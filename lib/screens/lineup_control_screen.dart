@@ -255,7 +255,11 @@ class _Header extends StatelessWidget {
             if (compName != null && compName.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Text(compName, style: titleStyle),
+                child: Text(
+                  compName,
+                  style: titleStyle,
+                  textAlign: TextAlign.center,
+                ),
               ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

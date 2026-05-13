@@ -71,7 +71,7 @@ ThemeData buildIwbfTheme() {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      centerTitle: false,
+      centerTitle: true,
       titleTextStyle: TextStyle(
         color: IwbfColors.textPrimary,
         fontSize: 18,
