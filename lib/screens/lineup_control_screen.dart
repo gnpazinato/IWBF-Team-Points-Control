@@ -546,77 +546,160 @@ class _PlayerCard extends StatelessWidget {
   }
 }
 
+/// Asset da quadra (orientação landscape original 2816x1504).
+///
+/// É exibida rotacionada 90° para o app, que opera em retrato.
+const String kCourtAsset = 'assets/images/court.png';
+
+/// Vista aérea simplificada da quadra com posicionamento simétrico
+/// dos cinco jogadores selecionados em cada metade.
+///
+/// O asset `court.png` é landscape (2816x1504). Como o app é portrait,
+/// rotacionamos 90° via `RotatedBox` para enxergar a quadra na vertical
+/// (Team A na metade superior, Team B na inferior).
 class _CourtView extends StatelessWidget {
   const _CourtView({required this.state});
 
   final MatchState state;
 
+  /// Aspect ratio da quadra pós-rotação (1504/2816 ≈ 0.534, portrait).
+  static const double _aspectRatio = 1504 / 2816;
+
+  /// Posições fracionárias (x, y) para os 5 jogadores da Team A na metade
+  /// superior (y < 0.5). Convenção: 2 perto da tabela, 2 mais à frente,
+  /// 1 no centro próximo da linha de meio-campo.
+  static const List<Offset> _teamATargets = <Offset>[
+    Offset(0.30, 0.10),
+    Offset(0.70, 0.10),
+    Offset(0.30, 0.28),
+    Offset(0.70, 0.28),
+    Offset(0.50, 0.40),
+  ];
+
+  /// Espelho simétrico da Team A para a metade inferior.
+  static const List<Offset> _teamBTargets = <Offset>[
+    Offset(0.30, 0.90),
+    Offset(0.70, 0.90),
+    Offset(0.30, 0.72),
+    Offset(0.70, 0.72),
+    Offset(0.50, 0.60),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8C898),
-        border: Border.all(color: Colors.brown.shade400),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      margin: const EdgeInsets.all(8),
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        children: <Widget>[
-          Expanded(
-            child: _CourtHalf(
-              players: state.selectedTeamAPlayers,
-              isTeamA: true,
-              emptyHint: 'Tap players in Team A list',
+    final List<Player> teamA = state.selectedTeamAPlayers;
+    final List<Player> teamB = state.selectedTeamBPlayers;
+
+    return Center(
+      key: const Key('court-view'),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: AspectRatio(
+          aspectRatio: _aspectRatio,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LayoutBuilder(
+              builder: (BuildContext _, BoxConstraints c) {
+                final double w = c.maxWidth;
+                final double h = c.maxHeight;
+                return Stack(
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    const Positioned.fill(
+                      child: RotatedBox(
+                        quarterTurns: 1,
+                        child: Image(
+                          image: AssetImage(kCourtAsset),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    if (teamA.isEmpty)
+                      const Align(
+                        alignment: Alignment(0, -0.55),
+                        child: _CourtHint(text: 'Tap players in Team A list'),
+                      ),
+                    if (teamB.isEmpty)
+                      const Align(
+                        alignment: Alignment(0, 0.55),
+                        child: _CourtHint(text: 'Tap players in Team B list'),
+                      ),
+                    for (int i = 0; i < teamA.length && i < 5; i++)
+                      _CourtPlayerSlot(
+                        player: teamA[i],
+                        isTeamA: true,
+                        target: _teamATargets[i],
+                        width: w,
+                        height: h,
+                      ),
+                    for (int i = 0; i < teamB.length && i < 5; i++)
+                      _CourtPlayerSlot(
+                        player: teamB[i],
+                        isTeamA: false,
+                        target: _teamBTargets[i],
+                        width: w,
+                        height: h,
+                      ),
+                  ],
+                );
+              },
             ),
           ),
-          Container(height: 2, color: Colors.white),
-          Expanded(
-            child: _CourtHalf(
-              players: state.selectedTeamBPlayers,
-              isTeamA: false,
-              emptyHint: 'Tap players in Team B list',
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _CourtHalf extends StatelessWidget {
-  const _CourtHalf({
-    required this.players,
-    required this.isTeamA,
-    required this.emptyHint,
-  });
+class _CourtHint extends StatelessWidget {
+  const _CourtHint({required this.text});
 
-  final List<Player> players;
-  final bool isTeamA;
-  final String emptyHint;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    if (players.isEmpty) {
-      return Center(
-        child: Text(
-          emptyHint,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.brown.shade700, fontSize: 12),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: IwbfColors.textPrimary,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 8,
-        runSpacing: 8,
-        children: players
-            .map(
-              (Player p) => _CourtPlayerChip(player: p, isTeamA: isTeamA),
-            )
-            .toList(),
+      ),
+    );
+  }
+}
+
+class _CourtPlayerSlot extends StatelessWidget {
+  const _CourtPlayerSlot({
+    required this.player,
+    required this.isTeamA,
+    required this.target,
+    required this.width,
+    required this.height,
+  });
+
+  final Player player;
+  final bool isTeamA;
+  final Offset target;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: width * target.dx,
+      top: height * target.dy,
+      child: FractionalTranslation(
+        translation: const Offset(-0.5, -0.5),
+        child: _CourtPlayerChip(player: player, isTeamA: isTeamA),
       ),
     );
   }
@@ -630,14 +713,22 @@ class _CourtPlayerChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = isTeamA ? Colors.white : Colors.black87;
-    final Color fg = isTeamA ? Colors.black87 : Colors.white;
+    final Color bg = isTeamA ? Colors.white : IwbfColors.textPrimary;
+    final Color fg = isTeamA ? IwbfColors.textPrimary : Colors.white;
+    final Color border = isTeamA ? IwbfColors.goldDeep : IwbfColors.textPrimary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: Colors.brown.shade700),
+        border: Border.all(color: border, width: 1.2),
         borderRadius: BorderRadius.circular(6),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

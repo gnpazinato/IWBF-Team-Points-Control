@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 4 em andamento. Itens 1/7 (tema) e 2/7 (header com logo IWBF) entregues: `IwbfBrandHeader` (logo grande + titulo + subtitle) na Load Spreadsheet; `IwbfAppBarTitle` (logo pequeno + texto) nas demais telas (Validation / Missing / Match Setup / Lineup). |
-| Fase atual | Fase 4 em andamento (2/7 itens) |
-| Proximo passo recomendado | Fase 4 item 3: substituir `_CourtView` simplificado pelo asset `court.png` (`assets/images/court.png`) como background da quadra e posicionar os 5 jogadores selecionados de forma simetrica (2 perto da tabela, 2 a frente, 1 perto do centro) em cada metade. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 127 passed (locais, Flutter 3.41.9 stable, apos header com logo) |
+| Status geral | Fase 4 em andamento. Itens 1/7 (tema), 2/7 (header com logo) e 3/7 (court.png + posicionamento simetrico) entregues. Quadra agora usa o asset `court.png` rotacionado 90° via `RotatedBox` como background, com 5 slots fracionarios por equipe e chips com sombra leve. |
+| Fase atual | Fase 4 em andamento (3/7 itens) |
+| Proximo passo recomendado | Fase 4 item 4: trocar o `CircleAvatar` numerico do `_PlayerCard` por icones de uniforme `team-a-men/women.png` ou `team-b-men/women.png` conforme `Player.gender`; cair em icone padrao quando `gender` ausente. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 129 passed (locais, Flutter 3.41.9 stable, apos court.png + slots fracionarios) |
 | APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos polimento; sera regenerado no item 7) |
 
 ## Ritual obrigatorio para a IA
@@ -143,7 +143,7 @@ Depois de implementar:
 - [x] Aplicar identidade visual (tema base — `buildIwbfTheme` + `IwbfColors`; logo IWBF no header de todas as telas via `IwbfBrandHeader` / `IwbfAppBarTitle`).
 - [ ] Ajustar layout para tablet.
 - [ ] Ajustar layout para celular.
-- [ ] Incluir logos, quadra e icones finais (logos: feito; quadra: pendente; icones: pendente).
+- [ ] Incluir logos, quadra e icones finais (logos: feito; quadra: feito via `court.png`; icones: pendente).
 - [ ] Incluir bandeiras locais ou solucao equivalente.
 - [ ] Criar templates baixaveis.
 - [ ] Revisar textos em ingles.
@@ -522,6 +522,47 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0016 - 2026-05-13 - Fase 4 (item 3/7): court.png + posicionamento simétrico
+
+Resumo:
+
+- `_CourtView` deixou de ser o retangulo marrom com `Wrap`: agora usa `assets/images/court.png` (2816x1504 landscape) como background, rotacionado 90° via `RotatedBox(quarterTurns: 1)` para ficar em retrato (aspect ratio pos-rotacao 1504/2816 ≈ 0.534).
+- Posicionamento simétrico via `Stack` + `LayoutBuilder` + `FractionalTranslation(-0.5, -0.5)`. Cada equipe tem 5 slots fracionarios `(dx, dy)` em coordenadas (0..1) da box:
+  - Team A (metade superior): (0.30, 0.10), (0.70, 0.10), (0.30, 0.28), (0.70, 0.28), (0.50, 0.40).
+  - Team B (metade inferior, espelho): (0.30, 0.90), (0.70, 0.90), (0.30, 0.72), (0.70, 0.72), (0.50, 0.60).
+- Hints "Tap players in Team A list" / "Tap players in Team B list" agora aparecem em pill com fundo branco translucido (`Colors.white.withValues(alpha: 0.85)`), centralizados verticalmente na sua metade da quadra (Alignment y = -0.55 / +0.55) sobre o asset.
+- Chips de jogador na quadra ganharam `BoxShadow` leve e bordas dourado escuro para Team A, preto institucional para Team B.
+- Constante publica `kCourtAsset` para reuso e teste.
+- Removida a classe interna `_CourtHalf` (não tem mais função após o refactor).
+- Aspect ratio garante que a quadra mantém forma mesmo em phone/tablet, sem distorcer o desenho original.
+
+Decisao tecnica:
+
+- Posicoes fracionarias em vez de coordenadas em pixels — `LayoutBuilder` resolve para o tamanho real do container, garantindo que o layout escala em tablet e celular sem hardcode.
+- `withOpacity` foi trocado por `withValues(alpha: ...)` (Flutter 3.41+ recomenda; `withOpacity` esta deprecated a partir do Material 3 + Flutter 3.41+).
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart` (`_CourtView`, novo `_CourtPlayerSlot`, novo `_CourtHint`, `_CourtPlayerChip` atualizado com sombra; removido `_CourtHalf`)
+- `test/screens/lineup_control_screen_test.dart` (+2 testes no grupo `LineupControlScreen — court`)
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 129 passed, 0 failed, 0 skipped (era 127; +2 novos no grupo court).
+
+Pendencias da Fase 4:
+
+- Item 4: icones de jogador por gender (substituir `CircleAvatar` numerico).
+- Item 5: templates `.xlsx` baixaveis.
+- Item 6: revisao final de copy em ingles.
+- Item 7: APK release via CI + docs de instalacao manual.
+
+Proximo passo recomendado:
+
+- Item 4/7: criar `_PlayerAvatar` que escolhe `team-a-men/women.png` ou `team-b-men/women.png` conforme `Player.gender` (ou fallback para o icone neutro da equipe quando `gender` ausente).
+
 ### 0015 - 2026-05-13 - Fase 4 (item 2/7): header com logo IWBF
 
 Resumo:
@@ -694,6 +735,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 123 passed, 0 failed, 0 skipped | Tema IWBF nao quebra widget tests existentes |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos header com logo IWBF (Fase 4 item 2) |
 | 2026-05-13 | `flutter test` (local) | 127 passed, 0 failed, 0 skipped | +4 novos testes do `iwbf_logo_header` |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos court.png + slots fracionarios (Fase 4 item 3) |
+| 2026-05-13 | `flutter test` (local) | 129 passed, 0 failed, 0 skipped | +2 novos no grupo "LineupControlScreen — court" |
 
 ## Pendencias e perguntas abertas
 
@@ -731,6 +774,8 @@ Decisoes fechadas:
 - Em assertions de scores no widget test, garantir que Team A e Team B tenham valores distintos antes de usar `findsOneWidget` no formato `total / limit` — caso contrario use `findsNWidgets(2)`.
 - `CardTheme` e `DialogTheme` foram renomeados para `CardThemeData` e `DialogThemeData` no Flutter 3.41+. Os nomes antigos so existem como typedefs deprecated e geram erro de tipo quando passados em `ThemeData(...)`.
 - Cores usadas em alertas e estados (limite excedido, erros de planilha, warnings) devem vir de `IwbfColors` (`alertRed`, `alertRedSurface`, `goldDeep`) e nao de `Colors.red.shade*`/`Colors.amber.shade*`, para manter o tema consistente.
+- `Color.withOpacity(x)` foi deprecated no Flutter 3.41+: usar `Color.withValues(alpha: x)`.
+- Para posicionar elementos sobre uma imagem mantendo proporcao em todos os tamanhos de tela: `AspectRatio` + `Stack` + `LayoutBuilder` + `Positioned(left/top = w*dx, h*dy)` + `FractionalTranslation(-0.5, -0.5)` para centralizar no ponto. Evita coordenadas em pixels e funciona igualmente em tablet/phone.
 
 ## Prompt curto de continuidade
 

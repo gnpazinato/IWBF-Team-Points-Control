@@ -208,6 +208,48 @@ void main() {
     });
   });
 
+  group('LineupControlScreen — court', () {
+    testWidgets('quadra renderiza com hints vazios para Team A e Team B',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: _freshState(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      expect(find.byKey(const Key('court-view')), findsOneWidget);
+      expect(find.text('Tap players in Team A list'), findsOneWidget);
+      expect(find.text('Tap players in Team B list'), findsOneWidget);
+    });
+
+    testWidgets('jogador selecionado aparece como chip na quadra',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: _freshState(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      await _tapPlayer(tester, 'team-brazil', 1);
+
+      // O chip da quadra mostra "#1" + SURNAME + classe — a lista lateral
+      // mostra "SURNAME1, First" + classe. "#1" só aparece no chip da quadra.
+      expect(find.text('#1'), findsOneWidget);
+      // Hint da Team A some quando há ao menos 1 jogador.
+      expect(find.text('Tap players in Team A list'), findsNothing);
+      // Hint da Team B continua, pois ela não tem ninguém selecionado.
+      expect(find.text('Tap players in Team B list'), findsOneWidget);
+    });
+  });
+
   group('LineupControlScreen — selection', () {
     testWidgets('tap em jogador seleciona e atualiza score',
         (WidgetTester tester) async {
