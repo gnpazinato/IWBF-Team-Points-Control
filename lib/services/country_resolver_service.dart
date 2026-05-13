@@ -5,8 +5,9 @@
 /// possivel. Este servico nao bloqueia nomes desconhecidos: ele apenas
 /// indica se um nome foi reconhecido e devolve o nome canonico.
 ///
-/// Bandeiras locais sao adicionadas na Fase 4; por enquanto o servico
-/// expoe um placeholder `flagAssetPathFor` para uso futuro.
+/// Bandeiras: usamos o emoji nacional Unicode (par de Regional Indicator
+/// Symbols) derivado do ISO 3166-1 alpha-2 do pais. Para paises desconhecidos
+/// retornamos `null` e o widget cai num icone generico.
 class CountryResolverService {
   CountryResolverService({Map<String, String>? aliasOverrides})
       : _normalizedAliases = _buildNormalizedAliases(aliasOverrides);
@@ -155,8 +156,59 @@ class CountryResolverService {
     return rawName.trim();
   }
 
-  /// Placeholder para a Fase 4: hoje retorna `null` para todo nome.
-  /// Quando bandeiras locais forem adicionadas, este metodo passa a
-  /// devolver `assets/flags/<arquivo>.png` para nomes conhecidos.
-  String? flagAssetPathFor(String rawName) => null;
+  /// Codigo ISO 3166-1 alpha-2 (`BR`, `AR`, `US`...) para o nome canonico.
+  /// Retorna `null` quando o pais nao for reconhecido.
+  String? countryCodeFor(String rawName) {
+    final String? canonical = resolveCanonical(rawName);
+    if (canonical == null) return null;
+    return _countryCodes[canonical];
+  }
+
+  /// Bandeira Unicode (par de Regional Indicator Symbols) para o pais.
+  /// Retorna `null` quando o pais nao for reconhecido.
+  String? flagEmojiFor(String rawName) {
+    final String? code = countryCodeFor(rawName);
+    if (code == null || code.length != 2) return null;
+    return countryFlagEmoji(code);
+  }
+
+  /// Mapa canonico -> ISO 3166-1 alpha-2.
+  static const Map<String, String> _countryCodes = <String, String>{
+    'Argentina': 'AR',
+    'Australia': 'AU',
+    'Brazil': 'BR',
+    'Canada': 'CA',
+    'China': 'CN',
+    'Colombia': 'CO',
+    'France': 'FR',
+    'Germany': 'DE',
+    'Great Britain': 'GB',
+    'Iran': 'IR',
+    'Italy': 'IT',
+    'Japan': 'JP',
+    'Mexico': 'MX',
+    'Netherlands': 'NL',
+    'Paraguay': 'PY',
+    'Peru': 'PE',
+    'South Korea': 'KR',
+    'Spain': 'ES',
+    'Turkey': 'TR',
+    'United States of America': 'US',
+    'Uruguay': 'UY',
+    'Venezuela': 'VE',
+  };
+}
+
+/// Converte um codigo alpha-2 (`BR`) no par de Regional Indicator Symbols
+/// que renderiza a bandeira (`🇧🇷`). A maioria das plataformas Web/Android
+/// usa a fonte do sistema para renderizar; em Web e tablet/celular Android
+/// modernos o suporte e confiavel.
+String countryFlagEmoji(String alpha2) {
+  if (alpha2.length != 2) return '';
+  final String code = alpha2.toUpperCase();
+  const int base = 0x1F1E6; // Regional Indicator Symbol Letter A
+  const int aChar = 0x41; // 'A'
+  final int first = base + (code.codeUnitAt(0) - aChar);
+  final int second = base + (code.codeUnitAt(1) - aChar);
+  return String.fromCharCodes(<int>[first, second]);
 }

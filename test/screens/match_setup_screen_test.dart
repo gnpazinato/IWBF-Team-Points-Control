@@ -238,7 +238,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Lineup Control'), findsOneWidget);
-      expect(find.text('Brazil  vs  Argentina'), findsOneWidget);
+      // Header agora monta Brazil + vs + Argentina em widgets separados
+      // para intercalar a bandeira de cada pais.
+      expect(find.text('Brazil'), findsWidgets);
+      expect(find.text('Argentina'), findsWidgets);
+      expect(find.text('  vs  '), findsOneWidget);
       expect(find.text('Point Limit:'), findsOneWidget);
     });
   });

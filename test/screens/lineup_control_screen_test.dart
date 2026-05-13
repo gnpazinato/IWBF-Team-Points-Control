@@ -133,7 +133,11 @@ void main() {
       );
 
       expect(find.text('Americas Championship'), findsOneWidget);
-      expect(find.text('Brazil  vs  Argentina'), findsOneWidget);
+      // Header agora monta Team A / vs / Team B em widgets separados para
+      // intercalar a bandeira de cada pais.
+      expect(find.text('Brazil'), findsWidgets);
+      expect(find.text('Argentina'), findsWidgets);
+      expect(find.text('  vs  '), findsOneWidget);
       expect(find.text('Team A'), findsWidgets);
       expect(find.text('Team B'), findsWidgets);
       expect(find.text('0.0 / 14.0'), findsNWidgets(2));
@@ -240,9 +244,10 @@ void main() {
 
       await _tapPlayer(tester, 'team-brazil', 1);
 
-      // O chip da quadra mostra "#1" + SURNAME + classe — a lista lateral
-      // mostra "SURNAME1, First" + classe. "#1" só aparece no chip da quadra.
-      expect(find.text('#1'), findsOneWidget);
+      // O chip da quadra agora usa `PlayerJerseyIcon` + SURNAME (em caixa
+      // alta) + classe. A lista lateral mostra "SURNAME1, First" — o
+      // sobrenome puro "SURNAME1" só aparece no chip da quadra.
+      expect(find.text('SURNAME1'), findsOneWidget);
       // Hint da Team A some quando há ao menos 1 jogador.
       expect(find.text('Tap players in Team A list'), findsNothing);
       // Hint da Team B continua, pois ela não tem ninguém selecionado.

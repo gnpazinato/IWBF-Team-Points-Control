@@ -126,12 +126,52 @@ void main() {
     });
   });
 
-  group('CountryResolverService - flagAssetPathFor', () {
+  group('CountryResolverService - countryCodeFor', () {
     final CountryResolverService resolver = CountryResolverService();
 
-    test('retorna null enquanto bandeiras nao forem adicionadas (Fase 4)', () {
-      expect(resolver.flagAssetPathFor('Brazil'), isNull);
-      expect(resolver.flagAssetPathFor('Marte'), isNull);
+    test('retorna alpha-2 para paises conhecidos', () {
+      expect(resolver.countryCodeFor('Brazil'), equals('BR'));
+      expect(resolver.countryCodeFor('USA'), equals('US'));
+      expect(resolver.countryCodeFor('Korea'), equals('KR'));
+    });
+
+    test('retorna null para paises desconhecidos', () {
+      expect(resolver.countryCodeFor('Marte'), isNull);
+      expect(resolver.countryCodeFor(''), isNull);
+    });
+  });
+
+  group('CountryResolverService - flagEmojiFor', () {
+    final CountryResolverService resolver = CountryResolverService();
+
+    test('retorna emoji nacional para paises conhecidos', () {
+      // 🇧🇷 = 0x1F1E7 + 0x1F1F7
+      expect(
+        resolver.flagEmojiFor('Brazil'),
+        equals(String.fromCharCodes(<int>[0x1F1E7, 0x1F1F7])),
+      );
+    });
+
+    test('retorna null quando o pais nao for reconhecido', () {
+      expect(resolver.flagEmojiFor('Marte'), isNull);
+    });
+  });
+
+  group('countryFlagEmoji helper', () {
+    test('converte alpha-2 em par de Regional Indicator Symbols', () {
+      expect(
+        countryFlagEmoji('BR'),
+        equals(String.fromCharCodes(<int>[0x1F1E7, 0x1F1F7])),
+      );
+      expect(
+        countryFlagEmoji('us'),
+        equals(String.fromCharCodes(<int>[0x1F1FA, 0x1F1F8])),
+      );
+    });
+
+    test('retorna string vazia para entrada invalida', () {
+      expect(countryFlagEmoji('B'), equals(''));
+      expect(countryFlagEmoji('BRA'), equals(''));
     });
   });
 }

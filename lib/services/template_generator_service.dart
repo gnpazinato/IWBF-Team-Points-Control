@@ -30,7 +30,11 @@ class TemplateGeneratorService {
   ];
 
   /// Colunas do modelo de uma aba por equipe.
+  ///
+  /// `competition_name` é opcional para o parser, mas aparece no template
+  /// para que o usuário possa preencher e o app exiba no topo da partida.
   static const List<String> perTeamHeaders = <String>[
+    'competition_name',
     'shirt_number',
     'surname',
     'first_name',
@@ -82,8 +86,8 @@ class TemplateGeneratorService {
         xlsx.IntCellValue(p.shirt),
         xlsx.TextCellValue(p.surname),
         xlsx.TextCellValue(p.firstName),
-        xlsx.DoubleCellValue(p.playerClass),
-        xlsx.TextCellValue(p.dob),
+        xlsx.TextCellValue(_formatPlayerClass(p.playerClass)),
+        xlsx.TextCellValue(_formatDob(p.dob)),
         xlsx.TextCellValue(p.gender),
       ]);
     }
@@ -105,11 +109,12 @@ class TemplateGeneratorService {
       for (final _SamplePlayer p
           in _sampleRoster.where((_SamplePlayer p) => p.team == teamName)) {
         excel.appendRow(teamName, <xlsx.CellValue?>[
+          xlsx.TextCellValue('IWBF Sample Championship'),
           xlsx.IntCellValue(p.shirt),
           xlsx.TextCellValue(p.surname),
           xlsx.TextCellValue(p.firstName),
-          xlsx.DoubleCellValue(p.playerClass),
-          xlsx.TextCellValue(p.dob),
+          xlsx.TextCellValue(_formatPlayerClass(p.playerClass)),
+          xlsx.TextCellValue(_formatDob(p.dob)),
           xlsx.TextCellValue(p.gender),
         ]);
       }
@@ -122,6 +127,20 @@ class TemplateGeneratorService {
     }
 
     return _encode(excel);
+  }
+
+  /// `2.0` → `"2,0"` (uma casa decimal, separador vírgula como nos
+  /// templates oficiais que o usuário pediu).
+  static String _formatPlayerClass(double value) {
+    final String fixed = value.toStringAsFixed(1);
+    return fixed.replaceAll('.', ',');
+  }
+
+  /// `"1995-04-15"` → `"15/04/1995"` (DD/MM/YYYY).
+  static String _formatDob(String iso) {
+    final List<String> parts = iso.split('-');
+    if (parts.length != 3) return iso;
+    return '${parts[2]}/${parts[1]}/${parts[0]}';
   }
 
   Uint8List _encode(xlsx.Excel excel) {

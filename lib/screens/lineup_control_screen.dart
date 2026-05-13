@@ -10,6 +10,7 @@ import '../services/cache_service.dart';
 import '../services/vibration_service.dart';
 import '../services/wakelock_controller.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/country_flag.dart';
 import '../widgets/iwbf_logo_header.dart';
 import '../widgets/player_jersey_icon.dart';
 
@@ -256,10 +257,29 @@ class _Header extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(compName, style: titleStyle),
               ),
-            Text(
-              '${state.teamA.displayName}  vs  ${state.teamB.displayName}',
-              style: titleStyle,
-              textAlign: TextAlign.center,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                CountryFlag(rawName: state.teamA.teamName, size: 18),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    state.teamA.displayName,
+                    style: titleStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text('  vs  ', style: titleStyle),
+                Flexible(
+                  child: Text(
+                    state.teamB.displayName,
+                    style: titleStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                CountryFlag(rawName: state.teamB.teamName, size: 18),
+              ],
             ),
             const SizedBox(height: 8),
             Row(
@@ -476,9 +496,18 @@ class _TeamPlayerList extends StatelessWidget {
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            team.displayName,
-            style: const TextStyle(fontWeight: FontWeight.w700),
+          child: Row(
+            children: <Widget>[
+              CountryFlag(rawName: team.teamName, size: 18),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  team.displayName,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
         ...team.players.map(
@@ -725,7 +754,7 @@ class _CourtPlayerChip extends StatelessWidget {
     final Color fg = isTeamA ? IwbfColors.textPrimary : Colors.white;
     final Color border = isTeamA ? IwbfColors.goldDeep : IwbfColors.textPrimary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
         border: Border.all(color: border, width: 1.2),
@@ -741,17 +770,19 @@ class _CourtPlayerChip extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            '#${player.shirtNumber}',
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+          PlayerJerseyIcon(
+            player: player,
+            isTeamA: isTeamA,
+            size: 36,
           ),
+          const SizedBox(height: 2),
           Text(
             player.surname.toUpperCase(),
-            style: TextStyle(color: fg, fontSize: 10),
+            style: TextStyle(
+              color: fg,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           Text(
             player.playerClass.toStringAsFixed(1),

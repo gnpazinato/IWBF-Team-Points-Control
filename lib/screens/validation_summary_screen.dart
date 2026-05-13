@@ -4,6 +4,7 @@ import '../models/team.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/country_flag.dart';
 import '../widgets/iwbf_logo_header.dart';
 import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
@@ -118,7 +119,7 @@ class ValidationSummaryScreen extends StatelessWidget {
       ),
       ...result.teams.map((Team team) => Card(
             child: ListTile(
-              leading: const Icon(Icons.groups_outlined),
+              leading: CountryFlag(rawName: team.teamName, size: 24),
               title: Text(team.displayName),
               subtitle:
                   Text('${team.players.length} player(s) imported'),

@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | **Fase 4 + hotfix Web + Pages destravado + logo corrigido.** Usuario validou preview Web e reportou 5 bugs visuais. Item 1 (logo) ja corrigido nesta sessao; itens 2-5 ficam para a Fase 5 numa nova sessao. |
-| Fase atual | **Fase 4 fechada. Fase 5 (ajustes pos-teste manual) aberta — 1/5+ entregue.** |
-| Proximo passo recomendado | Abrir nova sessao com o prompt do final deste log (secao "Prompt curto de continuidade — Fase 5"). Lista de itens da Fase 5 esta na entrada 0023. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (apos trocar logo branco -> preto). |
+| Status geral | **Fase 5 — 4 itens entregues em 1 sessao (logo, jerseys, templates, bandeiras, chip da quadra).** Aguarda nova rodada de teste manual no preview Web. |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — itens 1-4 da entrada 0023 entregues.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Se aparecerem ajustes novos, abrir nova sessao com os detalhes. |
+| Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI deve rodar `flutter analyze` + `flutter test` + `flutter build web` no push. Mudancas em testes pre-existentes foram feitas para acompanhar as mudancas estruturais (header agora monta nome+bandeira em widgets separados; chip da quadra usa `PlayerJerseyIcon`). |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
 ## Ritual obrigatorio para a IA
@@ -521,6 +521,64 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0024 - 2026-05-13 - Fase 5 (itens 2 a 5): templates, jerseys limpos, bandeiras Unicode, chip da quadra com icone
+
+Resumo:
+
+- Quatro itens da entrada 0023 fechados em sequencia. Ambiente sem Flutter SDK local — todas as mudancas validadas por leitura cuidadosa do codigo + leitura dos testes existentes (atualizados para acompanhar as mudancas estruturais).
+
+**Item 1 (templates `.xlsx`):**
+- `player_class` agora sai como texto `2,0` (uma casa decimal, vírgula). O parser ja aceita tanto `2.0` quanto `2,0` via `parsePlayerClass`.
+- `dob` agora sai em `DD/MM/YYYY`. O parser ja aceita tanto `YYYY-MM-DD` quanto `DD/MM/YYYY`.
+- `competition_name` adicionado ao `perTeamHeaders` (template per-team agora bate com o single-sheet nessa coluna). Valor `IWBF Sample Championship` para os 4 atletas exemplo.
+- Helpers `_formatPlayerClass` e `_formatDob` adicionados em `template_generator_service.dart`.
+
+**Item 2 (icones dos jogadores):**
+- Os 4 PNGs `team-a/b-men/women.png` vinham como 2048x2048 ~5MB cada, com `10` estampado na camiseta (interferia com o numero overlay e estourava o bundle).
+- Script Python (PIL + scipy.ndimage) detectou os digitos `1` e `0` da camiseta como componentes conexos isolados na ROI central do peito, dilatou a mascara (`binary_dilation iterations=8`) para pegar o halo antialiased e pintou tudo com a cor da camiseta (branco para Team A, preto para Team B). Depois redimensionei para 256x256 com filtro LANCZOS.
+- Resultado: ~85-95 KB cada (vs ~5 MB original — reducao de ~98%) e camiseta limpa, sem o `10` embutido. Validacao visual via `Read` direto dos PNGs no pos-processamento.
+- `PlayerJerseyIcon` reposicionado: numero agora em `Alignment(0, -0.20)` (alinhado ao peito da camiseta onde o `10` estava), com `FilterQuality.high`, `FontWeight.w900` e `fontSize: size * 0.32`. Numero preto no Team A (camiseta clara) e branco no Team B (camiseta escura), conforme contraste pedido.
+
+**Item 3 (bandeiras):**
+- `CountryResolverService` agora expoe `countryCodeFor(rawName)` (ISO 3166-1 alpha-2 a partir do nome canonico — `Brazil` -> `BR`) e `flagEmojiFor(rawName)` (par de Regional Indicator Symbols Unicode).
+- Funcao top-level `countryFlagEmoji(alpha2)` faz a conversao `BR` -> `🇧🇷` somando `0x1F1E6 + (letra - 'A')`. Funciona em Web e Android moderno via fonte do sistema, sem dependencia nova.
+- Mapa interno cobre os 22 paises que ja estavam nos aliases (Argentina/Brazil/USA/Korea/etc.).
+- Novo widget `lib/widgets/country_flag.dart` exibe o emoji ou cai num `Icon(Icons.flag_outlined)` quando o pais nao for reconhecido.
+- Bandeiras intercaladas em: `ValidationSummaryScreen` (cards de equipe), `MatchSetupScreen` (dropdowns Team A/B), `LineupControlScreen` (header e titulos das listas laterais).
+- Metodo antigo `flagAssetPathFor` removido. Teste correspondente substituido por testes de `countryCodeFor`, `flagEmojiFor` e do helper `countryFlagEmoji`.
+
+**Item 4 (chip da quadra com icone):**
+- `_CourtPlayerChip` em `lib/screens/lineup_control_screen.dart` agora usa `PlayerJerseyIcon` (size 36) no topo, em cima de `SURNAME` (caixa alta) e da classe.
+- Antes mostrava `#shirt` / `SURNAME` / `classe` so como texto.
+
+Arquivos alterados:
+
+- `assets/images/team-a-men.png`, `team-a-women.png`, `team-b-men.png`, `team-b-women.png` (regenerados 256x256 sem o `10` embutido).
+- `lib/services/template_generator_service.dart` (formato `2,0` para classe, `DD/MM/YYYY` para DOB, `competition_name` no per-team).
+- `lib/widgets/player_jersey_icon.dart` (`FilterQuality.high`, numero reposicionado, peso/tamanho ajustados).
+- `lib/services/country_resolver_service.dart` (`countryCodeFor`, `flagEmojiFor`, helper `countryFlagEmoji`, mapa alpha-2; remocao do antigo `flagAssetPathFor`).
+- `lib/widgets/country_flag.dart` (novo).
+- `lib/screens/validation_summary_screen.dart`, `lib/screens/match_setup_screen.dart`, `lib/screens/lineup_control_screen.dart` (uso do `CountryFlag` + reorganizacao do header em widgets separados; chip da quadra com icone).
+- `test/services/country_resolver_service_test.dart` (testes do antigo `flagAssetPathFor` substituidos pelos novos).
+- `test/screens/lineup_control_screen_test.dart` (header espera widgets separados; chip espera `SURNAME1` ao inves de `#1`).
+- `test/screens/match_setup_screen_test.dart` (mesma adaptacao do header).
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). Confianca via revisao dos testes pre-existentes e do impacto das mudancas. CI valida no push.
+
+Pendencias / Item 6 da entrada 0023:
+
+- Pendente: usuario havia mencionado "varios outros pequenos ajustes" alem dos 5 itens. Continuam pendentes ate o usuario detalhar.
+- Validar visualmente no preview Web pos-deploy:
+  - bandeiras renderizam (Web/Chrome tipicamente OK; em algumas distros Linux pode faltar emoji font color — ainda assim o widget cai bem no `Icon` se o glifo nao tiver cobertura);
+  - numero da camiseta legivel agora que o `10` foi removido;
+  - chip da quadra mostra o icone certo (claro/escuro por equipe).
+
+Proximo passo recomendado:
+
+- Aguardar smoke test do usuario. Se algo mais aparecer, abrir nova sessao com a lista detalhada.
 
 ### 0023 - 2026-05-13 - Fase 5 aberta (1/5): logo IWBF preto sobre fundo claro
 

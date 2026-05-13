@@ -4,6 +4,7 @@ import '../constants/point_limits.dart';
 import '../models/match_state.dart';
 import '../models/team.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/country_flag.dart';
 import '../widgets/iwbf_logo_header.dart';
 import 'lineup_control_screen.dart';
 
@@ -188,7 +189,18 @@ class _TeamDropdown extends StatelessWidget {
           .map(
             (Team t) => DropdownMenuItem<Team>(
               value: t,
-              child: Text(t.displayName),
+              child: Row(
+                children: <Widget>[
+                  CountryFlag(rawName: t.teamName, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      t.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           )
           .toList(),
