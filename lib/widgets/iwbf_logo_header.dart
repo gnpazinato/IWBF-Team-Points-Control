@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../theme/iwbf_theme.dart';
 
-/// Asset do logo IWBF colorido (versão pensada para fundos claros).
+/// Logo IWBF na versão branca (pensada para fundos escuros).
 const String kIwbfLogoWhiteAsset = 'assets/images/iwbf-logo-white.png';
 
-/// Asset do logo IWBF colorido sobre fundo escuro.
+/// Logo IWBF na versão preta/escura (pensada para fundos claros).
 const String kIwbfLogoBlackAsset = 'assets/images/iwbf-logo-black.png';
 
 /// Cabeçalho institucional usado na home (`LoadSpreadsheetScreen`).
@@ -42,7 +42,7 @@ class IwbfBrandHeader extends StatelessWidget {
               key: const Key('iwbf-brand-logo'),
               height: height,
               child: Image.asset(
-                kIwbfLogoWhiteAsset,
+                kIwbfLogoBlackAsset,
                 fit: BoxFit.contain,
                 semanticLabel: 'IWBF logo',
               ),
@@ -85,7 +85,7 @@ class IwbfAppBarTitle extends StatelessWidget {
           key: const Key('iwbf-appbar-logo'),
           height: 32,
           child: Image.asset(
-            kIwbfLogoWhiteAsset,
+            kIwbfLogoBlackAsset,
             fit: BoxFit.contain,
             semanticLabel: 'IWBF logo',
           ),

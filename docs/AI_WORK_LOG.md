@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | **Fase 4 concluida (7/7) + hotfix Web + GitHub Pages destravado.** Web preview ativo em `https://gnpazinato.github.io/IWBF-Team-Points-Control/`. Runs do `deploy-web.yml` em `claude/review-and-continue-9ZK5v` passaram a verde apos remover a restricao do environment `github-pages` (que limitava deploys so a `main`). |
-| Fase atual | **Fase 4 fechada — preview Web ativo.** |
-| Proximo passo recomendado | Validar manualmente o preview Web no navegador (Mac/iPhone/iPad) seguindo o smoke test do `docs/INSTALL_ANDROID.md` (Download Template → Load → Match Setup → Lineup). Para Android: artifact `iwbf-team-points-control-apk` do workflow `Build Android APK`. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed + `flutter build web --release` ✓ |
-| APK gerado | Sim, via CI a cada push. Preview Web tambem publicado a cada push apos destravar env protection. |
+| Status geral | **Fase 4 + hotfix Web + Pages destravado + logo corrigido.** Usuario validou preview Web e reportou 5 bugs visuais. Item 1 (logo) ja corrigido nesta sessao; itens 2-5 ficam para a Fase 5 numa nova sessao. |
+| Fase atual | **Fase 4 fechada. Fase 5 (ajustes pos-teste manual) aberta — 1/5+ entregue.** |
+| Proximo passo recomendado | Abrir nova sessao com o prompt do final deste log (secao "Prompt curto de continuidade — Fase 5"). Lista de itens da Fase 5 esta na entrada 0023. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (apos trocar logo branco -> preto). |
+| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
 ## Ritual obrigatorio para a IA
 
@@ -521,6 +521,52 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0023 - 2026-05-13 - Fase 5 aberta (1/5): logo IWBF preto sobre fundo claro
+
+Resumo:
+
+- Usuario testou o preview Web em `https://gnpazinato.github.io/IWBF-Team-Points-Control/` e reportou 5 bugs visuais (validacao manual que minha rotina `analyze + test` nao pega).
+- Item 1 corrigido nesta sessao (trivial, ~1 min): `IwbfBrandHeader` e `IwbfAppBarTitle` usavam `kIwbfLogoWhiteAsset` (logo branco, pensado para fundos escuros). Sobre o fundo off-white do tema, ficava ilegivel. Trocado para `kIwbfLogoBlackAsset` (logo preto/escuro, pensado para fundos claros). Docstrings das duas constantes tambem ajustadas para deixar claro o uso de cada uma.
+- Itens 2 a 5 ficam para uma sessao nova (Fase 5 completa). Lista abaixo (na ordem em que o usuario reportou):
+
+Fase 5 — Lista de bugs visuais (pos-teste manual no preview Web):
+
+1. **[FEITO]** `IwbfBrandHeader` / `IwbfAppBarTitle` usavam logo branco sobre fundo off-white. Trocado para `kIwbfLogoBlackAsset` (commit nesta sessao).
+
+2. **[ABERTO] `PlayerJerseyIcon` — numero duplicado/ilegivel:** os assets `team-a/b-men/women.png` ja tem o numero `10` estampado na camiseta (era o exemplo do PNG original). O overlay numerico do `PlayerJerseyIcon` aparece POR CIMA do 10, ficando ilegivel. Decidir entre:
+   (a) trocar os 4 assets por versoes sem numero embutido (preferencia: SVG ou PNG vetorial);
+   (b) reposicionar/cobrir a regiao do 10 com um badge solido sobre o ponto exato;
+   (c) outra abordagem (ex.: passar a usar so um avatar com cor + numero overlay, sem o PNG).
+
+3. **[ABERTO] Qualidade/pixelacao dos icones:** mesmo em alta densidade os PNGs estao mostrando borrado/serrilhado. Investigar:
+   - filtering do `Image.asset` (`filterQuality: FilterQuality.high`?);
+   - dimensoes efetivas vs original (2048x2048 sendo escalado para 36-40dp);
+   - regerar ou substituir os assets por SVG (`flutter_svg` ja avaliada no planejamento mas nao adicionada).
+
+4. **[ABERTO] Quadra sem icones dos jogadores selecionados:** hoje o `_CourtPlayerChip` em `lib/screens/lineup_control_screen.dart` mostra apenas texto (`#shirt / SURNAME / class`). O planejamento original (`IWBF_Team_Points_Control_Planejamento.md` secao 16.2) pede icone na quadra tambem. Trocar o chip por uma versao com `PlayerJerseyIcon` (apos resolver item 2).
+
+5. **[ABERTO] Dados incorretos no template `.xlsx`:** o usuario mencionou que as informacoes pre-preenchidas no template gerado estao com algo errado, mas nao detalhou ainda. Pedir a lista exata do que esta errado no inicio da nova sessao e revisar `_sampleRoster` em `lib/services/template_generator_service.dart`.
+
+6. **[ABERTO] "Varios outros pequenos ajustes":** o usuario mencionou que existem outros ajustes alem dos 5 acima. Pedir a lista completa na nova sessao antes de codar.
+
+Arquivos alterados (item 1):
+
+- `lib/widgets/iwbf_logo_header.dart` (3 lugares: docstrings das 2 constantes + asset usado em `IwbfBrandHeader` + asset usado em `IwbfAppBarTitle`).
+- `docs/AI_WORK_LOG.md`.
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 145 passed, 0 failed, 0 skipped.
+
+Pendencias:
+
+- Itens 2-6 da lista acima. **Devem ser tratados numa nova sessao de chat** (esta ja tem ~200k tokens de contexto).
+
+Proximo passo recomendado:
+
+- Abrir nova conversa com o prompt da secao "Prompt curto de continuidade — Fase 5" no final deste arquivo. O prompt ja inclui a lista acima (sem o item 1, ja resolvido).
 
 ### 0022 - 2026-05-13 - GitHub Pages destravado para branches `claude/*`
 
@@ -1076,4 +1122,68 @@ testes que passaram (numeros reais), pendencias, proximo passo.
 
 Comece pelo proximo passo recomendado do AI_WORK_LOG e me confirme
 em uma frase qual e o estado atual antes de codar.
+```
+
+## Prompt curto de continuidade — Fase 5
+
+```text
+Você está retomando o IWBF Team Points Control (Flutter offline para
+comissários de basquete em cadeira de rodas).
+
+Antes de qualquer coisa, leia nesta ordem:
+1. docs/IWBF_Team_Points_Control_Planejamento.md
+2. docs/PLANO_DESENVOLVIMENTO_IA.md
+3. docs/AI_WORK_LOG.md  ← fonte da verdade (estado, decisões, convenções, próximo passo)
+
+Branch de trabalho: claude/review-and-continue-9ZK5v (já existe no remoto)
+Repositório: gnpazinato/iwbf-team-points-control
+
+Estado atual: Fase 4 completa. Preview Web em
+https://gnpazinato.github.io/IWBF-Team-Points-Control/ ativo.
+flutter analyze 0 issues, flutter test 145 passed, build web OK.
+Item 1 da Fase 5 (logo IWBF preto sobre fundo claro) ja foi resolvido
+na sessao anterior. Veja entrada 0023 do AI_WORK_LOG para a lista
+completa de itens da Fase 5.
+
+Próximo passo: Fase 5 — Ajustes de polimento visual pós-teste manual.
+Lista de bugs/ajustes (entrada 0023 do AI_WORK_LOG tem detalhes):
+
+2. PlayerJerseyIcon: os assets team-a/b-men/women.png ja tem numero 10
+   estampado. Overlay numerico fica por cima do 10 e fica ilegivel.
+   Decidir: trocar assets (preferencia SVG) OU reposicionar overlay.
+
+3. Icones pixelados/borrados no preview. Investigar filterQuality,
+   dimensoes, ou regerar como SVG (flutter_svg).
+
+4. Quadra sem icones dos jogadores: _CourtPlayerChip mostra so texto.
+   Planejamento pede icone na quadra. Trocar por PlayerJerseyIcon
+   apos resolver item 2.
+
+5. Template .xlsx com dados pre-preenchidos incorretos. Pedir lista
+   detalhada do que esta errado em _sampleRoster (lib/services/
+   template_generator_service.dart) antes de codar.
+
+6. Usuario mencionou outros pequenos ajustes alem destes — pedir a
+   lista completa antes de codar.
+
+Regras (não revisitar sem motivo técnico):
+- Flutter local em /root/flutter/bin/flutter (se faltar, ver snippet
+  no log).
+- Sempre flutter pub get → analyze --no-fatal-infos (0 issues) →
+  test (tudo verde) antes do push.
+- Não commit pubspec.lock se mudou só pelo pub get local.
+- Plugins de plataforma sempre via callback/serviço injetável.
+- Não pedir validação manual; sua validação é analyze + test.
+- Em widget tests, nunca await Navigator.push(...).
+- Commits convencionais: feat(fase-5):..., fix(fase-5):..., chore(fase-5):...
+
+Rotina por incremento: implementa o menor pedaço útil → analyze + test
+local verdes → atualiza AI_WORK_LOG.md (nova entrada ### 00NN +
+checklist da Fase 5 + arquivos alterados + testes + próximo passo) →
+commit + push em claude/review-and-continue-9ZK5v → me reporta em 4-8
+linhas.
+
+Comece confirmando que leu os docs e pedindo (a) a lista detalhada
+do que esta errado no template (item 5) e (b) a lista completa dos
+"outros pequenos ajustes" (item 6) antes de codar o item 2.
 ```
