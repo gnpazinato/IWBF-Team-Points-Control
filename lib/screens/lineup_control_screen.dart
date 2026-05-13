@@ -11,6 +11,7 @@ import '../services/vibration_service.dart';
 import '../services/wakelock_controller.dart';
 import '../theme/iwbf_theme.dart';
 import '../widgets/iwbf_logo_header.dart';
+import '../widgets/player_jersey_icon.dart';
 
 /// Tela principal da partida.
 ///
@@ -384,6 +385,7 @@ class _TabletBody extends StatelessWidget {
           child: _TeamPlayerList(
             key: const Key('tablet-team-a-list'),
             team: state.teamA,
+            isTeamA: true,
             selectedIds: state.selectedTeamAIds,
             onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
           ),
@@ -397,6 +399,7 @@ class _TabletBody extends StatelessWidget {
           child: _TeamPlayerList(
             key: const Key('tablet-team-b-list'),
             team: state.teamB,
+            isTeamA: false,
             selectedIds: state.selectedTeamBIds,
             onPlayerTap: (Player p) => onPlayerTap(p, _Side.b),
           ),
@@ -431,6 +434,7 @@ class _PhoneBody extends StatelessWidget {
                 _TeamPlayerList(
                   key: const Key('phone-team-a-list'),
                   team: state.teamA,
+                  isTeamA: true,
                   selectedIds: state.selectedTeamAIds,
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
                 ),
@@ -438,6 +442,7 @@ class _PhoneBody extends StatelessWidget {
                 _TeamPlayerList(
                   key: const Key('phone-team-b-list'),
                   team: state.teamB,
+                  isTeamA: false,
                   selectedIds: state.selectedTeamBIds,
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.b),
                 ),
@@ -454,11 +459,13 @@ class _TeamPlayerList extends StatelessWidget {
   const _TeamPlayerList({
     super.key,
     required this.team,
+    required this.isTeamA,
     required this.selectedIds,
     required this.onPlayerTap,
   });
 
   final Team team;
+  final bool isTeamA;
   final Set<String> selectedIds;
   final ValueChanged<Player> onPlayerTap;
 
@@ -477,6 +484,7 @@ class _TeamPlayerList extends StatelessWidget {
         ...team.players.map(
           (Player p) => _PlayerCard(
             player: p,
+            isTeamA: isTeamA,
             selected: selectedIds.contains(p.id),
             onTap: () => onPlayerTap(p),
           ),
@@ -489,11 +497,13 @@ class _TeamPlayerList extends StatelessWidget {
 class _PlayerCard extends StatelessWidget {
   const _PlayerCard({
     required this.player,
+    required this.isTeamA,
     required this.selected,
     required this.onTap,
   });
 
   final Player player;
+  final bool isTeamA;
   final bool selected;
   final VoidCallback onTap;
 
@@ -519,12 +529,10 @@ class _PlayerCard extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: <Widget>[
-                CircleAvatar(
-                  radius: 16,
-                  child: Text(
-                    '${player.shirtNumber}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                PlayerJerseyIcon(
+                  player: player,
+                  isTeamA: isTeamA,
+                  size: 36,
                 ),
                 const SizedBox(width: 8),
                 Expanded(

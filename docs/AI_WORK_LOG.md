@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 4 em andamento. Itens 1/7 (tema), 2/7 (header com logo) e 3/7 (court.png + posicionamento simetrico) entregues. Quadra agora usa o asset `court.png` rotacionado 90° via `RotatedBox` como background, com 5 slots fracionarios por equipe e chips com sombra leve. |
-| Fase atual | Fase 4 em andamento (3/7 itens) |
-| Proximo passo recomendado | Fase 4 item 4: trocar o `CircleAvatar` numerico do `_PlayerCard` por icones de uniforme `team-a-men/women.png` ou `team-b-men/women.png` conforme `Player.gender`; cair em icone padrao quando `gender` ausente. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 129 passed (locais, Flutter 3.41.9 stable, apos court.png + slots fracionarios) |
+| Status geral | Fase 4 em andamento (4/7). `PlayerJerseyIcon` (assets `team-a/b-men/women.png` com numero da camiseta sobreposto) substitui o `CircleAvatar` numerico nos cards laterais; default `unspecified` cai no icone masculino. |
+| Fase atual | Fase 4 em andamento (4/7 itens) |
+| Proximo passo recomendado | Fase 4 item 5: gerar templates `.xlsx` (Single Sheet `Players` e One Sheet per Team) dentro do app via `excel` + `path_provider` + `share_plus`/intent; ligar nos botoes "Download Template — ..." da `LoadSpreadsheetScreen` que hoje so mostram snack placeholder. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 137 passed (locais, Flutter 3.41.9 stable, apos icones por gender) |
 | APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos polimento; sera regenerado no item 7) |
 
 ## Ritual obrigatorio para a IA
@@ -143,7 +143,7 @@ Depois de implementar:
 - [x] Aplicar identidade visual (tema base — `buildIwbfTheme` + `IwbfColors`; logo IWBF no header de todas as telas via `IwbfBrandHeader` / `IwbfAppBarTitle`).
 - [ ] Ajustar layout para tablet.
 - [ ] Ajustar layout para celular.
-- [ ] Incluir logos, quadra e icones finais (logos: feito; quadra: feito via `court.png`; icones: pendente).
+- [x] Incluir logos, quadra e icones finais (logos: feito; quadra: feito via `court.png`; icones: feito via `PlayerJerseyIcon`).
 - [ ] Incluir bandeiras locais ou solucao equivalente.
 - [ ] Criar templates baixaveis.
 - [ ] Revisar textos em ingles.
@@ -522,6 +522,46 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0017 - 2026-05-13 - Fase 4 (item 4/7): ícones de jogador por gender
+
+Resumo:
+
+- Criado `lib/widgets/player_jersey_icon.dart` com:
+  - Helper `resolveJerseyAsset({required isTeamA, required gender})` que mapeia `(isTeamA, PlayerGender)` → asset (`team-a/b-men/women.png`). `unspecified` cai no masculino (decisao registrada).
+  - Widget `PlayerJerseyIcon` que sobrepoe o numero da camiseta sobre o icone do uniforme via `Stack` + sombra leve, com cor do numero adaptativa (escura para Team A claro, branca para Team B escuro).
+  - Constantes publicas: `kTeamAMenAsset`, `kTeamAWomenAsset`, `kTeamBMenAsset`, `kTeamBWomenAsset`.
+- `_PlayerCard` (lista lateral) agora recebe `isTeamA` e usa `PlayerJerseyIcon` em vez de `CircleAvatar` com texto. Para isso `_TeamPlayerList`, `_TabletBody._PhoneBody` foram atualizados para repassar `isTeamA`.
+- `_CourtPlayerChip` (chip na quadra) ficou intencionalmente como esta (texto simples) — substituicao por icone full na quadra exigiria slot maior e checagem visual; o numero ja aparece no chip.
+
+Decisao registrada:
+
+- Quando `Player.gender == PlayerGender.unspecified`, o app usa o icone masculino (default da equipe). Isso esta alinhado com a decisao anterior de 2026-05-12: "icones masculino/feminino entram apenas se gender existir; caso contrario, icone padrao da equipe."
+
+Arquivos criados:
+
+- `lib/widgets/player_jersey_icon.dart`
+- `test/widgets/player_jersey_icon_test.dart` (8 testes: 5 unit testes do helper `resolveJerseyAsset` + 3 widget testes)
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart` (`_TabletBody`, `_PhoneBody`, `_TeamPlayerList`, `_PlayerCard` passam a propagar `isTeamA`; card usa `PlayerJerseyIcon`)
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 137 passed, 0 failed, 0 skipped (era 129; +8 novos do jersey icon).
+
+Pendencias da Fase 4:
+
+- Item 5: templates `.xlsx` baixaveis.
+- Item 6: revisao final de copy em ingles.
+- Item 7: APK release via CI + docs de instalacao manual.
+
+Proximo passo recomendado:
+
+- Item 5/7: gerar templates `.xlsx` (Single Sheet `Players` e One Sheet per Team) usando a lib `excel` + salvar em diretorio acessivel via `path_provider`; ligar nos dois botoes "Download Template — ..." que hoje so mostram snack placeholder.
+
 ### 0016 - 2026-05-13 - Fase 4 (item 3/7): court.png + posicionamento simétrico
 
 Resumo:
@@ -737,6 +777,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 127 passed, 0 failed, 0 skipped | +4 novos testes do `iwbf_logo_header` |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos court.png + slots fracionarios (Fase 4 item 3) |
 | 2026-05-13 | `flutter test` (local) | 129 passed, 0 failed, 0 skipped | +2 novos no grupo "LineupControlScreen — court" |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos icones por gender (Fase 4 item 4) |
+| 2026-05-13 | `flutter test` (local) | 137 passed, 0 failed, 0 skipped | +8 novos testes do `PlayerJerseyIcon` (5 unit + 3 widget) |
 
 ## Pendencias e perguntas abertas
 
