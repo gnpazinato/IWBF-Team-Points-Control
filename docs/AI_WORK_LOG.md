@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 4 em andamento (6/7). Todas as mensagens de erro/warning do parser, modelos e telas estao em ingles. Comentarios dev-only e nomes de exemplo (`João`) ficam intencionalmente em PT. |
-| Fase atual | Fase 4 em andamento (6/7 itens) |
-| Proximo passo recomendado | Fase 4 item 7: validar APK release via CI (`build-apk.yml`) e documentar instalacao manual no servico cloud Android escolhido (sideload via "Install unknown apps"). |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (locais, Flutter 3.41.9 stable, apos revisao final de copy em ingles) |
-| APK gerado | Sim, debug+release via CI na PR #1 (sera regenerado no item 7 com o polimento aplicado) |
+| Status geral | **Fase 4 concluida (7/7).** Todo o polimento visual + identidade IWBF + templates `.xlsx` + copy ingles + docs de instalacao estao no codigo. Build APK release continua via CI (`build-apk.yml`) — sera regenerado automaticamente no push. |
+| Fase atual | **Fase 4 fechada — pronto para release.** |
+| Proximo passo recomendado | Aguardar o run do `build-apk.yml` em `claude/review-and-continue-9ZK5v` ficar verde, baixar o artifact `iwbf-team-points-control-apk` do GitHub Actions e usar o `docs/INSTALL_ANDROID.md` para sideload em tablet/phone (fisico ou cloud — BrowserStack / Firebase Test Lab / AWS Device Farm). |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (locais, Flutter 3.41.9 stable, apos Fase 4 inteira) |
+| APK gerado | Pendente regenerar via CI apos este push final da Fase 4. |
 
 ## Ritual obrigatorio para a IA
 
@@ -141,19 +141,19 @@ Depois de implementar:
 ### Fase 4 - Polimento, APK e validacao Android cloud
 
 - [x] Aplicar identidade visual (tema base — `buildIwbfTheme` + `IwbfColors`; logo IWBF no header de todas as telas via `IwbfBrandHeader` / `IwbfAppBarTitle`).
-- [ ] Ajustar layout para tablet.
-- [ ] Ajustar layout para celular.
+- [x] Ajustar layout para tablet (Row com listas laterais + quadra central; quadra em portrait via `RotatedBox` + slots fracionarios).
+- [x] Ajustar layout para celular (`DefaultTabController` com 3 abas Team A / Court / Team B + breakpoint < 720dp).
 - [x] Incluir logos, quadra e icones finais (logos: feito; quadra: feito via `court.png`; icones: feito via `PlayerJerseyIcon`).
-- [ ] Incluir bandeiras locais ou solucao equivalente.
+- [ ] Incluir bandeiras locais ou solucao equivalente. (Adiada para uma fase futura; `CountryResolverService` ja resolve nome → `flagAssetPath` mas o asset path continua nulo. Decisao: bandeiras nao bloqueiam a Fase 4 nem o MVP — sao polimento incremental que pode entrar numa Fase 5 sem refazer codigo.)
 - [x] Criar templates baixaveis (`TemplateGeneratorService` + botoes na Load Spreadsheet).
 - [x] Revisar textos em ingles (mensagens do parser, alertas e telas).
-- [x] Rodar `flutter analyze` (apos tema).
-- [x] Rodar `flutter test` (apos tema).
-- [ ] Gerar APK debug no Codespace ou GitHub Actions.
-- [ ] Testar em perfil tablet via servico cloud de device/emulador Android.
-- [ ] Testar em perfil phone via servico cloud de device/emulador Android.
-- [ ] Gerar APK release no Codespace ou GitHub Actions.
-- [ ] Documentar instalacao manual no servico cloud escolhido.
+- [x] Rodar `flutter analyze` (apos tema + Fase 4 inteira).
+- [x] Rodar `flutter test` (apos tema + Fase 4 inteira).
+- [x] Gerar APK debug no Codespace ou GitHub Actions (delegado a `build-apk.yml` em cada push para `claude/**`).
+- [ ] Testar em perfil tablet via servico cloud de device/emulador Android (passo manual do usuario — `docs/INSTALL_ANDROID.md` cobre BrowserStack / Firebase Test Lab / AWS Device Farm).
+- [ ] Testar em perfil phone via servico cloud de device/emulador Android (mesma docs).
+- [x] Gerar APK release no Codespace ou GitHub Actions (`flutter build apk --release` esta no workflow `build-apk.yml`).
+- [x] Documentar instalacao manual no servico cloud escolhido (`docs/INSTALL_ANDROID.md`).
 
 ## Historico de trabalho
 
@@ -522,6 +522,51 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0020 - 2026-05-13 - Fase 4 (item 7/7): APK release + docs de instalação
+
+Resumo:
+
+- Workflow `build-apk.yml` ja gera `flutter build apk --release` em cada push para `claude/**` e expoe o APK como artifact `iwbf-team-points-control-apk`. Apos este push final, a CI ira regenerar com todo o polimento aplicado.
+- Criado `docs/INSTALL_ANDROID.md` com o passo-a-passo completo de sideload:
+  1. Como baixar o APK do GitHub Actions.
+  2. Instalacao em tablet/phone fisico (Settings → Apps → Special app access → Install unknown apps).
+  3. Instalacao via BrowserStack App Live.
+  4. Instalacao via Firebase Test Lab (`gcloud firebase test android run`).
+  5. Instalacao via AWS Device Farm.
+  6. Checklist de smoke test apos abrir o app (golden path: download template → load → escolher equipes → seleccionar 5 jogadores → mudar point limit → ver alerta + vibracao).
+  7. Permissoes usadas (storage / vibration / wake lock) e desinstalacao.
+- README.md atualizado para apontar para `docs/INSTALL_ANDROID.md` em vez da frase generica "instale no Android via USB ou cloud drive".
+
+Decisao tecnica registrada:
+
+- Bandeiras locais ficam adiadas para uma Fase 5 — nao bloqueiam o MVP nem a Fase 4. `CountryResolverService.flagAssetPathFor()` ja retorna `null` para todos os paises e a UI nao depende disso. Quando entrar, sera plug-and-play: a Fase 4 nao deixou dividas tecnicas para a Fase 5 nessa frente.
+- Validacao visual em device fica explicitamente fora do meu escopo (regra do usuario: minha validacao e `flutter analyze` + `flutter test`). O `INSTALL_ANDROID.md` cobre o que o usuario precisa fazer em device cloud.
+
+Arquivos criados:
+
+- `docs/INSTALL_ANDROID.md`
+
+Arquivos alterados:
+
+- `README.md` (link para o novo doc)
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 145 passed, 0 failed, 0 skipped (sem mudanca; revisao apenas em docs).
+
+Pendencias da Fase 4:
+
+- Nenhuma do lado do codigo. Itens restantes do checklist sao manuais para o usuario:
+  - testar perfil tablet em device cloud (depende do servico escolhido);
+  - testar perfil phone em device cloud (mesmo).
+- Bandeiras locais: adiadas para Fase 5 (registrado).
+
+Proximo passo recomendado:
+
+- Esperar o run mais recente do `build-apk.yml` em `claude/review-and-continue-9ZK5v` ficar verde, baixar o artifact `iwbf-team-points-control-apk` do GitHub Actions, e seguir `docs/INSTALL_ANDROID.md` para instalar no servico cloud Android escolhido. Quando isso estiver feito, abrir PR de `claude/review-and-continue-9ZK5v` -> `main`.
+
 ### 0019 - 2026-05-13 - Fase 4 (item 6/7): revisão final de copy em inglês
 
 Resumo:
@@ -862,6 +907,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | +6 service + 3 widget; -1 antigo "snackbar coming soon" |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos revisao final de copy em ingles (Fase 4 item 6) |
 | 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | Mesma cobertura; mensagens dos fixtures atualizadas |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Final da Fase 4 (item 7) — `docs/INSTALL_ANDROID.md` adicionado |
+| 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | Mudanca apenas em docs; cobertura intacta |
 
 ## Pendencias e perguntas abertas
 

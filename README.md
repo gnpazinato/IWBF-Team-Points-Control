@@ -10,7 +10,7 @@ Este repositório foi configurado para desenvolvimento sem dependências locais:
 
 1. **Editor**: abra o repo no Claude Code Nuvem (seletor de ambiente → "Adicionar ambiente em nuvem" → selecione `gnpazinato/IWBF-Team-Points-Control`) ou em GitHub Codespaces.
 2. **Build do APK**: ao fazer push para `main` (ou rodar manualmente o workflow), o GitHub Actions instala Flutter, gera o projeto Android e produz um `.apk` como artifact.
-3. **Teste no tablet**: baixe o artifact do Actions e instale no Android via USB ou cloud drive. Nada precisa rodar local.
+3. **Teste no tablet**: baixe o artifact do Actions e instale no Android via USB ou cloud drive. Nada precisa rodar local. Veja [`docs/INSTALL_ANDROID.md`](docs/INSTALL_ANDROID.md) para o passo-a-passo de sideload em tablet/phone físico e em serviços cloud (BrowserStack, Firebase Test Lab, AWS Device Farm).
 
 ## Estrutura inicial
 
