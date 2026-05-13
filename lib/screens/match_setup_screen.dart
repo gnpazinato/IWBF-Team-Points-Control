@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../constants/point_limits.dart';
 import '../models/match_state.dart';
 import '../models/team.dart';
+import 'lineup_control_screen.dart';
 
-/// Placeholder da Fase 3.
+/// Configuração da partida: escolhe Team A, Team B e Point Limit.
 ///
 /// Aceita dois caminhos de entrada:
-/// - lista de `teams` (vindo da `ValidationSummaryScreen`);
-/// - `restored` (vindo do cache, ao restaurar sessão anterior).
+/// - lista de [teams] vinda da `ValidationSummaryScreen`;
+/// - [restored] vindo do cache, ao restaurar sessão anterior.
 ///
-/// Renderiza apenas o estado básico recebido. A Fase 3 substitui esta
-/// tela pelo fluxo real de seleção de Team A / Team B / Point Limit.
-class MatchSetupScreen extends StatelessWidget {
+/// "Start Match" só fica habilitado quando há duas equipes selecionadas
+/// e elas são diferentes. Em retrato (uso principal), os dropdowns ficam
+/// empilhados para acomodar tablet e celular.
+class MatchSetupScreen extends StatefulWidget {
   const MatchSetupScreen({
     super.key,
     this.teams,
@@ -24,13 +27,62 @@ class MatchSetupScreen extends StatelessWidget {
   final MatchState? restored;
 
   @override
+  State<MatchSetupScreen> createState() => _MatchSetupScreenState();
+}
+
+class _MatchSetupScreenState extends State<MatchSetupScreen> {
+  Team? _teamA;
+  Team? _teamB;
+  double _pointLimit = kDefaultPointLimit;
+
+  @override
+  void initState() {
+    super.initState();
+    final MatchState? restored = widget.restored;
+    if (restored != null) {
+      _teamA = restored.teamA;
+      _teamB = restored.teamB;
+      _pointLimit = restored.pointLimit;
+    }
+  }
+
+  List<Team> get _availableTeams {
+    final List<Team>? raw = widget.teams;
+    if (raw != null) return raw;
+    final MatchState? r = widget.restored;
+    if (r != null) return <Team>[r.teamA, r.teamB];
+    return const <Team>[];
+  }
+
+  String? get _competitionName =>
+      widget.competitionName ?? widget.restored?.competitionName;
+
+  bool get _teamsAreSame =>
+      _teamA != null && _teamB != null && _teamA == _teamB;
+
+  bool get _canStart =>
+      _teamA != null && _teamB != null && !_teamsAreSame;
+
+  void _startMatch() {
+    final Team a = _teamA!;
+    final Team b = _teamB!;
+    final MatchState state = MatchState(
+      teamA: a,
+      teamB: b,
+      pointLimit: _pointLimit,
+      competitionName: _competitionName,
+    );
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => LineupControlScreen(initialState: state),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<Team> teamsToShow = teams ??
-        <Team>[
-          if (restored != null) restored!.teamA,
-          if (restored != null) restored!.teamB,
-        ];
-    final String? compName = competitionName ?? restored?.competitionName;
+    final List<Team> teams = _availableTeams;
+    final String? compName = _competitionName;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Match Setup')),
@@ -38,59 +90,139 @@ class MatchSetupScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               if (compName != null && compName.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     'Competition: $compName',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-              Card(
-                color: Colors.amber.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.construction, color: Colors.amber.shade800),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Match setup will be implemented in Phase 3. '
-                          'Below is the data successfully loaded.',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _TeamDropdown(
+                key: const Key('team-a-dropdown'),
+                label: 'Select Team A',
+                value: _teamA,
+                teams: teams,
+                onChanged: (Team? value) => setState(() => _teamA = value),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Teams available: ${teamsToShow.length}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+              _TeamDropdown(
+                key: const Key('team-b-dropdown'),
+                label: 'Select Team B',
+                value: _teamB,
+                teams: teams,
+                onChanged: (Team? value) => setState(() => _teamB = value),
               ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: teamsToShow.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Team team = teamsToShow[index];
-                    return Card(
-                      child: ListTile(
-                        title: Text(team.displayName),
-                        subtitle:
-                            Text('${team.players.length} player(s)'),
-                      ),
-                    );
-                  },
+              const SizedBox(height: 16),
+              _PointLimitDropdown(
+                value: _pointLimit,
+                onChanged: (double next) =>
+                    setState(() => _pointLimit = next),
+              ),
+              if (_teamsAreSame)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    'Team A and Team B must be different.',
+                    key: const Key('teams-equal-error'),
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
                 ),
-              ),
+              const Spacer(),
+              if (teams.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'No teams loaded. Go back and import a spreadsheet.',
+                  ),
+                ),
             ],
           ),
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: FilledButton.icon(
+            key: const Key('start-match-button'),
+            onPressed: _canStart ? _startMatch : null,
+            icon: const Icon(Icons.play_arrow),
+            label: const Text('Start Match'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TeamDropdown extends StatelessWidget {
+  const _TeamDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.teams,
+    required this.onChanged,
+  });
+
+  final String label;
+  final Team? value;
+  final List<Team> teams;
+  final ValueChanged<Team?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<Team>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      items: teams
+          .map(
+            (Team t) => DropdownMenuItem<Team>(
+              value: t,
+              child: Text(t.displayName),
+            ),
+          )
+          .toList(),
+      onChanged: teams.isEmpty ? null : onChanged,
+    );
+  }
+}
+
+class _PointLimitDropdown extends StatelessWidget {
+  const _PointLimitDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<double>(
+      key: const Key('point-limit-dropdown'),
+      initialValue: value,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Point Limit',
+        border: OutlineInputBorder(),
+      ),
+      items: kAcceptedPointLimits
+          .map(
+            (double v) => DropdownMenuItem<double>(
+              value: v,
+              child: Text(v.toStringAsFixed(1)),
+            ),
+          )
+          .toList(),
+      onChanged: (double? next) {
+        if (next != null) onChanged(next);
+      },
     );
   }
 }

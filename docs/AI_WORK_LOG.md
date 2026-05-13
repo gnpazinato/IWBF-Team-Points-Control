@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 2 concluida (logica + UI). Flutter SDK 3.41.9 instalado no ambiente de desenvolvimento para validacao local autonoma. |
-| Fase atual | Pronto para iniciar Fase 3 - Fluxo de partida funcional |
-| Proximo passo recomendado | Iniciar Fase 3: tela de selecao Team A / Team B / Point Limit, tela principal de controle com quadra e listas laterais, bloqueio do 6o atleta, vibracao no estouro de limite. |
-| Ultimos testes executados | `flutter analyze` 0 issues + `flutter test` 112 passed (locais, Flutter 3.41.9 stable) |
+| Status geral | Fase 3 em andamento — Match Setup real entregue (item 1/10). Flutter SDK 3.41.9 instalado no ambiente para validacao local autonoma. |
+| Fase atual | Fase 3 — Fluxo de partida funcional |
+| Proximo passo recomendado | Implementar `LineupControlScreen` real (substitui o placeholder criado no item 1) — itens 2 a 10: quadra central, listas laterais / abas, selecao ate 5 com bloqueio do 6, soma de pontos, alerta persistente, `VibrationService` mockavel, botoes Clear/Change/Load, confirmacao de saida, wakelock, persistencia via `CacheService`. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 105 passed (locais, Flutter 3.41.9 stable) |
 | APK gerado | Sim, debug+release via CI na PR #1 |
 
 ## Ritual obrigatorio para a IA
@@ -113,8 +113,8 @@ Depois de implementar:
 
 ### Fase 3 - Fluxo de partida funcional
 
-- [ ] Criar tela de selecao de Team A, Team B e Point Limit.
-- [ ] Bloquear Team A e Team B iguais.
+- [x] Criar tela de selecao de Team A, Team B e Point Limit.
+- [x] Bloquear Team A e Team B iguais.
 - [ ] Criar tela principal de controle.
 - [ ] Exibir quadra central.
 - [ ] Exibir listas de atletas por equipe.
@@ -476,6 +476,47 @@ Proximo passo recomendado:
 
 - Iniciar Fase 3 - Fluxo de partida funcional. Comecar pela tela real de configuracao de partida (selecao Team A / Team B / Point Limit) substituindo o placeholder atual.
 
+### 0012 - 2026-05-13 - Fase 3 (item 1): Match Setup real
+
+Resumo:
+
+- `MatchSetupScreen` deixou de ser placeholder e virou tela real:
+  - dropdowns "Select Team A" e "Select Team B" listando o `Team.displayName` de todas as equipes carregadas;
+  - bloqueio reativo: quando a mesma equipe e escolhida nos dois dropdowns, aparece a mensagem `Team A and Team B must be different.` e o `Start Match` permanece desabilitado;
+  - dropdown de Point Limit usando `kAcceptedPointLimits` (13.0 a 16.0, passo 0.5), com `kDefaultPointLimit` (14.0) como valor inicial;
+  - `Start Match` so habilita quando ha duas equipes diferentes selecionadas;
+  - quando a sessao e restaurada (`restored: MatchState`), os tres campos vem pre-preenchidos a partir do cache;
+  - mensagem de fallback quando nao ha teams carregados ("No teams loaded. Go back and import a spreadsheet.").
+- Criado `LineupControlScreen` como placeholder do proximo passo da Fase 3 (recebe `MatchState` via construtor; testes verificam nome do AppBar e dados basicos).
+- Detalhe tecnico: dropdowns usam `initialValue` (a partir do Flutter 3.41+) para evitar warning `deprecated_member_use`.
+
+Decisoes registradas:
+
+- `Start Match` apenas navega para a `LineupControlScreen` (placeholder). A persistencia do `MatchState` via `CacheService` entra junto com o item de Lineup Control real (proximo incremento), porque so faz sentido salvar quando ha selecoes de jogadores.
+
+Arquivos alterados:
+
+- `lib/screens/match_setup_screen.dart`
+- `test/screens/match_setup_screen_test.dart`
+
+Arquivos criados:
+
+- `lib/screens/lineup_control_screen.dart`
+- `docs/AI_WORK_LOG.md` (entrada nova)
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 105 passed, 0 failed, 0 skipped (era 99 antes; +9 novos testes do Match Setup real, -3 testes do placeholder removidos).
+
+Pendencias:
+
+- Lineup Control real (itens 2 a 10 da Fase 3): quadra, listas laterais / abas, selecao ate 5 com bloqueio do 6, soma de pontos, alerta persistente, vibracao via servico mockavel, botoes Clear/Change/Load, confirmacao de saida, wakelock, persistencia via `CacheService`.
+
+Proximo passo recomendado:
+
+- Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
 ## Registro de testes
 
 | Data | Comando | Resultado | Observacao |
@@ -485,6 +526,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` | Delegado a CI | Validacao via workflow `build-apk.yml` no push para `claude/**` |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Flutter 3.41.9 stable instalado em `/root/flutter` |
 | 2026-05-13 | `flutter test` (local) | 112 passed, 0 failed, 0 skipped | Inclui 18 widget tests novos das telas da Fase 2 |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos Match Setup real (Fase 3, item 1) |
+| 2026-05-13 | `flutter test` (local) | 105 passed, 0 failed, 0 skipped | Match Setup real cobre 9 cenarios; placeholder antigo (3 testes) removido |
 
 ## Pendencias e perguntas abertas
 
