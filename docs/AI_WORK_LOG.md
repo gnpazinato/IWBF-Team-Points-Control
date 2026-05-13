@@ -70,6 +70,11 @@ Depois de implementar:
 | 2026-05-13 | `Team.displayName` e `Player` ficam sem `countryCode`/`teamCode`; exibicao usa somente o `teamName` completo | Simplificacao pedida pelo usuario: tirar o codigo do pais e a manipulacao para extrai-lo. Bandeiras passam a ser mapeadas pelo `CountryResolverService` (Fase 2) usando o nome completo. |
 | 2026-05-13 | `MissingDataScreen` da Fase 2 e tela de diagnostico no MVP, sem edicao inline | Reduzir escopo da Fase 2 para entregar fluxo end-to-end. Edicao inline (preencher numero de camiseta sem reabrir Excel) fica como refinamento futuro. |
 | 2026-05-13 | Flutter SDK 3.41.9 instalado em `/root/flutter` para validacao autonoma local | Permite rodar `flutter analyze` e `flutter test` direto, antes de depender da CI. |
+| 2026-05-13 | Vibracao e wakelock viraram servicos mockaveis (`VibrationService`, `WakelockController`) | Permite widget tests sem `MissingPluginException` e isola plugins de plataforma do core. |
+| 2026-05-13 | Dropdowns usam `initialValue` (nao `value`) | `DropdownButtonFormField.value` deprecado no Flutter 3.41+. |
+| 2026-05-13 | `PopScope` usa `onPopInvokedWithResult` | `onPopInvoked` deprecado no Flutter 3.41+. |
+| 2026-05-13 | Capturar `Navigator.of(context)` antes do `await` em callbacks assincronos | Evita lint `use_build_context_synchronously` sem precisar checar `context.mounted`. |
+| 2026-05-13 | Em widget tests, nunca `await Navigator.push(...)` | O Future do `push` so completa quando a rota e popada — `await` causa timeout do teste. |
 
 ## Checklist por fase
 
@@ -597,7 +602,8 @@ Proximo passo recomendado:
 
 - Confirmar se o repositorio GitHub sera privado ou publico. Recomendacao: privado durante o MVP.
 - Confirmar se o usuario quer usar apenas Codespaces pelo navegador ou tambem permitir acesso via VS Code/GitHub CLI.
-- Escolher o servico cloud de device/emulador Android para validacao visual/manual.
+- Escolher o servico cloud de device/emulador Android para validacao visual/manual (Fase 4).
+- Definir paleta dourada final (Fase 4 — identidade visual IWBF).
 
 Decisoes fechadas:
 
@@ -613,16 +619,65 @@ Decisoes fechadas:
 - Android fisico esta descartado.
 - Validacao visual/manual Android deve usar servico cloud de device/emulador.
 - Nao assumir Android Emulator dentro do Codespace como caminho principal.
+- `Team.displayName` retorna apenas `teamName` (sem codigo de pais). `countryCode`/`teamCode` removidos dos modelos.
+- `Player.id` segue o padrao `${teamId}::${shirtNumber}`. `Team.id` segue `team-<slug-do-nome>`.
+- `MissingDataScreen` no MVP e tela de **diagnostico** (sem edicao inline). Edicao inline e refinamento futuro.
+- Vibracao e wakelock viraram servicos (`VibrationService`, `WakelockController`), injetaveis para widget tests.
+- Dropdowns usam `initialValue` (Flutter 3.41+); `value` esta deprecated.
+- `PopScope` usa `onPopInvokedWithResult`; `onPopInvoked` esta deprecated.
+
+## Convencoes de codigo (sessao 2026-05-13)
+
+- Sempre que uma tela depender de plugin de plataforma (`FilePicker`, `SharedPreferences`, `Vibration`, `WakelockPlus`), criar callback ou servico injetavel via construtor e default para o plugin real. Isso permite widget tests deterministicos.
+- Para evitar lint `use_build_context_synchronously`: capturar `Navigator.of(context)` antes do primeiro `await`, ou checar `context.mounted` depois.
+- Em testes de navegacao, NUNCA `await` em `Navigator.push(...)` (o Future so completa quando a rota e popada — causa timeout). Usar `unawaited(...)` ou disparar push via `tester.tap` em botao.
+- Em assertions de scores no widget test, garantir que Team A e Team B tenham valores distintos antes de usar `findsOneWidget` no formato `total / limit` — caso contrario use `findsNWidgets(2)`.
 
 ## Prompt curto de continuidade
 
 ```text
-Leia primeiro:
-1. IWBF_Team_Points_Control_Planejamento.md
-2. docs/PLANO_DESENVOLVIMENTO_IA.md
-3. docs/AI_WORK_LOG.md
+Voce esta retomando o IWBF Team Points Control (Flutter offline para
+comissarios de basquetebol em cadeira de rodas).
 
-Continue somente a partir do proximo item pendente no log.
-Nao refaca etapas concluidas sem justificar.
-Implemente o menor incremento util, rode os testes relevantes e atualize docs/AI_WORK_LOG.md ao final.
+Antes de qualquer coisa, leia nesta ordem:
+1. docs/IWBF_Team_Points_Control_Planejamento.md
+2. docs/PLANO_DESENVOLVIMENTO_IA.md
+3. docs/AI_WORK_LOG.md  (estado atual + decisoes + convencoes + proximo passo)
+
+Branch de trabalho: claude/review-and-continue-9ZK5v
+Repositorio: gnpazinato/iwbf-team-points-control
+
+Estado atual: Fases 1, 2 e 3 fechadas. flutter analyze --no-fatal-infos
+= 0 issues; flutter test = 123 passed. Proximo passo: Fase 4 (polimento
+visual, identidade IWBF, templates xlsx, build APK release, validacao em
+device cloud Android).
+
+Regras do usuario:
+- Flutter local em /root/flutter/bin/flutter. Se nao existir, instalar
+  com o snippet do prompt de continuidade no AI_WORK_LOG (Fase 4 mantem
+  os mesmos comandos).
+- Valide tudo localmente antes de cada push: flutter pub get, flutter
+  analyze --no-fatal-infos (0 issues), flutter test (todos verdes).
+  Corrija lint info-level (prefer_const, unnecessary_const, etc.) antes
+  do push, mesmo com --no-fatal-infos.
+- Nao commit pubspec.lock se ele so mudou por pub get local
+  (git restore pubspec.lock antes do commit).
+- Para telas: preferir callbacks/servicos injetaveis em vez de plugins
+  estaticos (FilePicker.platform, SharedPreferences.getInstance,
+  Vibration, WakelockPlus). Sem essa abstracao, widget tests quebram.
+- Nao pedir validacao manual em navegador, emulador ou device. A
+  validacao e flutter analyze + flutter test (incluindo widget tests).
+- Decisoes ja fechadas (ver tabela no log) nao devem ser revisitadas
+  sem motivo tecnico claro.
+
+Trabalhe em incrementos pequenos: cada incremento termina com analyze
++ test verdes, log atualizado (nova entrada ### 00NN no historico,
+checklist da fase atualizado, arquivos alterados, testes rodados,
+proximo passo) e commit/push com mensagem convencional.
+
+Ao final de cada incremento, me reporte em 4-8 linhas: o que entregou,
+testes que passaram (numeros reais), pendencias, proximo passo.
+
+Comece pelo proximo passo recomendado do AI_WORK_LOG e me confirme
+em uma frase qual e o estado atual antes de codar.
 ```
