@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 1 em andamento; scaffold + CI prontos, modelos e constantes implementados |
-| Fase atual | Fase 1 - Fundacao testavel (modelos e testes unitarios) |
-| Proximo passo recomendado | Aguardar CI rodar `flutter analyze` e `flutter test` na branch `claude/review-and-continue-9ZK5v`; depois iniciar Fase 2 (parser `.xlsx`) com `CountryResolverService` e `CacheService` |
-| Ultimos testes executados | Push para CI em `claude/review-and-continue-9ZK5v` (flutter analyze + flutter test) |
+| Status geral | Fase 1 concluida (CI verde no commit 59663fc); Fase 2 em andamento com parser, resolver e cache implementados sem UI |
+| Fase atual | Fase 2 - Planilha, validacao e cache base (logica sem UI) |
+| Proximo passo recomendado | Aguardar CI verde do novo push; depois adicionar UI da Fase 2 (telas de upload, resumo e correcao de dados) |
+| Ultimos testes executados | Delegados a CI em `claude/review-and-continue-9ZK5v` (flutter analyze + flutter test) |
 | APK gerado | Sim, debug+release via CI na PR #1 |
 
 ## Ritual obrigatorio para a IA
@@ -93,21 +93,21 @@ Depois de implementar:
 
 ### Fase 2 - Planilha, validacao e cache base
 
-- [ ] Implementar importacao `.xlsx`.
-- [ ] Manter `.csv` fora do MVP e registrar como melhoria futura.
-- [ ] Criar fixtures de planilha para testes.
-- [ ] Interpretar modelo de aba unica.
-- [ ] Interpretar modelo de uma aba por equipe.
-- [ ] Validar colunas obrigatorias.
-- [ ] Validar classes funcionais.
-- [ ] Detectar atletas sem numero.
-- [ ] Detectar equipes nao reconhecidas.
+- [x] Implementar importacao `.xlsx`.
+- [x] Manter `.csv` fora do MVP e registrar como melhoria futura.
+- [x] Criar fixtures de planilha para testes (geradas in-memory via `excel` + dados puros via `SheetData`).
+- [x] Interpretar modelo de aba unica.
+- [x] Interpretar modelo de uma aba por equipe.
+- [x] Validar colunas obrigatorias.
+- [x] Validar classes funcionais.
+- [x] Detectar atletas sem numero.
+- [x] Detectar equipes nao reconhecidas.
 - [ ] Criar tela de resumo da planilha.
 - [ ] Criar tela de correcao de dados.
-- [ ] Criar `CountryResolverService`.
-- [ ] Criar `CacheService`.
-- [ ] Cobrir parser e validacoes com testes.
-- [ ] Atualizar este log com formatos suportados de fato.
+- [x] Criar `CountryResolverService`.
+- [x] Criar `CacheService`.
+- [x] Cobrir parser e validacoes com testes.
+- [x] Atualizar este log com formatos suportados de fato.
 
 ### Fase 3 - Fluxo de partida funcional
 
@@ -383,6 +383,49 @@ Pendencias:
 Proximo passo recomendado:
 
 - Confirmar CI verde e iniciar a Fase 2: parser `.xlsx`, fixtures de planilha em `test/fixtures/`, `CountryResolverService` (resolve nome -> bandeira local) e `CacheService`.
+
+### 0010 - 2026-05-13 - Fase 2 (sem UI): parser .xlsx, resolver de paises e cache
+
+Resumo:
+
+- Criada a camada de servicos da Fase 2 (logica pura, sem telas):
+  - `CountryResolverService`: tabela inicial de aliases (Brasil, Argentina, USA, China, Reino Unido, Alemanha, Espanha, Italia, Japao, Coreia do Sul, Mexico, Holanda, Paraguai, Peru, Uruguai, Venezuela, Turquia, Australia, Iran). Normaliza caixa, acentos e pontuacao. Permite overrides no construtor.
+  - `SpreadsheetParserService`: detecta automaticamente modelo aba unica (`Players`) ou modelo aba-por-equipe; valida colunas obrigatorias; valida classes funcionais (aceita virgula); detecta atletas sem numero, sem classe, sem DOB ou com nome incompleto como erros bloqueantes; equipe nao reconhecida e duplicidade de camiseta entram como warning (nao bloqueiam). Tem camada intermediaria `SheetData` para testar a logica sem depender de bytes binarios.
+  - `CacheService`: persiste `MatchState` como JSON em `shared_preferences` (chave `iwbf.match_state.v1`); tolera JSON corrompido retornando `null` em vez de lancar.
+- Decisao confirmada: `.csv` continua fora do MVP. `.xls` continua fora do MVP. Somente `.xlsx`.
+- Decisao registrada: `Player.id` agora e gerado pelo parser no padrao `${teamId}::${shirtNumber}`. `Team.id` segue padrao `team-<nome-slugificado>`.
+
+Decisoes registradas:
+
+- `Player.id` e composto pelo parser para garantir idempotencia entre reimportacoes da mesma planilha.
+- `CacheService.loadMatchState()` engole erros de decodificacao silenciosamente e devolve `null`. O motivo: cache temporario, partida nao pode ser bloqueada por corrupcao residual.
+
+Arquivos criados:
+
+- `lib/services/country_resolver_service.dart`
+- `lib/services/spreadsheet_parser_service.dart`
+- `lib/services/cache_service.dart`
+- `test/services/country_resolver_service_test.dart`
+- `test/services/spreadsheet_parser_service_test.dart`
+- `test/services/cache_service_test.dart`
+
+Arquivos alterados:
+
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- Delegados a CI via push em `claude/review-and-continue-9ZK5v`. Geram: `flutter analyze --no-fatal-infos`, `flutter test` e build APK.
+
+Pendencias:
+
+- Confirmar CI verde do push antes de iniciar a UI da Fase 2.
+- Telas da Fase 2 (Load Spreadsheet, Validation Summary, Missing Data Correction) ainda pendentes.
+- Bandeiras (`CountryResolverService.flagAssetPathFor`) continuam retornando `null` ate a Fase 4.
+
+Proximo passo recomendado:
+
+- Implementar telas da Fase 2 ligando a UI ao parser e ao cache. Sugestao: comecar pela tela de upload + integracao com `file_picker` (ja no pubspec) e tela de resumo.
 
 ## Registro de testes
 
