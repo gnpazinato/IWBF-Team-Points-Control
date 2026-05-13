@@ -4,6 +4,7 @@ import '../models/team.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/iwbf_logo_header.dart';
 import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
 
@@ -36,7 +37,9 @@ class ValidationSummaryScreen extends StatelessWidget {
     final List<ParseIssue> warnings = _warnings;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spreadsheet Summary')),
+      appBar: AppBar(
+        title: const IwbfAppBarTitle(text: 'Spreadsheet Summary'),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

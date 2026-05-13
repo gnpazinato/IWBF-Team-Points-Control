@@ -10,6 +10,7 @@ import '../services/cache_service.dart';
 import '../services/vibration_service.dart';
 import '../services/wakelock_controller.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/iwbf_logo_header.dart';
 
 /// Tela principal da partida.
 ///
@@ -187,7 +188,9 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
         navigator.pop();
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Lineup Control')),
+        appBar: AppBar(
+          title: const IwbfAppBarTitle(text: 'Lineup Control'),
+        ),
         body: SafeArea(
           child: Column(
             children: <Widget>[

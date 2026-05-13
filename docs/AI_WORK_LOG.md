@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 4 em andamento. Item 1/7 entregue: tema IWBF (`buildIwbfTheme()` + paleta `IwbfColors`) aplicado globalmente; alertas de limite e issues de planilha agora usam `IwbfColors.alertRed`/`alertRedSurface`. Resto da Fase 4 (header com logo IWBF, court.png, icones por gender, templates `.xlsx`, revisao de copy, APK release) ainda pendente. |
-| Fase atual | Fase 4 em andamento (1/7 itens) |
-| Proximo passo recomendado | Fase 4 item 2: criar widget reutilizavel `IwbfLogoHeader` (logo + competition) e usar nas telas Load / ValidationSummary / MatchSetup / Lineup. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 123 passed (locais, Flutter 3.41.9 stable, apos tema IWBF) |
-| APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos tema; sera regenerado no item 7) |
+| Status geral | Fase 4 em andamento. Itens 1/7 (tema) e 2/7 (header com logo IWBF) entregues: `IwbfBrandHeader` (logo grande + titulo + subtitle) na Load Spreadsheet; `IwbfAppBarTitle` (logo pequeno + texto) nas demais telas (Validation / Missing / Match Setup / Lineup). |
+| Fase atual | Fase 4 em andamento (2/7 itens) |
+| Proximo passo recomendado | Fase 4 item 3: substituir `_CourtView` simplificado pelo asset `court.png` (`assets/images/court.png`) como background da quadra e posicionar os 5 jogadores selecionados de forma simetrica (2 perto da tabela, 2 a frente, 1 perto do centro) em cada metade. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 127 passed (locais, Flutter 3.41.9 stable, apos header com logo) |
+| APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos polimento; sera regenerado no item 7) |
 
 ## Ritual obrigatorio para a IA
 
@@ -140,10 +140,10 @@ Depois de implementar:
 
 ### Fase 4 - Polimento, APK e validacao Android cloud
 
-- [x] Aplicar identidade visual (tema base — `buildIwbfTheme` + `IwbfColors`).
+- [x] Aplicar identidade visual (tema base — `buildIwbfTheme` + `IwbfColors`; logo IWBF no header de todas as telas via `IwbfBrandHeader` / `IwbfAppBarTitle`).
 - [ ] Ajustar layout para tablet.
 - [ ] Ajustar layout para celular.
-- [ ] Incluir logos, quadra e icones finais.
+- [ ] Incluir logos, quadra e icones finais (logos: feito; quadra: pendente; icones: pendente).
 - [ ] Incluir bandeiras locais ou solucao equivalente.
 - [ ] Criar templates baixaveis.
 - [ ] Revisar textos em ingles.
@@ -522,6 +522,48 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0015 - 2026-05-13 - Fase 4 (item 2/7): header com logo IWBF
+
+Resumo:
+
+- Criado `lib/widgets/iwbf_logo_header.dart` com dois widgets reutilizaveis:
+  - `IwbfBrandHeader`: logo IWBF grande (max 140dp, responsivo ao container) + titulo padrao "IWBF Team Points Control" + subtitle opcional. Usado na home (`LoadSpreadsheetScreen`) substituindo o `AppBar` e o titulo solto.
+  - `IwbfAppBarTitle`: logo pequeno (32dp) + texto, usado como `AppBar.title` nas demais telas (`Validation Summary`, `Missing Data`, `Match Setup`, `Lineup Control`).
+- Assets `iwbf-logo-white.png` (RGBA, fundo claro) e `iwbf-logo-black.png` continuam registrados em `assets/images/`. Header usa o `white` por enquanto (fundo off-white do tema).
+- Constantes publicas: `kIwbfLogoWhiteAsset` e `kIwbfLogoBlackAsset` em `iwbf_logo_header.dart` (facilita reuso em outras telas/testes).
+- Removido o `AppBar` da `LoadSpreadsheetScreen` para dar espaco ao header maior.
+
+Arquivos criados:
+
+- `lib/widgets/iwbf_logo_header.dart`
+- `test/widgets/iwbf_logo_header_test.dart` (4 widget tests: render basico, subtitle, titulo customizado, IwbfAppBarTitle)
+
+Arquivos alterados:
+
+- `lib/screens/load_spreadsheet_screen.dart`
+- `lib/screens/validation_summary_screen.dart`
+- `lib/screens/missing_data_screen.dart`
+- `lib/screens/match_setup_screen.dart`
+- `lib/screens/lineup_control_screen.dart`
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 127 passed, 0 failed, 0 skipped (era 123; +4 novos do `iwbf_logo_header_test.dart`).
+
+Pendencias da Fase 4:
+
+- Item 3: `_CourtView` -> `court.png` + posicionamento simetrico dos 5 jogadores.
+- Item 4: icones de jogador por gender (team-a-men/women, team-b-men/women).
+- Item 5: templates `.xlsx` baixaveis.
+- Item 6: revisao final de copy em ingles.
+- Item 7: APK release via CI + docs de instalacao manual.
+
+Proximo passo recomendado:
+
+- Item 3/7: substituir o `_CourtView` simplificado (browns) pelo asset `court.png` como background da quadra e posicionar os 5 jogadores selecionados em layout simetrico (2 perto da tabela, 2 a frente, 1 perto do centro) em cada metade.
+
 ### 0014 - 2026-05-13 - Fase 4 (item 1/7): tema IWBF off-white + dourado
 
 Resumo:
@@ -650,6 +692,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 123 passed, 0 failed, 0 skipped | +18 novos testes do Lineup Control fechando a Fase 3 inteira |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos tema IWBF (Fase 4 item 1) |
 | 2026-05-13 | `flutter test` (local) | 123 passed, 0 failed, 0 skipped | Tema IWBF nao quebra widget tests existentes |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos header com logo IWBF (Fase 4 item 2) |
+| 2026-05-13 | `flutter test` (local) | 127 passed, 0 failed, 0 skipped | +4 novos testes do `iwbf_logo_header` |
 
 ## Pendencias e perguntas abertas
 

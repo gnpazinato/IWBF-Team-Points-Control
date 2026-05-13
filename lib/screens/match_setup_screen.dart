@@ -4,6 +4,7 @@ import '../constants/point_limits.dart';
 import '../models/match_state.dart';
 import '../models/team.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/iwbf_logo_header.dart';
 import 'lineup_control_screen.dart';
 
 /// Configuração da partida: escolhe Team A, Team B e Point Limit.
@@ -86,7 +87,9 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
     final String? compName = _competitionName;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Match Setup')),
+      appBar: AppBar(
+        title: const IwbfAppBarTitle(text: 'Match Setup'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

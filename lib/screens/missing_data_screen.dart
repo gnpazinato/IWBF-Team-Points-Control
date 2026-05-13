@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/spreadsheet_parser_service.dart';
 import '../theme/iwbf_theme.dart';
+import '../widgets/iwbf_logo_header.dart';
 
 /// Tela de diagnóstico para issues bloqueantes da planilha.
 ///
@@ -21,7 +22,9 @@ class MissingDataScreen extends StatelessWidget {
     final bool hasBlockingIssues = grouped.values.any((l) => l.isNotEmpty);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Missing Data')),
+      appBar: AppBar(
+        title: const IwbfAppBarTitle(text: 'Missing Data'),
+      ),
       body: SafeArea(
         child: hasBlockingIssues
             ? _IssuesList(grouped: grouped)

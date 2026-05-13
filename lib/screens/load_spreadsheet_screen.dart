@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/match_state.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
+import '../widgets/iwbf_logo_header.dart';
 import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
 import 'validation_summary_screen.dart';
@@ -155,7 +156,6 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('IWBF Team Points Control')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -163,10 +163,8 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               const SizedBox(height: 16),
-              Text(
-                'Wheelchair basketball — team points control',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
+              const IwbfBrandHeader(
+                subtitle: 'Wheelchair basketball — team points control',
               ),
               const SizedBox(height: 8),
               const Text(
