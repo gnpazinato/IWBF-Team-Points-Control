@@ -13,19 +13,15 @@ Player _player(String id, int number, double cls) => Player(
 
 void main() {
   group('Team', () {
-    test('displayName usa "Name - CODE" quando há código', () {
-      final Team t = Team(id: 't1', teamName: 'Brazil', countryCode: 'BRA');
-      expect(t.displayName, equals('Brazil - BRA'));
-    });
-
-    test('displayName normaliza código para caixa alta', () {
-      final Team t = Team(id: 't1', teamName: 'Canada', countryCode: 'can');
-      expect(t.displayName, equals('Canada - CAN'));
-    });
-
-    test('displayName cai para apenas o nome sem código', () {
+    test('displayName retorna apenas o teamName', () {
       final Team t = Team(id: 't1', teamName: 'Brazil');
       expect(t.displayName, equals('Brazil'));
+    });
+
+    test('displayName preserva nomes com múltiplas palavras', () {
+      final Team t =
+          Team(id: 't1', teamName: 'United States of America');
+      expect(t.displayName, equals('United States of America'));
     });
 
     test('lista de players é imutável', () {
@@ -42,7 +38,6 @@ void main() {
       final Team original = Team(
         id: 't1',
         teamName: 'Brazil',
-        countryCode: 'BRA',
         flagAssetPath: 'assets/flags/bra.png',
         players: <Player>[
           _player('p1', 7, 2.5),
@@ -53,7 +48,6 @@ void main() {
 
       expect(restored.id, equals(original.id));
       expect(restored.teamName, equals(original.teamName));
-      expect(restored.countryCode, equals(original.countryCode));
       expect(restored.flagAssetPath, equals(original.flagAssetPath));
       expect(restored.players, hasLength(2));
       expect(restored.players.first.shirtNumber, equals(7));

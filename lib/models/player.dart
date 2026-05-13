@@ -36,15 +36,11 @@ class Player {
     required this.firstName,
     required this.playerClass,
     this.dateOfBirth,
-    this.teamCode,
-    this.countryCode,
     this.gender = PlayerGender.unspecified,
   }) : assert(playerClass > 0, 'playerClass deve ser positivo');
 
   final String id;
   final String teamName;
-  final String? teamCode;
-  final String? countryCode;
   final int shirtNumber;
   final String surname;
   final String firstName;
@@ -60,8 +56,6 @@ class Player {
   Player copyWith({
     String? id,
     String? teamName,
-    String? teamCode,
-    String? countryCode,
     int? shirtNumber,
     String? surname,
     String? firstName,
@@ -72,8 +66,6 @@ class Player {
     return Player(
       id: id ?? this.id,
       teamName: teamName ?? this.teamName,
-      teamCode: teamCode ?? this.teamCode,
-      countryCode: countryCode ?? this.countryCode,
       shirtNumber: shirtNumber ?? this.shirtNumber,
       surname: surname ?? this.surname,
       firstName: firstName ?? this.firstName,
@@ -86,8 +78,6 @@ class Player {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'teamName': teamName,
-        'teamCode': teamCode,
-        'countryCode': countryCode,
         'shirtNumber': shirtNumber,
         'surname': surname,
         'firstName': firstName,
@@ -100,8 +90,6 @@ class Player {
     return Player(
       id: json['id'] as String,
       teamName: json['teamName'] as String,
-      teamCode: json['teamCode'] as String?,
-      countryCode: json['countryCode'] as String?,
       shirtNumber: json['shirtNumber'] as int,
       surname: json['surname'] as String,
       firstName: json['firstName'] as String,

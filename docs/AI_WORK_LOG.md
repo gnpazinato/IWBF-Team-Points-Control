@@ -67,6 +67,7 @@ Depois de implementar:
 | 2026-05-13 | Logos IWBF recebidos na pasta local | Assets `Vertical IWBF Logo Coloured Black.png` e `Vertical IWBF Logo Coloured White.png` devem ser registrados/otimizados no projeto |
 | 2026-05-13 | Android fisico esta descartado para o desenvolvimento | Usuario nao possui dispositivo Android fisico |
 | 2026-05-13 | Android Emulator dentro do Codespace nao deve ser assumido como caminho principal | Codespace sera usado para codigo, testes automatizados e build; validacao visual/manual fica em device/emulator cloud |
+| 2026-05-13 | `Team.displayName` e `Player` ficam sem `countryCode`/`teamCode`; exibicao usa somente o `teamName` completo | Simplificacao pedida pelo usuario: tirar o codigo do pais e a manipulacao para extrai-lo. Bandeiras passam a ser mapeadas pelo `CountryResolverService` (Fase 2) usando o nome completo. |
 
 ## Checklist por fase
 
@@ -354,6 +355,34 @@ Pendencias:
 Proximo passo recomendado:
 
 - Iniciar Fase 2: parser `.xlsx` (lib `excel` ja esta no `pubspec.yaml`) com fixtures de planilha em `test/fixtures/`, `CountryResolverService` e `CacheService`.
+
+### 0009 - 2026-05-13 - Simplificacao do display de equipe
+
+Resumo:
+
+- Decisao do usuario: tirar a complexidade de extrair/manter o codigo de pais (`countryCode`) e padronizar a exibicao da equipe apenas pelo nome completo.
+- `Team.displayName` passou a retornar somente `teamName`.
+- Removidos `countryCode` e os campos correlatos `teamCode`/`countryCode` do `Player` para deixar o modelo enxuto. `flagAssetPath` permanece no `Team` e sera preenchido pelo `CountryResolverService` (Fase 2) com base no nome.
+- Decisao registrada na tabela de "Decisoes registradas".
+
+Arquivos alterados:
+
+- `lib/models/team.dart`
+- `lib/models/player.dart`
+- `test/models/team_test.dart`
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` e `flutter test` via workflow `build-apk.yml` (CI dispara automaticamente em push para `claude/**`).
+
+Pendencias:
+
+- O usuario precisa confirmar que o run mais recente do `build-apk.yml` em `claude/review-and-continue-9ZK5v` ficou verde antes de iniciar a Fase 2.
+
+Proximo passo recomendado:
+
+- Confirmar CI verde e iniciar a Fase 2: parser `.xlsx`, fixtures de planilha em `test/fixtures/`, `CountryResolverService` (resolve nome -> bandeira local) e `CacheService`.
 
 ## Registro de testes
 

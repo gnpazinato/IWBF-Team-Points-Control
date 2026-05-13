@@ -1,43 +1,36 @@
 import 'player.dart';
 
 /// Equipe importada da planilha de referência.
+///
+/// O nome completo do país é a única forma de identificação visível ao
+/// usuário; a resolução para uma bandeira local fica a cargo do
+/// `CountryResolverService` (Fase 2), que preenche [flagAssetPath].
 class Team {
   Team({
     required this.id,
     required this.teamName,
-    this.countryCode,
     this.flagAssetPath,
     List<Player>? players,
   }) : players = List<Player>.unmodifiable(players ?? const <Player>[]);
 
   final String id;
   final String teamName;
-  final String? countryCode;
   final String? flagAssetPath;
   final List<Player> players;
 
-  /// Nome exibido no padrão `"Brazil - BRA"` quando há código,
-  /// caindo para apenas o nome quando não houver.
-  String get displayName {
-    if (countryCode == null || countryCode!.isEmpty) {
-      return teamName;
-    }
-    return '$teamName - ${countryCode!.toUpperCase()}';
-  }
+  String get displayName => teamName;
 
   int get playerCount => players.length;
 
   Team copyWith({
     String? id,
     String? teamName,
-    String? countryCode,
     String? flagAssetPath,
     List<Player>? players,
   }) {
     return Team(
       id: id ?? this.id,
       teamName: teamName ?? this.teamName,
-      countryCode: countryCode ?? this.countryCode,
       flagAssetPath: flagAssetPath ?? this.flagAssetPath,
       players: players ?? this.players,
     );
@@ -46,7 +39,6 @@ class Team {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'teamName': teamName,
-        'countryCode': countryCode,
         'flagAssetPath': flagAssetPath,
         'players': players.map((Player p) => p.toJson()).toList(),
       };
@@ -57,7 +49,6 @@ class Team {
     return Team(
       id: json['id'] as String,
       teamName: json['teamName'] as String,
-      countryCode: json['countryCode'] as String?,
       flagAssetPath: json['flagAssetPath'] as String?,
       players: rawPlayers
           .map((dynamic p) => Player.fromJson(p as Map<String, dynamic>))
