@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../constants/point_limits.dart';
 import '../models/match_state.dart';
 import '../models/team.dart';
+import '../theme/iwbf_theme.dart';
 import 'lineup_control_screen.dart';
 
 /// Configuração da partida: escolhe Team A, Team B e Point Limit.
@@ -122,12 +123,12 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                     setState(() => _pointLimit = next),
               ),
               if (_teamsAreSame)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
                   child: Text(
                     'Team A and Team B must be different.',
-                    key: const Key('teams-equal-error'),
-                    style: TextStyle(color: Colors.red.shade700),
+                    key: Key('teams-equal-error'),
+                    style: TextStyle(color: IwbfColors.alertRed),
                   ),
                 ),
               const Spacer(),

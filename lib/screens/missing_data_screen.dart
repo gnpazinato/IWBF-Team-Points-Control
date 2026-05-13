@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/spreadsheet_parser_service.dart';
+import '../theme/iwbf_theme.dart';
 
 /// Tela de diagnóstico para issues bloqueantes da planilha.
 ///
@@ -150,7 +151,7 @@ class _CategoryBlock extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Icon(Icons.error_outline, color: Colors.red.shade400),
+                const Icon(Icons.error_outline, color: IwbfColors.alertRed),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

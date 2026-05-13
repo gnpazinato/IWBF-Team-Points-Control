@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/team.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
+import '../theme/iwbf_theme.dart';
 import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
 
@@ -50,8 +51,8 @@ class ValidationSummaryScreen extends StatelessWidget {
             if (errors.isNotEmpty)
               _IssueBlock(
                 title: 'Errors that block the match',
-                color: Colors.red.shade50,
-                borderColor: Colors.red.shade300,
+                color: IwbfColors.alertRedSurface,
+                borderColor: IwbfColors.alertRed,
                 icon: Icons.error_outline,
                 issues: errors,
                 trailing: FilledButton.tonalIcon(
@@ -64,8 +65,8 @@ class ValidationSummaryScreen extends StatelessWidget {
             if (warnings.isNotEmpty)
               _IssueBlock(
                 title: 'Warnings',
-                color: Colors.amber.shade50,
-                borderColor: Colors.amber.shade400,
+                color: const Color(0xFFFFF7E0),
+                borderColor: IwbfColors.goldDeep,
                 icon: Icons.warning_amber_outlined,
                 issues: warnings,
               ),
@@ -178,7 +179,9 @@ class _Header extends StatelessWidget {
                   hasBlockingIssues
                       ? Icons.error_outline
                       : Icons.check_circle_outline,
-                  color: hasBlockingIssues ? Colors.red : Colors.green,
+                  color: hasBlockingIssues
+                      ? IwbfColors.alertRed
+                      : const Color(0xFF1B8A3A),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

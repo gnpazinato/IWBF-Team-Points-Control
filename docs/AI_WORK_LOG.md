@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 3 concluida — Match Setup real + Lineup Control real (court, listas/abas, alerta, vibracao, clear, change/load, exit confirm, wakelock, cache). Flutter SDK 3.41.9 instalado no ambiente para validacao local autonoma. |
-| Fase atual | Fase 3 fechada — pronto para Fase 4 (polimento visual, identidade IWBF, build APK e validacao Android cloud) |
-| Proximo passo recomendado | Iniciar Fase 4: aplicar identidade visual (off-white + dourado, logos IWBF), substituir o `_CourtView` simplificado pelo asset `court.png`, ajustar player cards com icones de uniforme (team-a/team-b men/women), criar templates `.xlsx` baixaveis, gerar APK via CI e testar em servico cloud Android (tablet + phone). |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 123 passed (locais, Flutter 3.41.9 stable) |
-| APK gerado | Sim, debug+release via CI na PR #1 |
+| Status geral | Fase 4 em andamento. Item 1/7 entregue: tema IWBF (`buildIwbfTheme()` + paleta `IwbfColors`) aplicado globalmente; alertas de limite e issues de planilha agora usam `IwbfColors.alertRed`/`alertRedSurface`. Resto da Fase 4 (header com logo IWBF, court.png, icones por gender, templates `.xlsx`, revisao de copy, APK release) ainda pendente. |
+| Fase atual | Fase 4 em andamento (1/7 itens) |
+| Proximo passo recomendado | Fase 4 item 2: criar widget reutilizavel `IwbfLogoHeader` (logo + competition) e usar nas telas Load / ValidationSummary / MatchSetup / Lineup. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 123 passed (locais, Flutter 3.41.9 stable, apos tema IWBF) |
+| APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos tema; sera regenerado no item 7) |
 
 ## Ritual obrigatorio para a IA
 
@@ -140,15 +140,15 @@ Depois de implementar:
 
 ### Fase 4 - Polimento, APK e validacao Android cloud
 
-- [ ] Aplicar identidade visual.
+- [x] Aplicar identidade visual (tema base — `buildIwbfTheme` + `IwbfColors`).
 - [ ] Ajustar layout para tablet.
 - [ ] Ajustar layout para celular.
 - [ ] Incluir logos, quadra e icones finais.
 - [ ] Incluir bandeiras locais ou solucao equivalente.
 - [ ] Criar templates baixaveis.
 - [ ] Revisar textos em ingles.
-- [ ] Rodar `flutter analyze`.
-- [ ] Rodar `flutter test`.
+- [x] Rodar `flutter analyze` (apos tema).
+- [x] Rodar `flutter test` (apos tema).
 - [ ] Gerar APK debug no Codespace ou GitHub Actions.
 - [ ] Testar em perfil tablet via servico cloud de device/emulador Android.
 - [ ] Testar em perfil phone via servico cloud de device/emulador Android.
@@ -522,6 +522,57 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0014 - 2026-05-13 - Fase 4 (item 1/7): tema IWBF off-white + dourado
+
+Resumo:
+
+- Criado `lib/theme/iwbf_theme.dart` com paleta institucional `IwbfColors` (`gold`, `goldDeep`, `goldSoft`, `offWhite`, `offWhiteElevated`, `textPrimary`, `textSecondary`, `alertRed`, `alertRedSurface`) e factory `buildIwbfTheme()` Material 3.
+- `main.dart` passa a usar `buildIwbfTheme()` no `MaterialApp` (theme antes era inline com cores soltas).
+- `AppBarTheme` padronizado: fundo off-white, texto preto institucional, sem elevation, titulo bold 18.
+- `FilledButtonTheme` agora pinta com dourado IWBF e padding maior, mais legivel sob luz.
+- `OutlinedButtonTheme` ganha borda dourada escura (`goldDeep`) consistente em todas as telas.
+- `CardThemeData` (renomeado em 3.41+) e `DialogThemeData` ajustados para fundo off-white sem tint material.
+- `SnackBarTheme` usa preto institucional com texto branco e behavior `floating`.
+- `_ScoreCell` (lineup) e `_IssueBlock`/`_Header` (validation summary) trocam vermelho/amber generico (`Colors.red.shade*`, `Colors.amber.shade*`) por tokens da paleta: `alertRed`, `alertRedSurface`, e warning em amarelo claro com borda `goldDeep`.
+- `_Header` da lineup troca `Colors.grey.shade100` por `IwbfColors.offWhiteElevated`.
+- `MissingDataScreen` e `MatchSetupScreen` tambem migraram para `IwbfColors.alertRed` (icones de erro e mensagem "Team A and Team B must be different").
+- Browns da `_CourtView` ficam intencionalmente intocados — serao substituidos pelo asset `court.png` no item 3.
+
+Decisao tecnica:
+
+- `CardTheme`/`DialogTheme` ficam como `CardThemeData`/`DialogThemeData` no Flutter 3.41+ (deprecated nos nomes antigos). Registrado nas convencoes de codigo.
+
+Arquivos criados:
+
+- `lib/theme/iwbf_theme.dart`
+
+Arquivos alterados:
+
+- `lib/main.dart`
+- `lib/screens/lineup_control_screen.dart`
+- `lib/screens/validation_summary_screen.dart`
+- `lib/screens/missing_data_screen.dart`
+- `lib/screens/match_setup_screen.dart`
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 123 passed, 0 failed, 0 skipped.
+
+Pendencias da Fase 4:
+
+- Header com logo IWBF reutilizavel (item 2).
+- `_CourtView` -> `court.png` + posicionamento simetrico (item 3).
+- Icones de jogador por gender (item 4).
+- Templates `.xlsx` baixaveis (item 5).
+- Revisao final de copy em ingles (item 6).
+- APK release via CI + docs de instalacao (item 7).
+
+Proximo passo recomendado:
+
+- Item 2/7: criar `IwbfLogoHeader` (logo + nome da competicao quando houver) e usar nas telas principais.
+
 ### 0013 - 2026-05-13 - Fase 3 (itens 2 a 10): Lineup Control real
 
 Resumo:
@@ -597,6 +648,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 105 passed, 0 failed, 0 skipped | Match Setup real cobre 9 cenarios; placeholder antigo (3 testes) removido |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos Lineup Control real (Fase 3, itens 2-10) |
 | 2026-05-13 | `flutter test` (local) | 123 passed, 0 failed, 0 skipped | +18 novos testes do Lineup Control fechando a Fase 3 inteira |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos tema IWBF (Fase 4 item 1) |
+| 2026-05-13 | `flutter test` (local) | 123 passed, 0 failed, 0 skipped | Tema IWBF nao quebra widget tests existentes |
 
 ## Pendencias e perguntas abertas
 
@@ -632,6 +685,8 @@ Decisoes fechadas:
 - Para evitar lint `use_build_context_synchronously`: capturar `Navigator.of(context)` antes do primeiro `await`, ou checar `context.mounted` depois.
 - Em testes de navegacao, NUNCA `await` em `Navigator.push(...)` (o Future so completa quando a rota e popada — causa timeout). Usar `unawaited(...)` ou disparar push via `tester.tap` em botao.
 - Em assertions de scores no widget test, garantir que Team A e Team B tenham valores distintos antes de usar `findsOneWidget` no formato `total / limit` — caso contrario use `findsNWidgets(2)`.
+- `CardTheme` e `DialogTheme` foram renomeados para `CardThemeData` e `DialogThemeData` no Flutter 3.41+. Os nomes antigos so existem como typedefs deprecated e geram erro de tipo quando passados em `ThemeData(...)`.
+- Cores usadas em alertas e estados (limite excedido, erros de planilha, warnings) devem vir de `IwbfColors` (`alertRed`, `alertRedSurface`, `goldDeep`) e nao de `Colors.red.shade*`/`Colors.amber.shade*`, para manter o tema consistente.
 
 ## Prompt curto de continuidade
 

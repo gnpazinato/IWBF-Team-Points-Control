@@ -9,6 +9,7 @@ import '../models/team.dart';
 import '../services/cache_service.dart';
 import '../services/vibration_service.dart';
 import '../services/wakelock_controller.dart';
+import '../theme/iwbf_theme.dart';
 
 /// Tela principal da partida.
 ///
@@ -240,7 +241,7 @@ class _Header extends StatelessWidget {
     final TextStyle? titleStyle = Theme.of(context).textTheme.titleMedium;
     final String? compName = state.competitionName;
     return Material(
-      color: Colors.grey.shade100,
+      color: IwbfColors.offWhiteElevated,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -326,30 +327,37 @@ class _ScoreCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textColor = isOver ? Colors.red.shade700 : Colors.black87;
+    final Color textColor =
+        isOver ? IwbfColors.alertRed : IwbfColors.textPrimary;
     return Container(
       key: Key(keyName),
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: isOver ? Colors.red.shade50 : Colors.transparent,
+        color: isOver ? IwbfColors.alertRedSurface : Colors.transparent,
         border: Border.all(
-          color: isOver ? Colors.red.shade400 : Colors.black12,
+          color: isOver ? IwbfColors.alertRed : Colors.black12,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         children: <Widget>[
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
           Text(
             '${total.toStringAsFixed(1)} / ${limit.toStringAsFixed(1)}',
-            style: TextStyle(color: textColor, fontSize: 18),
+            style: TextStyle(
+              color: textColor,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           if (isOver)
             const Text(
               'Point limit exceeded.',
-              style:
-                  TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: IwbfColors.alertRed,
+                fontWeight: FontWeight.bold,
+              ),
             ),
         ],
       ),
