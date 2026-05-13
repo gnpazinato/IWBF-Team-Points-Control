@@ -329,7 +329,7 @@ void main() {
       ]);
       sheet.appendRow(<xlsx.CellValue?>[
         xlsx.TextCellValue('Brazil'),
-        xlsx.IntCellValue(7),
+        const xlsx.IntCellValue(7),
         xlsx.TextCellValue('Silva'),
         xlsx.TextCellValue('Joao'),
         xlsx.TextCellValue('2.5'),
