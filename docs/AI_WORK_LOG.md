@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 1 concluida (CI verde no commit 59663fc); Fase 2 em andamento com parser, resolver e cache implementados sem UI |
-| Fase atual | Fase 2 - Planilha, validacao e cache base (logica sem UI) |
-| Proximo passo recomendado | Aguardar CI verde do novo push; depois adicionar UI da Fase 2 (telas de upload, resumo e correcao de dados) |
-| Ultimos testes executados | Delegados a CI em `claude/review-and-continue-9ZK5v` (flutter analyze + flutter test) |
+| Status geral | Fase 2 concluida (logica + UI). Flutter SDK 3.41.9 instalado no ambiente de desenvolvimento para validacao local autonoma. |
+| Fase atual | Pronto para iniciar Fase 3 - Fluxo de partida funcional |
+| Proximo passo recomendado | Iniciar Fase 3: tela de selecao Team A / Team B / Point Limit, tela principal de controle com quadra e listas laterais, bloqueio do 6o atleta, vibracao no estouro de limite. |
+| Ultimos testes executados | `flutter analyze` 0 issues + `flutter test` 112 passed (locais, Flutter 3.41.9 stable) |
 | APK gerado | Sim, debug+release via CI na PR #1 |
 
 ## Ritual obrigatorio para a IA
@@ -68,6 +68,8 @@ Depois de implementar:
 | 2026-05-13 | Android fisico esta descartado para o desenvolvimento | Usuario nao possui dispositivo Android fisico |
 | 2026-05-13 | Android Emulator dentro do Codespace nao deve ser assumido como caminho principal | Codespace sera usado para codigo, testes automatizados e build; validacao visual/manual fica em device/emulator cloud |
 | 2026-05-13 | `Team.displayName` e `Player` ficam sem `countryCode`/`teamCode`; exibicao usa somente o `teamName` completo | Simplificacao pedida pelo usuario: tirar o codigo do pais e a manipulacao para extrai-lo. Bandeiras passam a ser mapeadas pelo `CountryResolverService` (Fase 2) usando o nome completo. |
+| 2026-05-13 | `MissingDataScreen` da Fase 2 e tela de diagnostico no MVP, sem edicao inline | Reduzir escopo da Fase 2 para entregar fluxo end-to-end. Edicao inline (preencher numero de camiseta sem reabrir Excel) fica como refinamento futuro. |
+| 2026-05-13 | Flutter SDK 3.41.9 instalado em `/root/flutter` para validacao autonoma local | Permite rodar `flutter analyze` e `flutter test` direto, antes de depender da CI. |
 
 ## Checklist por fase
 
@@ -102,8 +104,8 @@ Depois de implementar:
 - [x] Validar classes funcionais.
 - [x] Detectar atletas sem numero.
 - [x] Detectar equipes nao reconhecidas.
-- [ ] Criar tela de resumo da planilha.
-- [ ] Criar tela de correcao de dados.
+- [x] Criar tela de resumo da planilha.
+- [x] Criar tela de correcao de dados (versao MVP: tela de diagnostico, sem edicao inline; edicao inline fica como refinamento futuro).
 - [x] Criar `CountryResolverService`.
 - [x] Criar `CacheService`.
 - [x] Cobrir parser e validacoes com testes.
@@ -427,6 +429,53 @@ Proximo passo recomendado:
 
 - Implementar telas da Fase 2 ligando a UI ao parser e ao cache. Sugestao: comecar pela tela de upload + integracao com `file_picker` (ja no pubspec) e tela de resumo.
 
+### 0011 - 2026-05-13 - Fase 2 (UI): telas e fluxo ponta-a-ponta + Flutter SDK local
+
+Resumo:
+
+- Telas implementadas:
+  - `LoadSpreadsheetScreen`: tela inicial com botao de upload `.xlsx` (via `file_picker` real, injetavel para testes) + detecao de cache + dialogo "Restore Previous Session / Start from Scratch".
+  - `ValidationSummaryScreen`: cabecalho com competition, contagem de equipes e atletas; blocos coloridos para errors (vermelho) e warnings (amarelo); botao "Continue" so habilita quando nao ha erros bloqueantes.
+  - `MissingDataScreen`: agrupa issues por categoria com hint pratica para cada tipo de erro (numero de camiseta, classe invalida, DOB, etc.). MVP nao edita inline.
+  - `MatchSetupScreen`: placeholder da Fase 3 com aviso e listagem dos teams recebidos. Aceita lista de teams ou `MatchState` restaurado.
+- `main.dart`: substitui scaffold placeholder por `LoadSpreadsheetScreen`.
+- `widget_test.dart`: atualizado para verificar boot na nova tela.
+- Cobertura de testes: 18 widget tests novos (load=7, validation=5, missing=3, match=3). Total geral: 112 testes passando.
+- Decisao registrada: edicao inline de dados ausentes fica como refinamento futuro. MVP usa diagnostico textual claro.
+- Flutter SDK 3.41.9 stable instalado em `/root/flutter` para validacao autonoma local (`flutter analyze` + `flutter test`).
+
+Arquivos criados:
+
+- `lib/screens/load_spreadsheet_screen.dart`
+- `lib/screens/validation_summary_screen.dart`
+- `lib/screens/missing_data_screen.dart`
+- `lib/screens/match_setup_screen.dart`
+- `test/screens/load_spreadsheet_screen_test.dart`
+- `test/screens/validation_summary_screen_test.dart`
+- `test/screens/missing_data_screen_test.dart`
+- `test/screens/match_setup_screen_test.dart`
+
+Arquivos alterados:
+
+- `lib/main.dart`
+- `test/widget_test.dart`
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 112 passed, 0 failed, 0 skipped (executado em 11.1s).
+
+Pendencias da Fase 2:
+
+- Nenhuma. Todas as checkboxes fechadas.
+- Refinamento futuro registrado: edicao inline em `MissingDataScreen` (preencher numero de camiseta sem reabrir Excel).
+- Refinamento futuro registrado: templates `.xlsx` para download (Fase 4).
+
+Proximo passo recomendado:
+
+- Iniciar Fase 3 - Fluxo de partida funcional. Comecar pela tela real de configuracao de partida (selecao Team A / Team B / Point Limit) substituindo o placeholder atual.
+
 ## Registro de testes
 
 | Data | Comando | Resultado | Observacao |
@@ -434,6 +483,8 @@ Proximo passo recomendado:
 | 2026-05-12 | Nao aplicavel | Nao executado | Projeto ainda nao criado |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` | Delegado a CI | Validacao via workflow `build-apk.yml` no push para `claude/**` |
 | 2026-05-13 | `flutter test` | Delegado a CI | Validacao via workflow `build-apk.yml` no push para `claude/**` |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Flutter 3.41.9 stable instalado em `/root/flutter` |
+| 2026-05-13 | `flutter test` (local) | 112 passed, 0 failed, 0 skipped | Inclui 18 widget tests novos das telas da Fase 2 |
 
 ## Pendencias e perguntas abertas
 

@@ -1,0 +1,128 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:iwbf_team_points_control/models/player.dart';
+import 'package:iwbf_team_points_control/models/team.dart';
+import 'package:iwbf_team_points_control/screens/validation_summary_screen.dart';
+import 'package:iwbf_team_points_control/services/spreadsheet_parser_service.dart';
+
+Future<void> _pump(WidgetTester tester, SpreadsheetParseResult result) async {
+  await tester.pumpWidget(MaterialApp(
+    home: ValidationSummaryScreen(result: result),
+  ));
+}
+
+Player _p(String id, int n, double cls) => Player(
+      id: id,
+      teamName: 'Brazil',
+      shirtNumber: n,
+      surname: 'P$id',
+      firstName: 'First',
+      playerClass: cls,
+    );
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('cabeçalho mostra competition e contagens',
+      (WidgetTester tester) async {
+    final SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[
+        Team(
+          id: 'team-brazil',
+          teamName: 'Brazil',
+          players: <Player>[_p('p1', 7, 2.5), _p('p2', 9, 4.0)],
+        ),
+      ],
+      issues: const <ParseIssue>[],
+      competitionName: 'Americas Championship',
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Americas Championship'), findsOneWidget);
+    expect(find.text('Teams found: 1'), findsOneWidget);
+    expect(find.text('Players found: 2'), findsOneWidget);
+    expect(find.textContaining('loaded successfully'), findsOneWidget);
+  });
+
+  testWidgets('botão Continue habilitado quando não há erros',
+      (WidgetTester tester) async {
+    final SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[
+        Team(id: 'team-brazil', teamName: 'Brazil', players: <Player>[_p('p1', 7, 2.5)]),
+      ],
+      issues: const <ParseIssue>[],
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    final Finder cont = find.byKey(const Key('continue-button'));
+    expect(cont, findsOneWidget);
+    final FilledButton button = tester.widget<FilledButton>(cont);
+    expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('botão Continue desabilitado quando há erros bloqueantes',
+      (WidgetTester tester) async {
+    const SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[],
+      issues: <ParseIssue>[
+        ParseIssue(
+          category: ParseIssueCategory.missingShirtNumber,
+          severity: ParseIssueSeverity.error,
+          message: 'Atleta sem número de camiseta',
+        ),
+      ],
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    final FilledButton button =
+        tester.widget<FilledButton>(find.byKey(const Key('continue-button')));
+    expect(button.onPressed, isNull);
+    expect(find.textContaining('fix before continuing'), findsOneWidget);
+  });
+
+  testWidgets('mostra warnings em bloco separado quando existem',
+      (WidgetTester tester) async {
+    final SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[
+        Team(id: 'team-atlantis', teamName: 'Atlantis', players: <Player>[_p('p1', 7, 2.5)]),
+      ],
+      issues: const <ParseIssue>[
+        ParseIssue(
+          category: ParseIssueCategory.unknownTeam,
+          severity: ParseIssueSeverity.warning,
+          message: 'Equipe não reconhecida: "Atlantis"',
+        ),
+      ],
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Warnings'), findsOneWidget);
+    expect(find.textContaining('Atlantis'), findsWidgets);
+  });
+
+  testWidgets('botão View Issues abre MissingDataScreen',
+      (WidgetTester tester) async {
+    const SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[],
+      issues: <ParseIssue>[
+        ParseIssue(
+          category: ParseIssueCategory.missingShirtNumber,
+          severity: ParseIssueSeverity.error,
+          message: 'Atleta sem número de camiseta',
+          playerLabel: 'SILVA, João',
+        ),
+      ],
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('view-issues-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Missing Data'), findsOneWidget);
+  });
+}
