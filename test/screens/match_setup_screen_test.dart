@@ -238,9 +238,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Lineup Control'), findsOneWidget);
-      expect(find.text('Team A: Brazil'), findsOneWidget);
-      expect(find.text('Team B: Argentina'), findsOneWidget);
-      expect(find.text('Point Limit: 14.0'), findsOneWidget);
+      expect(find.text('Brazil  vs  Argentina'), findsOneWidget);
+      expect(find.text('Point Limit:'), findsOneWidget);
     });
   });
 }

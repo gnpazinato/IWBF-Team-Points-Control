@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 3 em andamento — Match Setup real entregue (item 1/10). Flutter SDK 3.41.9 instalado no ambiente para validacao local autonoma. |
-| Fase atual | Fase 3 — Fluxo de partida funcional |
-| Proximo passo recomendado | Implementar `LineupControlScreen` real (substitui o placeholder criado no item 1) — itens 2 a 10: quadra central, listas laterais / abas, selecao ate 5 com bloqueio do 6, soma de pontos, alerta persistente, `VibrationService` mockavel, botoes Clear/Change/Load, confirmacao de saida, wakelock, persistencia via `CacheService`. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 105 passed (locais, Flutter 3.41.9 stable) |
+| Status geral | Fase 3 concluida — Match Setup real + Lineup Control real (court, listas/abas, alerta, vibracao, clear, change/load, exit confirm, wakelock, cache). Flutter SDK 3.41.9 instalado no ambiente para validacao local autonoma. |
+| Fase atual | Fase 3 fechada — pronto para Fase 4 (polimento visual, identidade IWBF, build APK e validacao Android cloud) |
+| Proximo passo recomendado | Iniciar Fase 4: aplicar identidade visual (off-white + dourado, logos IWBF), substituir o `_CourtView` simplificado pelo asset `court.png`, ajustar player cards com icones de uniforme (team-a/team-b men/women), criar templates `.xlsx` baixaveis, gerar APK via CI e testar em servico cloud Android (tablet + phone). |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 123 passed (locais, Flutter 3.41.9 stable) |
 | APK gerado | Sim, debug+release via CI na PR #1 |
 
 ## Ritual obrigatorio para a IA
@@ -115,23 +115,23 @@ Depois de implementar:
 
 - [x] Criar tela de selecao de Team A, Team B e Point Limit.
 - [x] Bloquear Team A e Team B iguais.
-- [ ] Criar tela principal de controle.
-- [ ] Exibir quadra central.
-- [ ] Exibir listas de atletas por equipe.
-- [ ] Selecionar e desselecionar atletas por toque.
-- [ ] Bloquear sexto atleta.
-- [ ] Somar pontos automaticamente.
-- [ ] Mostrar alerta persistente acima do limite.
-- [ ] Acionar vibracao leve ao cruzar o limite.
-- [ ] Implementar Clear Team A.
-- [ ] Implementar Clear Team B.
-- [ ] Implementar Clear All.
-- [ ] Implementar Change Teams.
-- [ ] Implementar Load New Spreadsheet.
-- [ ] Confirmar antes de sair da partida.
-- [ ] Manter tela ativa durante a partida.
-- [ ] Restaurar sessao anterior.
-- [ ] Cobrir fluxo critico com testes.
+- [x] Criar tela principal de controle.
+- [x] Exibir quadra central.
+- [x] Exibir listas de atletas por equipe.
+- [x] Selecionar e desselecionar atletas por toque.
+- [x] Bloquear sexto atleta.
+- [x] Somar pontos automaticamente.
+- [x] Mostrar alerta persistente acima do limite.
+- [x] Acionar vibracao leve ao cruzar o limite.
+- [x] Implementar Clear Team A.
+- [x] Implementar Clear Team B.
+- [x] Implementar Clear All.
+- [x] Implementar Change Teams.
+- [x] Implementar Load New Spreadsheet.
+- [x] Confirmar antes de sair da partida.
+- [x] Manter tela ativa durante a partida.
+- [x] Restaurar sessao anterior.
+- [x] Cobrir fluxo critico com testes.
 
 ### Fase 4 - Polimento, APK e validacao Android cloud
 
@@ -517,6 +517,68 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0013 - 2026-05-13 - Fase 3 (itens 2 a 10): Lineup Control real
+
+Resumo:
+
+- Substitui o placeholder do `LineupControlScreen` pela tela real, fechando os 9 itens restantes da Fase 3 num so incremento (a tela e indivisivel — todos os pedacos compartilham o mesmo `MatchState`).
+- Layout responsivo via `LayoutBuilder` com breakpoint `>= 720dp`:
+  - tablet: `Row` com listas laterais (Team A esq., Team B dir.) e quadra central;
+  - celular: `DefaultTabController` com 3 abas (Team A / Court / Team B).
+- Header (`_Header`): nome da competicao (se houver), `Brazil  vs  Argentina`, dois `_ScoreCell` com `total / limit` e badge "Point limit exceeded." quando aplicavel, dropdown de Point Limit reativo (mudar limite reavalia alerta e dispara vibracao se cruzar).
+- Selecao por toque (`_PlayerCard` com `InkWell`): toque seleciona, toque novamente desseleciona; o 6º atleta e bloqueado com snackbar `Only 5 players can be selected for Team X.`.
+- Quadra (`_CourtView` + `_CourtHalf`): area marrom-clara dividida ao meio, jogadores selecionados aparecem como chips em `Wrap` (Team A em cima, Team B embaixo). MVP funcional; substituicao por asset `court.png` + posicionamento simetrico fica para a Fase 4.
+- Vibracao (`VibrationService`, novo): leve (`Vibration.vibrate(duration: 1500)`) acionada **uma vez por cruzamento** por equipe — usa flags `_wasOverA` / `_wasOverB`, ativa apenas na transicao "abaixo → acima".
+- Wakelock (`WakelockController`, novo): wrapper mockavel sobre `wakelock_plus`, habilita no `initState` e desabilita no `dispose`.
+- Persistencia (`CacheService`): `saveMatchState` chamado no `initState` (snapshot inicial) e a cada mudanca relevante (selecao, point limit, clear). Erros do plugin sao engolidos.
+- Botoes operacionais (`_OperationalButtons`): Clear Team A / Clear Team B / Clear All / Change Teams / Load New Spreadsheet em `Wrap` para nao estourar layout.
+- Confirmacao antes de sair (`_confirmLeave`): `AlertDialog` "Are you sure you want to leave this match? Current selections may be lost." com botoes Stay / Leave. Disparado por `Change Teams`, `Load New Spreadsheet` E pelo `PopScope` (botao back do Android / gesto).
+- `Load New Spreadsheet` faz `cache.clear()` e `popUntil(isFirst)` apos a confirmacao.
+
+Decisoes tecnicas:
+
+- `togglePlayer` retorna `false` para "deselected" e para "blocked"; o screen distingue capturando `bucket.contains(id)` antes do toggle.
+- Vibracao e wakelock viraram `services/` mockaveis em vez de chamadas estaticas para nao quebrar widget tests com `MissingPluginException`.
+- Dropdowns usam `initialValue` (Flutter 3.41+); `value` esta deprecated.
+- `PopScope` usa `onPopInvokedWithResult` (`onPopInvoked` esta deprecated).
+- Capturei `Navigator.of(context)` antes do `await` no handler do `PopScope` para evitar `use_build_context_synchronously`.
+
+Arquivos criados:
+
+- `lib/services/vibration_service.dart`
+- `lib/services/wakelock_controller.dart`
+- `test/screens/lineup_control_screen_test.dart`
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart` (placeholder → tela real, ~480 linhas)
+- `test/screens/match_setup_screen_test.dart` (assertions do teste de navegacao alinhadas com a tela real)
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 123 passed, 0 failed, 0 skipped (era 105; +18 novos no Lineup Control).
+
+Cobertura de testes do Lineup Control (18 cenarios):
+
+- Header: render basico (competition + nomes + Point Limit) e mudanca de Point Limit re-avaliando alerta.
+- Layout responsivo: tablet (>=720dp) mostra listas laterais; celular (<720dp) mostra abas.
+- Selecao: tap seleciona/atualiza score, tap novamente desseleciona, 5 maximo com snackbar bloqueando o 6.
+- Alerta + vibracao: cruzar limite mostra alerta + vibra 1x; voltar abaixo limpa alerta sem vibrar; cruzar de novo vibra mais 1x; alerta de uma equipe nao afeta a outra.
+- Botoes: Clear Team A / B / All com isolamento entre equipes.
+- Saida: Change Teams (confirmacao Stay/Leave), Load New Spreadsheet (confirmacao + cache.clear + popUntil first), back do Android (PopScope dispara dialog).
+- Lifecycle: wakelock enable no init + disable no dispose; cache.saveMatchState no init.
+
+Pendencias:
+
+- Nenhuma da Fase 3.
+- Refinamento futuro registrado: posicionamento simetrico real dos 5 jogadores na quadra (nao em Wrap), uso do asset `court.png` como background, icones `team-a-men/women` e `team-b-men/women` nos cards (depende de `gender`).
+
+Proximo passo recomendado:
+
+- Iniciar Fase 4 (polimento + APK + validacao Android cloud). Sugestao de ordem: 1) substituir `_CourtView` pelo asset `court.png` com posicionamento simetrico; 2) icones de jogador conforme `gender`; 3) header com logo IWBF; 4) tema off-white + dourado consistente; 5) templates `.xlsx` baixaveis; 6) build APK release via CI; 7) validacao em device cloud (tablet + phone).
+
 ## Registro de testes
 
 | Data | Comando | Resultado | Observacao |
@@ -528,6 +590,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 112 passed, 0 failed, 0 skipped | Inclui 18 widget tests novos das telas da Fase 2 |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos Match Setup real (Fase 3, item 1) |
 | 2026-05-13 | `flutter test` (local) | 105 passed, 0 failed, 0 skipped | Match Setup real cobre 9 cenarios; placeholder antigo (3 testes) removido |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos Lineup Control real (Fase 3, itens 2-10) |
+| 2026-05-13 | `flutter test` (local) | 123 passed, 0 failed, 0 skipped | +18 novos testes do Lineup Control fechando a Fase 3 inteira |
 
 ## Pendencias e perguntas abertas
 
