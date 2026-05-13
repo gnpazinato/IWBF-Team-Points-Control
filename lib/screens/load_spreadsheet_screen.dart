@@ -1,14 +1,13 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../models/match_state.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
 import '../services/template_generator_service.dart';
+import '../utils/template_saver.dart' as platform_saver;
 import '../widgets/iwbf_logo_header.dart';
 import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
@@ -74,7 +73,7 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     _cache = widget._cache ?? CacheService();
     _pickFile = widget._filePicker ?? _defaultFilePicker;
     _templates = widget._templates ?? const TemplateGeneratorService();
-    _saveTemplate = widget._saveTemplate ?? _defaultSaveTemplate;
+    _saveTemplate = widget._saveTemplate ?? platform_saver.defaultSaveTemplate;
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferRestore());
   }
 
@@ -88,14 +87,6 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     final PlatformFile file = picked.files.single;
     final Uint8List? bytes = file.bytes;
     return bytes;
-  }
-
-  Future<String?> _defaultSaveTemplate(
-      String filename, Uint8List bytes) async {
-    final Directory dir = await getApplicationDocumentsDirectory();
-    final File file = File('${dir.path}/$filename');
-    await file.writeAsBytes(bytes, flush: true);
-    return file.path;
   }
 
   Future<void> _maybeOfferRestore() async {

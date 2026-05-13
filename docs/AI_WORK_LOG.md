@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | **Fase 4 concluida (7/7).** Todo o polimento visual + identidade IWBF + templates `.xlsx` + copy ingles + docs de instalacao estao no codigo. Build APK release continua via CI (`build-apk.yml`) — sera regenerado automaticamente no push. |
-| Fase atual | **Fase 4 fechada — pronto para release.** |
-| Proximo passo recomendado | Aguardar o run do `build-apk.yml` em `claude/review-and-continue-9ZK5v` ficar verde, baixar o artifact `iwbf-team-points-control-apk` do GitHub Actions e usar o `docs/INSTALL_ANDROID.md` para sideload em tablet/phone (fisico ou cloud — BrowserStack / Firebase Test Lab / AWS Device Farm). |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (locais, Flutter 3.41.9 stable, apos Fase 4 inteira) |
-| APK gerado | Pendente regenerar via CI apos este push final da Fase 4. |
+| Status geral | **Fase 4 concluida (7/7) + hotfix Web.** Saver de templates agora usa conditional imports (`dart.library.io` / `dart.library.html`) para nao quebrar runtime no Flutter Web. `path_provider` so e chamado em Android/iOS/desktop; na Web o template baixa direto via `<a download>` (package:web + dart:js_interop). |
+| Fase atual | **Fase 4 fechada — preview Web ativo em github.io.** |
+| Proximo passo recomendado | Confirmar `https://gnpazinato.github.io/IWBF-Team-Points-Control/` ativo (Pages habilitado em Settings → Pages → Source: GitHub Actions). Para device fisico: baixar `iwbf-team-points-control-apk` do Actions e usar `docs/INSTALL_ANDROID.md`. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed + `flutter build web --release` ✓ (locais, Flutter 3.41.9 stable, apos hotfix Web) |
+| APK gerado | Pendente regenerar via CI apos este push (hotfix nao afeta Android). |
 
 ## Ritual obrigatorio para a IA
 
@@ -522,6 +522,50 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0021 - 2026-05-13 - Hotfix Web: template saver via conditional imports
+
+Resumo:
+
+- `LoadSpreadsheetScreen._defaultSaveTemplate` usava `dart:io` + `path_provider`. Isso compila no Web (Flutter Web tem shim do `dart:io`) MAS `path_provider.getApplicationDocumentsDirectory()` lanca `MissingPluginException` em runtime — quem clicasse em "Download Template" no preview Web teria visto erro.
+- Solucao: extrair o saver default para um modulo separado com conditional imports:
+  - `lib/utils/template_saver.dart` — fachada, faz `import 'template_saver_stub.dart' if (dart.library.io) 'template_saver_io.dart' if (dart.library.html) 'template_saver_web.dart'`.
+  - `lib/utils/template_saver_io.dart` — Android/iOS/desktop: `path_provider` + `dart:io`.
+  - `lib/utils/template_saver_web.dart` — Web: `package:web` + `dart:js_interop`, cria `Blob`, gera `Object URL`, dispara `<a download>`.
+  - `lib/utils/template_saver_stub.dart` — fallback que so lanca `UnsupportedError` (nao deveria ser alcancado).
+- `LoadSpreadsheetScreen` agora importa `package:.../utils/template_saver.dart as platform_saver` e usa `platform_saver.defaultSaveTemplate` como default — sem `dart:io` direto na tela.
+- `web: ^1.1.0` virou dep direta (antes era transitive). pubspec.lock atualizado.
+- Verificado:
+  - `flutter analyze --no-fatal-infos` -> No issues found (zero, incluindo info-level).
+  - `flutter test` -> 145 passed, 0 failed.
+  - `flutter build web --release` -> ✓ Built build/web (62 MB, ~50s).
+
+Decisao tecnica registrada:
+
+- Para "salvar arquivo" multiplaforma no Flutter, conditional imports com `dart.library.io` / `dart.library.html` sao o padrao recomendado (em vez de `kIsWeb`). Mantem o `dart:io` longe do bundle Web e evita `MissingPluginException` em runtime.
+- `dart:html` esta deprecated no Flutter 3.41+. Usar `package:web` + `dart:js_interop` (Blob, URL, HTMLAnchorElement).
+
+Arquivos criados:
+
+- `lib/utils/template_saver.dart`
+- `lib/utils/template_saver_io.dart`
+- `lib/utils/template_saver_web.dart`
+- `lib/utils/template_saver_stub.dart`
+
+Arquivos alterados:
+
+- `lib/screens/load_spreadsheet_screen.dart` (removido `dart:io` e `path_provider`; default agora vem de `template_saver.dart`)
+- `pubspec.yaml` (adicionado `web: ^1.1.0`)
+- `pubspec.lock` (web virou direct main)
+- `docs/AI_WORK_LOG.md`
+
+Pendencias:
+
+- Nenhuma do codigo. Preview Web em `https://gnpazinato.github.io/IWBF-Team-Points-Control/` depende de Pages estar habilitado: Settings → Pages → Source: "GitHub Actions". Se 403 persistir, e isso.
+
+Proximo passo recomendado:
+
+- Apos o `deploy-web.yml` rodar nesse push, abrir o URL no Mac/iPhone/iPad e exercitar o app inteiro (Carregar template baixado → Validation Summary → Match Setup → Lineup Control com selecao + alerta).
+
 ### 0020 - 2026-05-13 - Fase 4 (item 7/7): APK release + docs de instalação
 
 Resumo:
@@ -909,6 +953,9 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | Mesma cobertura; mensagens dos fixtures atualizadas |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Final da Fase 4 (item 7) — `docs/INSTALL_ANDROID.md` adicionado |
 | 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | Mudanca apenas em docs; cobertura intacta |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos hotfix Web (conditional imports + package:web) |
+| 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | Cobertura intacta apos extracao do saver |
+| 2026-05-13 | `flutter build web --release` (local) | ✓ Built build/web (62 MB) | Verifica que o bundle Web sai limpo sem `dart:io` direto |
 
 ## Pendencias e perguntas abertas
 
