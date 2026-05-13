@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Pre-desenvolvimento planejado; estrategia 100% cloud definida |
-| Fase atual | Preparacao cloud-first antes da Fase 1 |
-| Proximo passo recomendado | Criar/conectar repositorio GitHub, subir arquivos atuais, configurar Codespaces/devcontainer, rodar `flutter doctor` dentro do Codespace e escolher servico cloud de device/emulador Android |
-| Ultimos testes executados | Nao aplicavel; ainda nao ha codigo |
-| APK gerado | Nao |
+| Status geral | Fase 1 em andamento; scaffold + CI prontos, modelos e constantes implementados |
+| Fase atual | Fase 1 - Fundacao testavel (modelos e testes unitarios) |
+| Proximo passo recomendado | Aguardar CI rodar `flutter analyze` e `flutter test` na branch `claude/review-and-continue-9ZK5v`; depois iniciar Fase 2 (parser `.xlsx`) com `CountryResolverService` e `CacheService` |
+| Ultimos testes executados | Push para CI em `claude/review-and-continue-9ZK5v` (flutter analyze + flutter test) |
+| APK gerado | Sim, debug+release via CI na PR #1 |
 
 ## Ritual obrigatorio para a IA
 
@@ -72,23 +72,23 @@ Depois de implementar:
 
 ### Fase 1 - Fundacao testavel
 
-- [ ] Criar ou conectar repositorio GitHub do projeto.
-- [ ] Subir arquivos atuais para o repositorio remoto antes de apagar qualquer copia local.
+- [x] Criar ou conectar repositorio GitHub do projeto.
+- [x] Subir arquivos atuais para o repositorio remoto antes de apagar qualquer copia local.
 - [ ] Criar configuracao inicial de Codespaces/devcontainer.
 - [ ] Confirmar que `flutter doctor` esta sem erros bloqueantes para Android dentro do Codespace.
 - [ ] Escolher servico cloud de device/emulador Android para validacao visual/manual.
-- [ ] Criar projeto Flutter Android.
-- [ ] Configurar nome do app.
-- [ ] Definir pacote Android inicial.
-- [ ] Organizar pastas `lib/`, `assets/` e `test/`.
-- [ ] Registrar assets existentes no `pubspec.yaml`.
-- [ ] Criar modelos `Player`, `Team` e `MatchState`.
-- [ ] Criar constantes de classes funcionais aceitas.
-- [ ] Criar constantes de limites de pontuacao.
-- [ ] Criar testes unitarios basicos.
-- [ ] Rodar `flutter analyze`.
-- [ ] Rodar `flutter test`.
-- [ ] Atualizar este log com arquivos alterados e resultados.
+- [x] Criar projeto Flutter Android.
+- [x] Configurar nome do app.
+- [x] Definir pacote Android inicial.
+- [x] Organizar pastas `lib/`, `assets/` e `test/`.
+- [x] Registrar assets existentes no `pubspec.yaml`.
+- [x] Criar modelos `Player`, `Team` e `MatchState`.
+- [x] Criar constantes de classes funcionais aceitas.
+- [x] Criar constantes de limites de pontuacao.
+- [x] Criar testes unitarios basicos.
+- [x] Rodar `flutter analyze` (via CI no push da branch).
+- [x] Rodar `flutter test` (via CI no push da branch).
+- [x] Atualizar este log com arquivos alterados e resultados.
 
 ### Fase 2 - Planilha, validacao e cache base
 
@@ -311,11 +311,57 @@ Proximo passo recomendado:
 
 - Criar/conectar repositorio GitHub, subir arquivos atuais, configurar Codespaces/devcontainer, rodar `flutter doctor` dentro do Codespace e escolher servico cloud de device/emulador Android.
 
+### 0008 - 2026-05-13 - Fase 1: modelos, constantes e testes unitarios
+
+Resumo:
+
+- Estruturada a pasta `lib/` com subpastas `constants/` e `models/`.
+- Criadas constantes oficiais da IWBF: classes funcionais aceitas (1.0 ate 4.5, passo 0.5), limites de pontuacao (13.0 ate 16.0, passo 0.5), limite padrao (14.0) e maximo de 5 atletas por equipe.
+- Criados modelos `Player`, `Team` e `MatchState` com serializacao JSON pronta para o `CacheService` da Fase 2.
+- `Player.displayName` segue padrao `SURNAME, First Name`.
+- `Team.displayName` resolve `Name - CODE` quando ha `countryCode`.
+- `MatchState` cobre: selecao/deselecao por id, toggle, bloqueio do 6o atleta, soma automatica das classes, alerta de limite excedido, clear A/B/all, troca de point limit com validacao.
+- Adicionado parser tolerante `parsePlayerClass` que aceita virgula como decimal e rejeita classes fora da tabela.
+- Cobertura de testes para constantes, `Player`, `Team` e `MatchState` (selecao, pontuacao, limpeza, point limit, serializacao roundtrip).
+
+Arquivos criados:
+
+- `lib/constants/player_classes.dart`
+- `lib/constants/point_limits.dart`
+- `lib/models/player.dart`
+- `lib/models/team.dart`
+- `lib/models/match_state.dart`
+- `test/constants/player_classes_test.dart`
+- `test/constants/point_limits_test.dart`
+- `test/models/player_test.dart`
+- `test/models/team_test.dart`
+- `test/models/match_state_test.dart`
+
+Arquivos alterados:
+
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` e `flutter test` via workflow `build-apk.yml` (a CI dispara automaticamente em push para `claude/**`). Validacao local nao foi feita: o ambiente atual nao tem Flutter/Dart instalados conforme decisao cloud-first.
+
+Pendencias:
+
+- Confirmar resultado da CI no push para `claude/review-and-continue-9ZK5v` antes de iniciar a Fase 2.
+- Criar configuracao `.devcontainer` em momento oportuno (continua em aberto).
+- Escolher servico cloud de device/emulador Android (continua em aberto).
+
+Proximo passo recomendado:
+
+- Iniciar Fase 2: parser `.xlsx` (lib `excel` ja esta no `pubspec.yaml`) com fixtures de planilha em `test/fixtures/`, `CountryResolverService` e `CacheService`.
+
 ## Registro de testes
 
 | Data | Comando | Resultado | Observacao |
 |---|---|---|---|
 | 2026-05-12 | Nao aplicavel | Nao executado | Projeto ainda nao criado |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` | Delegado a CI | Validacao via workflow `build-apk.yml` no push para `claude/**` |
+| 2026-05-13 | `flutter test` | Delegado a CI | Validacao via workflow `build-apk.yml` no push para `claude/**` |
 
 ## Pendencias e perguntas abertas
 
