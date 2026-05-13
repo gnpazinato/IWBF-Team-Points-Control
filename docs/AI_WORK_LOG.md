@@ -15,10 +15,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 4 em andamento (4/7). `PlayerJerseyIcon` (assets `team-a/b-men/women.png` com numero da camiseta sobreposto) substitui o `CircleAvatar` numerico nos cards laterais; default `unspecified` cai no icone masculino. |
-| Fase atual | Fase 4 em andamento (4/7 itens) |
-| Proximo passo recomendado | Fase 4 item 5: gerar templates `.xlsx` (Single Sheet `Players` e One Sheet per Team) dentro do app via `excel` + `path_provider` + `share_plus`/intent; ligar nos botoes "Download Template — ..." da `LoadSpreadsheetScreen` que hoje so mostram snack placeholder. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 137 passed (locais, Flutter 3.41.9 stable, apos icones por gender) |
+| Status geral | Fase 4 em andamento (5/7). `TemplateGeneratorService` cria `.xlsx` exemplo (single sheet + per team) que o proprio parser do app consegue ler; botoes "Download Template — ..." na `LoadSpreadsheetScreen` agora salvam de verdade no documents dir e mostram caminho. |
+| Fase atual | Fase 4 em andamento (5/7 itens) |
+| Proximo passo recomendado | Fase 4 item 6: revisar copy em ingles em todas as telas (textos PT residuais como "Templates ficam disponiveis...", erros etc.) e padronizar mensagens. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (locais, Flutter 3.41.9 stable, apos templates baixaveis) |
 | APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos polimento; sera regenerado no item 7) |
 
 ## Ritual obrigatorio para a IA
@@ -145,7 +145,7 @@ Depois de implementar:
 - [ ] Ajustar layout para celular.
 - [x] Incluir logos, quadra e icones finais (logos: feito; quadra: feito via `court.png`; icones: feito via `PlayerJerseyIcon`).
 - [ ] Incluir bandeiras locais ou solucao equivalente.
-- [ ] Criar templates baixaveis.
+- [x] Criar templates baixaveis (`TemplateGeneratorService` + botoes na Load Spreadsheet).
 - [ ] Revisar textos em ingles.
 - [x] Rodar `flutter analyze` (apos tema).
 - [x] Rodar `flutter test` (apos tema).
@@ -522,6 +522,50 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0018 - 2026-05-13 - Fase 4 (item 5/7): templates `.xlsx` baixáveis
+
+Resumo:
+
+- Criado `lib/services/template_generator_service.dart` com `TemplateGeneratorService` que gera dois layouts via `package:excel`:
+  - `TemplateKind.singleSheet`: aba `Players` com colunas oficiais (competition_name, team_name, shirt_number, surname, first_name, player_class, dob, gender) + 4 linhas de exemplo (2 Brazil, 2 Argentina, com classes funcionais 1.5/2.0/2.5/3.0 e mistura de gender male/female).
+  - `TemplateKind.perTeam`: uma aba por equipe (`Brazil`, `Argentina`) com colunas minimas + as mesmas 4 linhas distribuidas. Aba default `Sheet1` removida.
+- API publica: `build(TemplateKind)` retorna `Uint8List`, `filenameFor(TemplateKind)` devolve o nome sugerido (`iwbf_template_single_sheet.xlsx` / `iwbf_template_per_team.xlsx`).
+- `LoadSpreadsheetScreen` agora:
+  - aceita `TemplateGeneratorService` e `TemplateSaveFn` injetaveis;
+  - default `TemplateSaveFn` escreve em `getApplicationDocumentsDirectory()/<filename>` via `path_provider` (ja no `pubspec.yaml`);
+  - botoes "Download Template — Single Sheet" e "Download Template — One Sheet per Team" agora chamam o servico, salvam de verdade e mostram snackbar com o caminho ou erro (sem mais snack "Fase 4 placeholder");
+  - botoes ganharam Keys (`download-template-single-sheet`, `download-template-per-team`).
+- Teste anti-regressao chave: o `SpreadsheetParserService` consegue re-ler os templates gerados sem erros bloqueantes (round-trip valido) — garante que o que o usuario baixar e o que o app aceita.
+
+Decisao tecnica:
+
+- Saver e injetavel via construtor (`TemplateSaveFn`) para nao depender de `path_provider` em widget tests. Default usa `getApplicationDocumentsDirectory()` em runtime real. Mesmo padrao usado para `FilePicker`, `Vibration`, `Wakelock`, `SharedPreferences` no resto do app.
+
+Arquivos criados:
+
+- `lib/services/template_generator_service.dart`
+- `test/services/template_generator_service_test.dart` (6 testes: bytes nao vazios, round-trip parser, filename sugerido — para os dois layouts)
+
+Arquivos alterados:
+
+- `lib/screens/load_spreadsheet_screen.dart` (`TemplateSaveFn` typedef, `_defaultSaveTemplate`, `_onDownloadTemplatePressed(kind)`, keys nos botoes)
+- `test/screens/load_spreadsheet_screen_test.dart` (+3 testes para download single/per-team/saver null; teste antigo "snackbar coming soon" virou "saved to path")
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 145 passed, 0 failed, 0 skipped (era 137; +8 novos = 6 service + 3 widget - 1 removido).
+
+Pendencias da Fase 4:
+
+- Item 6: revisao final de copy em ingles (procurar PT residual: "Templates ficam disponiveis...", erros etc.).
+- Item 7: APK release via CI + docs de instalacao manual.
+
+Proximo passo recomendado:
+
+- Item 6/7: rodar `grep -rn "Templates ficam\|Fase 4\|Sucesso\|Erro\b" lib/` para achar copy PT residual e padronizar tudo em ingles institucional.
+
 ### 0017 - 2026-05-13 - Fase 4 (item 4/7): ícones de jogador por gender
 
 Resumo:
@@ -779,6 +823,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 129 passed, 0 failed, 0 skipped | +2 novos no grupo "LineupControlScreen — court" |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos icones por gender (Fase 4 item 4) |
 | 2026-05-13 | `flutter test` (local) | 137 passed, 0 failed, 0 skipped | +8 novos testes do `PlayerJerseyIcon` (5 unit + 3 widget) |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos templates baixaveis (Fase 4 item 5) |
+| 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | +6 service + 3 widget; -1 antigo "snackbar coming soon" |
 
 ## Pendencias e perguntas abertas
 

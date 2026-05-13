@@ -7,17 +7,32 @@ import 'package:iwbf_team_points_control/models/player.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/screens/load_spreadsheet_screen.dart';
 import 'package:iwbf_team_points_control/services/cache_service.dart';
+import 'package:iwbf_team_points_control/services/template_generator_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _FakeTemplateSaver {
+  final List<({String filename, int byteCount})> calls = <({String filename, int byteCount})>[];
+  String returnPath = '/tmp/fake/path';
+
+  Future<String?> save(String filename, Uint8List bytes) async {
+    calls.add((filename: filename, byteCount: bytes.lengthInBytes));
+    return returnPath;
+  }
+}
 
 Future<void> _pumpScreen(
   WidgetTester tester, {
   FilePickerFn? filePicker,
   CacheService? cache,
+  TemplateSaveFn? saveTemplate,
+  TemplateGeneratorService? templates,
 }) async {
   await tester.pumpWidget(MaterialApp(
     home: LoadSpreadsheetScreen(
       cache: cache ?? CacheService(),
       filePicker: filePicker,
+      saveTemplate: saveTemplate,
+      templates: templates,
     ),
   ));
 }
@@ -61,15 +76,52 @@ void main() {
     expect(find.text('Download Template — One Sheet per Team'), findsOneWidget);
   });
 
-  testWidgets('botão de template mostra snackbar de "coming soon"',
+  testWidgets('botão Single Sheet salva o template e mostra o caminho',
       (WidgetTester tester) async {
-    await _pumpScreen(tester);
+    final _FakeTemplateSaver saver = _FakeTemplateSaver()
+      ..returnPath = '/tmp/iwbf/iwbf_template_single_sheet.xlsx';
+    await _pumpScreen(tester, saveTemplate: saver.save);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Download Template — Single Sheet'));
-    await tester.pump();
+    await tester.tap(find.byKey(const Key('download-template-single-sheet')));
+    await tester.pumpAndSettle();
 
-    expect(find.textContaining('Fase 4'), findsOneWidget);
+    expect(saver.calls, hasLength(1));
+    expect(saver.calls.first.filename, 'iwbf_template_single_sheet.xlsx');
+    expect(saver.calls.first.byteCount, greaterThan(0));
+    expect(
+      find.text('Template saved to /tmp/iwbf/iwbf_template_single_sheet.xlsx'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('botão Per Team salva o template no nome correto',
+      (WidgetTester tester) async {
+    final _FakeTemplateSaver saver = _FakeTemplateSaver()
+      ..returnPath = '/tmp/iwbf/iwbf_template_per_team.xlsx';
+    await _pumpScreen(tester, saveTemplate: saver.save);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('download-template-per-team')));
+    await tester.pumpAndSettle();
+
+    expect(saver.calls, hasLength(1));
+    expect(saver.calls.first.filename, 'iwbf_template_per_team.xlsx');
+  });
+
+  testWidgets('saver retornando null não mostra mensagem de erro',
+      (WidgetTester tester) async {
+    await _pumpScreen(
+      tester,
+      saveTemplate: (String _, Uint8List __) async => null,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('download-template-single-sheet')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Template saved to'), findsNothing);
+    expect(find.textContaining('Could not save template'), findsNothing);
   });
 
   testWidgets('quando filePicker retorna null, nada acontece',

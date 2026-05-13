@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../models/match_state.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
+import '../services/template_generator_service.dart';
 import '../widgets/iwbf_logo_header.dart';
 import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
@@ -17,6 +20,15 @@ import 'validation_summary_screen.dart';
 /// que devolve bytes em memória sem tocar na plataforma.
 typedef FilePickerFn = Future<Uint8List?> Function();
 
+/// Função que salva os bytes de um template `.xlsx` em algum lugar
+/// acessível ao usuário e devolve o caminho final (ou `null` quando o
+/// usuário cancela).
+///
+/// Em produção: grava no diretório de documentos do app via
+/// `path_provider`. Nos testes, recebe um fake em memória.
+typedef TemplateSaveFn = Future<String?> Function(
+    String filename, Uint8List bytes);
+
 /// Tela inicial do app.
 ///
 /// Permite carregar uma planilha `.xlsx` e oferece restaurar a última
@@ -27,13 +39,19 @@ class LoadSpreadsheetScreen extends StatefulWidget {
     SpreadsheetParserService? parser,
     CacheService? cache,
     FilePickerFn? filePicker,
+    TemplateGeneratorService? templates,
+    TemplateSaveFn? saveTemplate,
   })  : _parser = parser,
         _cache = cache,
-        _filePicker = filePicker;
+        _filePicker = filePicker,
+        _templates = templates,
+        _saveTemplate = saveTemplate;
 
   final SpreadsheetParserService? _parser;
   final CacheService? _cache;
   final FilePickerFn? _filePicker;
+  final TemplateGeneratorService? _templates;
+  final TemplateSaveFn? _saveTemplate;
 
   @override
   State<LoadSpreadsheetScreen> createState() => _LoadSpreadsheetScreenState();
@@ -43,6 +61,8 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
   late final SpreadsheetParserService _parser;
   late final CacheService _cache;
   late final FilePickerFn _pickFile;
+  late final TemplateGeneratorService _templates;
+  late final TemplateSaveFn _saveTemplate;
 
   bool _busy = false;
   bool _hasPromptedRestore = false;
@@ -53,6 +73,8 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     _parser = widget._parser ?? SpreadsheetParserService();
     _cache = widget._cache ?? CacheService();
     _pickFile = widget._filePicker ?? _defaultFilePicker;
+    _templates = widget._templates ?? const TemplateGeneratorService();
+    _saveTemplate = widget._saveTemplate ?? _defaultSaveTemplate;
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferRestore());
   }
 
@@ -66,6 +88,14 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     final PlatformFile file = picked.files.single;
     final Uint8List? bytes = file.bytes;
     return bytes;
+  }
+
+  Future<String?> _defaultSaveTemplate(
+      String filename, Uint8List bytes) async {
+    final Directory dir = await getApplicationDocumentsDirectory();
+    final File file = File('${dir.path}/$filename');
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
   }
 
   Future<void> _maybeOfferRestore() async {
@@ -143,8 +173,22 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     }
   }
 
-  void _onDownloadTemplatePressed() {
-    _showSnack('Templates ficam disponíveis na Fase 4.');
+  Future<void> _onDownloadTemplatePressed(TemplateKind kind) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final Uint8List bytes = _templates.build(kind);
+      final String filename = _templates.filenameFor(kind);
+      final String? savedAt = await _saveTemplate(filename, bytes);
+      if (!mounted) return;
+      if (savedAt == null) return;
+      _showSnack('Template saved to $savedAt');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Could not save template: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   void _showSnack(String message) {
@@ -180,13 +224,20 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
-                onPressed: _busy ? null : _onDownloadTemplatePressed,
+                key: const Key('download-template-single-sheet'),
+                onPressed: _busy
+                    ? null
+                    : () =>
+                        _onDownloadTemplatePressed(TemplateKind.singleSheet),
                 icon: const Icon(Icons.download_outlined),
                 label: const Text('Download Template — Single Sheet'),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
-                onPressed: _busy ? null : _onDownloadTemplatePressed,
+                key: const Key('download-template-per-team'),
+                onPressed: _busy
+                    ? null
+                    : () => _onDownloadTemplatePressed(TemplateKind.perTeam),
                 icon: const Icon(Icons.download_outlined),
                 label: const Text('Download Template — One Sheet per Team'),
               ),
