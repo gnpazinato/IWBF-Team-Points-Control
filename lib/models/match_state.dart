@@ -45,7 +45,7 @@ class MatchState {
 
   void setPointLimit(double value) {
     if (!isAcceptedPointLimit(value)) {
-      throw ArgumentError('Point limit não permitido: $value');
+      throw ArgumentError('Point limit not allowed: $value');
     }
     _pointLimit = value;
   }
@@ -93,7 +93,7 @@ class MatchState {
     if (teamB.players.any((Player p) => p.id == player.id)) {
       return _selectedTeamB;
     }
-    throw ArgumentError('Jogador ${player.id} não pertence a Team A nem Team B');
+    throw ArgumentError('Player ${player.id} does not belong to Team A or Team B');
   }
 
   double _sumClasses(List<Player> players) {

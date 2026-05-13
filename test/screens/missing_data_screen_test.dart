@@ -21,7 +21,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.missingShirtNumber,
           severity: ParseIssueSeverity.error,
-          message: 'Atleta sem número de camiseta',
+          message: 'Player is missing shirt number',
           playerLabel: 'SILVA, João',
           teamName: 'Brazil',
           rowNumber: 2,
@@ -29,7 +29,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.invalidPlayerClass,
           severity: ParseIssueSeverity.error,
-          message: 'Classe funcional inválida para SOUZA, Pedro',
+          message: 'Invalid functional class for SOUZA, Pedro',
           playerLabel: 'SOUZA, Pedro',
           teamName: 'Brazil',
           rowNumber: 3,
@@ -56,7 +56,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.unknownTeam,
           severity: ParseIssueSeverity.warning,
-          message: 'Equipe não reconhecida',
+          message: 'Unknown team',
         ),
       ],
     );
@@ -73,7 +73,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.missingShirtNumber,
           severity: ParseIssueSeverity.error,
-          message: 'Atleta sem número',
+          message: 'Player is missing shirt number',
         ),
       ],
     );

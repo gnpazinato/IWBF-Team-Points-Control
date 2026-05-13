@@ -70,7 +70,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.missingShirtNumber,
           severity: ParseIssueSeverity.error,
-          message: 'Atleta sem número de camiseta',
+          message: 'Player is missing shirt number',
         ),
       ],
     );
@@ -93,7 +93,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.unknownTeam,
           severity: ParseIssueSeverity.warning,
-          message: 'Equipe não reconhecida: "Atlantis"',
+          message: 'Unknown team: "Atlantis"',
         ),
       ],
     );
@@ -112,7 +112,7 @@ void main() {
         ParseIssue(
           category: ParseIssueCategory.missingShirtNumber,
           severity: ParseIssueSeverity.error,
-          message: 'Atleta sem número de camiseta',
+          message: 'Player is missing shirt number',
           playerLabel: 'SILVA, João',
         ),
       ],

@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | Fase 4 em andamento (5/7). `TemplateGeneratorService` cria `.xlsx` exemplo (single sheet + per team) que o proprio parser do app consegue ler; botoes "Download Template — ..." na `LoadSpreadsheetScreen` agora salvam de verdade no documents dir e mostram caminho. |
-| Fase atual | Fase 4 em andamento (5/7 itens) |
-| Proximo passo recomendado | Fase 4 item 6: revisar copy em ingles em todas as telas (textos PT residuais como "Templates ficam disponiveis...", erros etc.) e padronizar mensagens. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (locais, Flutter 3.41.9 stable, apos templates baixaveis) |
-| APK gerado | Sim, debug+release via CI na PR #1 (ainda nao regenerado apos polimento; sera regenerado no item 7) |
+| Status geral | Fase 4 em andamento (6/7). Todas as mensagens de erro/warning do parser, modelos e telas estao em ingles. Comentarios dev-only e nomes de exemplo (`João`) ficam intencionalmente em PT. |
+| Fase atual | Fase 4 em andamento (6/7 itens) |
+| Proximo passo recomendado | Fase 4 item 7: validar APK release via CI (`build-apk.yml`) e documentar instalacao manual no servico cloud Android escolhido (sideload via "Install unknown apps"). |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed (locais, Flutter 3.41.9 stable, apos revisao final de copy em ingles) |
+| APK gerado | Sim, debug+release via CI na PR #1 (sera regenerado no item 7 com o polimento aplicado) |
 
 ## Ritual obrigatorio para a IA
 
@@ -146,7 +146,7 @@ Depois de implementar:
 - [x] Incluir logos, quadra e icones finais (logos: feito; quadra: feito via `court.png`; icones: feito via `PlayerJerseyIcon`).
 - [ ] Incluir bandeiras locais ou solucao equivalente.
 - [x] Criar templates baixaveis (`TemplateGeneratorService` + botoes na Load Spreadsheet).
-- [ ] Revisar textos em ingles.
+- [x] Revisar textos em ingles (mensagens do parser, alertas e telas).
 - [x] Rodar `flutter analyze` (apos tema).
 - [x] Rodar `flutter test` (apos tema).
 - [ ] Gerar APK debug no Codespace ou GitHub Actions.
@@ -522,6 +522,41 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0019 - 2026-05-13 - Fase 4 (item 6/7): revisão final de copy em inglês
+
+Resumo:
+
+- Traduzidas todas as mensagens de erro/warning do `SpreadsheetParserService` para ingles. Antes: "Colunas obrigatórias ausentes...", "Atleta sem número de camiseta", "Equipe não reconhecida", "Data de nascimento ausente ou inválida", "Classe funcional inválida para...", "Número de camiseta #X aparece Y vezes na equipe...", etc. Agora todas iniciam por verbo/substantivo institucional em ingles: "Required columns missing...", "Player is missing shirt number", "Unknown team", "Date of birth is missing or invalid", "Invalid functional class for...", "Shirt number #X appears Y times in...".
+- Mensagens institucionais de bloqueio do `parseBytes`/`parseSheets`: "Could not read .xlsx file", "Spreadsheet has no data", "Sheet has no valid header row".
+- `MatchState.setPointLimit` e `_bucketFor`: `ArgumentError` em ingles.
+- Test fixtures que passavam strings PT em `ParseIssue` (apenas como data, nao asserts) tambem atualizadas para os mesmos textos em ingles, para evitar confusao em uma futura leitura.
+
+Decisao registrada:
+
+- Comentarios de codigo (`//`, `///`) e nomes de teste em portugues continuam OK — sao dev-facing, fora da "100% em ingles" do app. So strings que cruzam para a UI estao em ingles.
+- Nomes de pessoas em dados de exemplo (`João`, `SOUZA, Pedro`) ficam em portugues — sao dados de exemplo realistas e nao texto de UI.
+
+Arquivos alterados:
+
+- `lib/services/spreadsheet_parser_service.dart` (12 mensagens traduzidas + 3 mensagens de `SpreadsheetParseResult.error` traduzidas)
+- `lib/models/match_state.dart` (2 ArgumentError traduzidos)
+- `test/screens/missing_data_screen_test.dart` (4 messages em fixtures)
+- `test/screens/validation_summary_screen_test.dart` (4 messages em fixtures)
+- `docs/AI_WORK_LOG.md`
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> No issues found.
+- `flutter test` -> 145 passed, 0 failed, 0 skipped (sem mudanca de contagem; mesmos testes, mensagens em ingles).
+
+Pendencias da Fase 4:
+
+- Item 7: APK release via CI + docs de instalacao manual + escolha do servico cloud Android.
+
+Proximo passo recomendado:
+
+- Item 7/7: confirmar que o workflow `build-apk.yml` continua verde apos o polimento, gerar APK release, e documentar no `README.md` (ou em `docs/`) como o usuario faria sideload manual num dispositivo Android cloud (passos: GitHub Actions → artifact `iwbf-release.apk` → BrowserStack/Firebase Test Lab → instalar via `adb install` ou upload no painel).
+
 ### 0018 - 2026-05-13 - Fase 4 (item 5/7): templates `.xlsx` baixáveis
 
 Resumo:
@@ -825,6 +860,8 @@ Proximo passo recomendado:
 | 2026-05-13 | `flutter test` (local) | 137 passed, 0 failed, 0 skipped | +8 novos testes do `PlayerJerseyIcon` (5 unit + 3 widget) |
 | 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos templates baixaveis (Fase 4 item 5) |
 | 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | +6 service + 3 widget; -1 antigo "snackbar coming soon" |
+| 2026-05-13 | `flutter analyze --no-fatal-infos` (local) | No issues found! | Apos revisao final de copy em ingles (Fase 4 item 6) |
+| 2026-05-13 | `flutter test` (local) | 145 passed, 0 failed, 0 skipped | Mesma cobertura; mensagens dos fixtures atualizadas |
 
 ## Pendencias e perguntas abertas
 

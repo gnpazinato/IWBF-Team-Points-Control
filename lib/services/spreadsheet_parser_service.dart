@@ -129,7 +129,7 @@ class SpreadsheetParserService {
     final List<SheetData>? sheets = _readBytes(bytes);
     if (sheets == null) {
       return SpreadsheetParseResult.error(
-        'Não foi possível ler o arquivo .xlsx',
+        'Could not read .xlsx file',
         ParseIssueCategory.fileUnreadable,
       );
     }
@@ -144,7 +144,7 @@ class SpreadsheetParserService {
 
     if (nonEmpty.isEmpty) {
       return SpreadsheetParseResult.error(
-        'Planilha sem dados',
+        'Spreadsheet has no data',
         ParseIssueCategory.emptyFile,
       );
     }
@@ -171,7 +171,7 @@ class SpreadsheetParserService {
     final _HeaderInfo? header = _readHeader(sheet);
     if (header == null) {
       return SpreadsheetParseResult.error(
-        'Aba "${sheet.name}" sem cabeçalho válido',
+        'Sheet "${sheet.name}" has no valid header row',
         ParseIssueCategory.missingRequiredColumn,
       );
     }
@@ -187,7 +187,7 @@ class SpreadsheetParserService {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingRequiredColumn,
         severity: ParseIssueSeverity.error,
-        message: 'Colunas obrigatórias ausentes: ${missing.join(", ")}',
+        message: 'Required columns missing: ${missing.join(", ")}',
         sheetName: sheet.name,
       ));
       return SpreadsheetParseResult(
@@ -210,7 +210,7 @@ class SpreadsheetParserService {
         issues.add(ParseIssue(
           category: ParseIssueCategory.missingRequiredColumn,
           severity: ParseIssueSeverity.error,
-          message: 'Linha sem team_name',
+          message: 'Row is missing team_name',
           sheetName: sheet.name,
           rowNumber: i + 1,
         ));
@@ -230,7 +230,7 @@ class SpreadsheetParserService {
           issues.add(ParseIssue(
             category: ParseIssueCategory.unknownTeam,
             severity: ParseIssueSeverity.warning,
-            message: 'Equipe não reconhecida: "$rawTeam"',
+            message: 'Unknown team: "$rawTeam"',
             sheetName: sheet.name,
             teamName: teamDisplay,
           ));
@@ -284,7 +284,7 @@ class SpreadsheetParserService {
         issues.add(ParseIssue(
           category: ParseIssueCategory.missingRequiredColumn,
           severity: ParseIssueSeverity.error,
-          message: 'Aba "${sheet.name}" sem cabeçalho válido',
+          message: 'Sheet "${sheet.name}" has no valid header row',
           sheetName: sheet.name,
         ));
         continue;
@@ -300,7 +300,7 @@ class SpreadsheetParserService {
         issues.add(ParseIssue(
           category: ParseIssueCategory.missingRequiredColumn,
           severity: ParseIssueSeverity.error,
-          message: 'Colunas obrigatórias ausentes: ${missing.join(", ")}',
+          message: 'Required columns missing: ${missing.join(", ")}',
           sheetName: sheet.name,
         ));
         continue;
@@ -325,7 +325,7 @@ class SpreadsheetParserService {
         issues.add(ParseIssue(
           category: ParseIssueCategory.unknownTeam,
           severity: ParseIssueSeverity.warning,
-          message: 'Equipe não reconhecida: "$teamName"',
+          message: 'Unknown team: "$teamName"',
           sheetName: sheet.name,
           teamName: teamDisplay,
         ));
@@ -401,7 +401,7 @@ class SpreadsheetParserService {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingPlayerName,
         severity: ParseIssueSeverity.error,
-        message: 'Atleta sem nome completo',
+        message: 'Player is missing full name (surname and first name)',
         sheetName: sheetName,
         rowNumber: rowNumber,
         teamName: teamName,
@@ -415,7 +415,7 @@ class SpreadsheetParserService {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingShirtNumber,
         severity: ParseIssueSeverity.error,
-        message: 'Atleta sem número de camiseta',
+        message: 'Player is missing shirt number',
         sheetName: sheetName,
         rowNumber: rowNumber,
         teamName: teamName,
@@ -429,7 +429,7 @@ class SpreadsheetParserService {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingPlayerClass,
         severity: ParseIssueSeverity.error,
-        message: 'Atleta sem classe funcional',
+        message: 'Player is missing functional class',
         sheetName: sheetName,
         rowNumber: rowNumber,
         teamName: teamName,
@@ -443,7 +443,7 @@ class SpreadsheetParserService {
           category: ParseIssueCategory.invalidPlayerClass,
           severity: ParseIssueSeverity.error,
           message:
-              'Classe funcional inválida para $playerLabel (valores aceitos: ${kAcceptedPlayerClasses.join(", ")})',
+              'Invalid functional class for $playerLabel (accepted values: ${kAcceptedPlayerClasses.join(", ")})',
           sheetName: sheetName,
           rowNumber: rowNumber,
           teamName: teamName,
@@ -458,7 +458,7 @@ class SpreadsheetParserService {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingDateOfBirth,
         severity: ParseIssueSeverity.error,
-        message: 'Data de nascimento ausente ou inválida',
+        message: 'Date of birth is missing or invalid',
         sheetName: sheetName,
         rowNumber: rowNumber,
         teamName: teamName,
@@ -497,7 +497,7 @@ class SpreadsheetParserService {
             category: ParseIssueCategory.duplicateShirtNumber,
             severity: ParseIssueSeverity.warning,
             message:
-                'Número de camiseta #$number aparece $n vezes na equipe ${team.teamName}',
+                'Shirt number #$number appears $n times in ${team.teamName}',
             sheetName: sheetName,
             teamName: team.teamName,
           ));
