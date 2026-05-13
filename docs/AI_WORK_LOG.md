@@ -15,11 +15,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-13 |
-| Status geral | **Fase 4 concluida (7/7) + hotfix Web.** Saver de templates agora usa conditional imports (`dart.library.io` / `dart.library.html`) para nao quebrar runtime no Flutter Web. `path_provider` so e chamado em Android/iOS/desktop; na Web o template baixa direto via `<a download>` (package:web + dart:js_interop). |
-| Fase atual | **Fase 4 fechada — preview Web ativo em github.io.** |
-| Proximo passo recomendado | Confirmar `https://gnpazinato.github.io/IWBF-Team-Points-Control/` ativo (Pages habilitado em Settings → Pages → Source: GitHub Actions). Para device fisico: baixar `iwbf-team-points-control-apk` do Actions e usar `docs/INSTALL_ANDROID.md`. |
-| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed + `flutter build web --release` ✓ (locais, Flutter 3.41.9 stable, apos hotfix Web) |
-| APK gerado | Pendente regenerar via CI apos este push (hotfix nao afeta Android). |
+| Status geral | **Fase 4 concluida (7/7) + hotfix Web + GitHub Pages destravado.** Web preview ativo em `https://gnpazinato.github.io/IWBF-Team-Points-Control/`. Runs do `deploy-web.yml` em `claude/review-and-continue-9ZK5v` passaram a verde apos remover a restricao do environment `github-pages` (que limitava deploys so a `main`). |
+| Fase atual | **Fase 4 fechada — preview Web ativo.** |
+| Proximo passo recomendado | Validar manualmente o preview Web no navegador (Mac/iPhone/iPad) seguindo o smoke test do `docs/INSTALL_ANDROID.md` (Download Template → Load → Match Setup → Lineup). Para Android: artifact `iwbf-team-points-control-apk` do workflow `Build Android APK`. |
+| Ultimos testes executados | `flutter analyze --no-fatal-infos` 0 issues + `flutter test` 145 passed + `flutter build web --release` ✓ |
+| APK gerado | Sim, via CI a cada push. Preview Web tambem publicado a cada push apos destravar env protection. |
 
 ## Ritual obrigatorio para a IA
 
@@ -521,6 +521,39 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0022 - 2026-05-13 - GitHub Pages destravado para branches `claude/*`
+
+Resumo:
+
+- Os 22 runs anteriores do `deploy-web.yml` em `claude/review-and-continue-9ZK5v` (commits 8 a 23) buildavam o Flutter Web com sucesso mas falhavam na etapa final `Deploy to GitHub Pages` com:
+  `Branch 'claude/review-and-continue-9ZK5v' is not allowed to deploy to github-pages due to environment protection rules.`
+- Causa: o environment `github-pages` no GitHub Settings vinha com "Deployment branches and tags" restrito (provavelmente `main` only, default do GH Pages).
+- Solucao: usuario foi em Settings → Environments → github-pages → "Deployment branches and tags" → mudou para **No restriction** ("Environment changes successfully saved: all branches can deploy.").
+- Apos a mudanca, runs #22 e #23 foram re-rodados e ficaram verdes. Confirma que o build Web e os assets estavam corretos desde o `tema IWBF` (Fase 4 item 1).
+- Pushei commit vazio `3b17b1d` para disparar o run #24 e confirmar que a regra funciona para novos pushes daqui em diante.
+
+Decisao registrada:
+
+- Environment protection do `github-pages` fica em "No restriction" durante o ciclo MVP — qualquer push em `claude/*` ou `main` publica. Quando o projeto for para producao real, vale revisitar para travar de novo a `main`.
+
+Arquivos alterados:
+
+- `docs/AI_WORK_LOG.md`
+- Sem mudancas de codigo.
+- Commit `3b17b1d` e empty commit para disparar workflow.
+
+Testes executados:
+
+- Nenhum local (mudanca apenas em config remoto do GitHub).
+
+Pendencias:
+
+- Nenhuma. Preview Web ja servindo `b8fa23a` em `https://gnpazinato.github.io/IWBF-Team-Points-Control/`.
+
+Proximo passo recomendado:
+
+- Smoke test manual no navegador. Quando estiver OK, abrir PR `claude/review-and-continue-9ZK5v → main` e mergear.
 
 ### 0021 - 2026-05-13 - Hotfix Web: template saver via conditional imports
 
