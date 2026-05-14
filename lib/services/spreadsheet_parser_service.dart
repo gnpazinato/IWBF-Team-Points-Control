@@ -578,16 +578,40 @@ class SpreadsheetParserService {
     }
   }
 
+  /// Conjunto de tokens reconhecidos como "indicador de gênero" no fim do
+  /// nome da equipe ou no valor da coluna `gender`. Inclui:
+  /// - inglês: `m`/`f`/`w`, `man`/`men`/`woman`/`women` com plural (`mens`),
+  ///   possessivo (`men's`), `male`/`female` com plural (`males`),
+  ///   `masculine`/`feminine`;
+  /// - português: `masculino`/`masculina`/`feminino`/`feminina`;
+  /// - espanhol: `masculino`/`masculina`/`femenino`/`femenina`;
+  /// - abreviações: `masc`/`fem`/`mas`.
+  ///
+  /// `mas` cobre o caso "MAS" maiúsculo (alguns usuários abreviam masculino
+  /// como "Mas"). Não confundir com o código IOC da Malásia, que é tratado
+  /// pelo `CountryResolverService` antes de chegar aqui — o strip só roda
+  /// quando há outro token antes do indicador.
+  static const String _genderKeywordPattern =
+      "m|f|w|"
+      "men|mens|men's|man|mans|man's|"
+      "women|womens|women's|woman|womans|woman's|"
+      "male|males|female|females|"
+      "masculine|feminine|"
+      "masculino|masculina|"
+      "feminino|feminina|"
+      "femenino|femenina|"
+      "masc|fem|mas";
+
   /// Remove sufixos comuns de gênero do nome bruto da equipe
-  /// (`"Brazil Women"` → `"Brazil"`, `"Brazil - Men"` → `"Brazil"`).
-  /// Aceita `men`, `women`, `male`, `female`, `masculino`, `feminino` e a
-  /// variação possessiva `men's`/`women's`, separadas por espaço, hífen ou
-  /// ambos. O gênero real vem do gênero dos atletas.
+  /// (`"Brazil Women"` → `"Brazil"`, `"Brazil - Men"` → `"Brazil"`,
+  /// `"Arg M"` → `"Arg"`). O separador entre país e gênero pode ser
+  /// espaço, hífen ou ambos. O gênero real do time vem da coluna `gender`
+  /// dos atletas — o strip aqui é apenas para limpar o `team_name`.
   String _stripGenderKeyword(String raw) {
     final String trimmed = raw.trim();
     if (trimmed.isEmpty) return trimmed;
     final RegExp pattern = RegExp(
-      r"(?:\s+|\s*-+\s*)(?:men'?s?|women'?s?|male|female|masculino|feminino)$",
+      "(?:\\s+|\\s*-+\\s*)(?:$_genderKeywordPattern)\$",
       caseSensitive: false,
     );
     return trimmed.replaceAll(pattern, '').trim();
@@ -640,15 +664,29 @@ class SpreadsheetParserService {
     return null;
   }
 
+  /// Conjunto de valores aceitos na coluna `gender` (case-insensitive).
+  /// Cobre EN/PT/ES + abreviações para evitar que pequenas variações de
+  /// digitação caiam em `unspecified`.
+  static const Set<String> _maleGenderTokens = <String>{
+    'm', 'male', 'males', 'man', 'men', 'mans', 'mens',
+    "man's", "men's",
+    'masculine', 'masculino', 'masculina',
+    'masc', 'mas',
+  };
+
+  static const Set<String> _femaleGenderTokens = <String>{
+    'f', 'w', 'female', 'females', 'woman', 'women', 'womans', 'womens',
+    "woman's", "women's",
+    'feminine', 'feminino', 'feminina', 'femenino', 'femenina',
+    'fem',
+  };
+
   PlayerGender _genderFromString(String? raw) {
     if (raw == null) return PlayerGender.unspecified;
     final String value = raw.trim().toLowerCase();
-    if (value == 'm' || value == 'male' || value == 'masculino') {
-      return PlayerGender.male;
-    }
-    if (value == 'f' || value == 'female' || value == 'feminino') {
-      return PlayerGender.female;
-    }
+    if (value.isEmpty) return PlayerGender.unspecified;
+    if (_maleGenderTokens.contains(value)) return PlayerGender.male;
+    if (_femaleGenderTokens.contains(value)) return PlayerGender.female;
     return PlayerGender.unspecified;
   }
 

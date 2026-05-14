@@ -350,6 +350,228 @@ void main() {
     });
   });
 
+  group('SpreadsheetParserService - variantes de genero (entrada 0030)', () {
+    final SpreadsheetParserService parser = SpreadsheetParserService();
+
+    /// Helper que monta uma planilha single-sheet com um time + um atleta,
+    /// usando os valores fornecidos para `team_name` e `gender`. Verifica
+    /// que o nome canonico do time vira "Argentina" e o gênero vira o
+    /// esperado.
+    void _expectArgentinaTeam({
+      required String rawTeamName,
+      required String rawGender,
+      required TeamGender expectedGender,
+      required String expectedDisplayName,
+    }) {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>[
+          rawTeamName, '7', 'Lopez', 'Diego', '2.5', '1998-01-02', rawGender,
+        ]),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: 'team_name="$rawTeamName" gender="$rawGender": '
+              '${result.issues}');
+      expect(result.teams, hasLength(1),
+          reason: 'team_name="$rawTeamName" gender="$rawGender"');
+      expect(result.teams.first.teamName, equals('Argentina'),
+          reason: 'team_name="$rawTeamName"');
+      expect(result.teams.first.gender, equals(expectedGender),
+          reason: 'gender="$rawGender"');
+      expect(result.teams.first.displayName, equals(expectedDisplayName),
+          reason: 'team_name="$rawTeamName" gender="$rawGender"');
+    }
+
+    test('strip aceita M, Men, Mens, Mans, Man, Male, Masc, Masculino', () {
+      const List<String> maleSuffixes = <String>[
+        'Argentina M',
+        'Argentina Men',
+        'Argentina Mens',
+        "Argentina Men's",
+        'Argentina Man',
+        'Argentina Mans',
+        'Argentina Male',
+        'Argentina Males',
+        'Argentina Masculine',
+        'Argentina Masculino',
+        'Argentina Masculina',
+        'Argentina Masc',
+        'Argentina MAS',
+      ];
+      for (final String teamName in maleSuffixes) {
+        _expectArgentinaTeam(
+          rawTeamName: teamName,
+          rawGender: 'male',
+          expectedGender: TeamGender.men,
+          expectedDisplayName: 'Argentina - Men',
+        );
+      }
+    });
+
+    test('strip aceita F, W, Women, Woman, Femenino, Feminino, Fem', () {
+      const List<String> femaleSuffixes = <String>[
+        'Argentina F',
+        'Argentina W',
+        'Argentina Women',
+        'Argentina Womens',
+        "Argentina Women's",
+        'Argentina Woman',
+        'Argentina Womans',
+        'Argentina Female',
+        'Argentina Females',
+        'Argentina Feminine',
+        'Argentina Feminino',
+        'Argentina Feminina',
+        'Argentina Femenino',
+        'Argentina Femenina',
+        'Argentina Fem',
+      ];
+      for (final String teamName in femaleSuffixes) {
+        _expectArgentinaTeam(
+          rawTeamName: teamName,
+          rawGender: 'female',
+          expectedGender: TeamGender.women,
+          expectedDisplayName: 'Argentina - Women',
+        );
+      }
+    });
+
+    test('strip + alias 3 letras: "Arg Man", "ARG Mens", "ARG F"', () {
+      _expectArgentinaTeam(
+        rawTeamName: 'Arg Man',
+        rawGender: 'male',
+        expectedGender: TeamGender.men,
+        expectedDisplayName: 'Argentina - Men',
+      );
+      _expectArgentinaTeam(
+        rawTeamName: 'ARG Mens',
+        rawGender: 'male',
+        expectedGender: TeamGender.men,
+        expectedDisplayName: 'Argentina - Men',
+      );
+      _expectArgentinaTeam(
+        rawTeamName: 'ARG F',
+        rawGender: 'female',
+        expectedGender: TeamGender.women,
+        expectedDisplayName: 'Argentina - Women',
+      );
+    });
+
+    test('separador hifen funciona com qualquer variante: "Arg - M"', () {
+      _expectArgentinaTeam(
+        rawTeamName: 'Arg - M',
+        rawGender: 'male',
+        expectedGender: TeamGender.men,
+        expectedDisplayName: 'Argentina - Men',
+      );
+      _expectArgentinaTeam(
+        rawTeamName: 'Argentina-W',
+        rawGender: 'female',
+        expectedGender: TeamGender.women,
+        expectedDisplayName: 'Argentina - Women',
+      );
+    });
+
+    test('coluna gender aceita variantes: Mens, Masc, Woman, Femenino', () {
+      // gender column vinda como "Mens" (plural) ou "Masc" deve cair em male.
+      _expectArgentinaTeam(
+        rawTeamName: 'Argentina',
+        rawGender: 'Mens',
+        expectedGender: TeamGender.men,
+        expectedDisplayName: 'Argentina - Men',
+      );
+      _expectArgentinaTeam(
+        rawTeamName: 'Argentina',
+        rawGender: 'Masc',
+        expectedGender: TeamGender.men,
+        expectedDisplayName: 'Argentina - Men',
+      );
+      _expectArgentinaTeam(
+        rawTeamName: 'Argentina',
+        rawGender: 'Woman',
+        expectedGender: TeamGender.women,
+        expectedDisplayName: 'Argentina - Women',
+      );
+      _expectArgentinaTeam(
+        rawTeamName: 'Argentina',
+        rawGender: 'Femenino',
+        expectedGender: TeamGender.women,
+        expectedDisplayName: 'Argentina - Women',
+      );
+    });
+
+    test(
+        'USA com nome longo + variantes de genero: '
+        '"United States America Men", "USA M", "US Fem"', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>[
+          'United States America Men', '4', 'Smith', 'John', '2.0',
+          '1995-01-01', 'male',
+        ]),
+        _row(<String?>[
+          'USA M', '5', 'Davis', 'Mike', '3.0', '1996-02-02', 'm',
+        ]),
+        _row(<String?>[
+          'US Fem', '6', 'Jones', 'Lisa', '1.5', '1997-03-03', 'female',
+        ]),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      // 3 atletas, 2 times (USA Men com 2, USA Women com 1).
+      expect(result.teams, hasLength(2));
+      final Team men = result.teams.firstWhere(
+          (Team t) => t.gender == TeamGender.men);
+      final Team women = result.teams.firstWhere(
+          (Team t) => t.gender == TeamGender.women);
+      expect(men.displayName, equals('United States of America - Men'));
+      expect(women.displayName, equals('United States of America - Women'));
+      expect(men.players, hasLength(2));
+      expect(women.players, hasLength(1));
+    });
+
+    test('strip NAO ataca o nome quando nao ha separador antes do keyword',
+        () {
+      // "ArgM" nao tem espaco antes de "M". Deve ficar literal e o
+      // resolver vai cair em fallback (nome desconhecido).
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>[
+          'ArgM', '7', 'Lopez', 'Diego', '2.5', '1998-01-02', 'male',
+        ]),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      // Nome literal "ArgM" — nao bate com nenhum alias. Deve gerar warning
+      // unknownTeam (mas nao bloqueante).
+      final List<ParseIssue> unknowns = result.issues
+          .where((ParseIssue i) =>
+              i.category == ParseIssueCategory.unknownTeam)
+          .toList();
+      expect(unknowns, hasLength(1));
+      expect(result.teams.first.teamName, equals('ArgM'));
+    });
+  });
+
   group('SpreadsheetParserService - regressao Chile (entrada 0029)', () {
     final SpreadsheetParserService parser = SpreadsheetParserService();
 

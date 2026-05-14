@@ -43,8 +43,21 @@ void main() {
           equals('United States of America'));
       expect(resolver.resolveCanonical('United States of America'),
           equals('United States of America'));
+      expect(resolver.resolveCanonical('United States America'),
+          equals('United States of America'));
       expect(resolver.resolveCanonical('Estados Unidos'),
           equals('United States of America'));
+      expect(resolver.resolveCanonical('EUA'),
+          equals('United States of America'));
+    });
+
+    test('reconhece outros aliases comuns adicionados na entrada 0030', () {
+      expect(resolver.resolveCanonical('PRC'), equals('China'));
+      expect(resolver.resolveCanonical('IRI'), equals('Iran'));
+      expect(resolver.resolveCanonical('Korea Republic'),
+          equals('South Korea'));
+      expect(resolver.resolveCanonical('GB'), equals('Great Britain'));
+      expect(resolver.resolveCanonical('Britain'), equals('Great Britain'));
     });
 
     test('reconhece variantes da China', () {

@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — quinta rodada: Chile na lista oficial, cobertura IWBF expandida, displayName com hifen, dialog Men vs Women.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025+0026+0027+0028+0029 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy (Chile sem warning, dropdown mostrando `Brazil - Men`, dialogo Men vs Women). |
+| Status geral | **Fase 5 — sexta rodada: variantes de genero (M/F/W/Man/Mens/Masc/Femenino...) + aliases extras (USA "United States America", PRC, IRI, GB, Korea Republic) aceitos no parser.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0030 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario com planilha contendo variantes mistas (ex.: "Arg Men", "USA F", "Argentina Masculino"). |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
@@ -547,6 +547,65 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0030 - 2026-05-14 - Fase 5 - sexta rodada: variantes de genero amplas + aliases extras (USA, PRC, IRI, GB)
+
+Resumo:
+
+- Usuario perguntou se a planilha aceita formas como `"Argentina M"`, `"Argentina Man"`, `"Arg Mans"` e variacoes longas/curtas para USA (`"United States"`, `"United States America"`, `"USA"`, `"US"`...). Pre-checagem mostrou que a rodada anterior (0029) ja cobria `Men`/`Mens`/`Men's`/`Male`/`Female`/`Masculino`/`Feminino` no strip, mas faltavam:
+  - letras unicas `M`/`F`/`W`;
+  - singular `Man`/`Woman` + plurals nao-possessivos `Mans`/`Womans`;
+  - abreviacoes `Masc`/`Fem`/`Mas`;
+  - variantes EN/ES/PT: `Masculine`/`Masculina`/`Feminine`/`Feminina`/`Femenino`/`Femenina`;
+  - USA sem o "of": `"United States America"`;
+  - aliases extras: `PRC` (China), `IRI` (Iran, codigo IOC), `Korea Republic`, `GB`, `Britain`.
+
+**Mudancas no `SpreadsheetParserService`:**
+
+- Constante nova `_genderKeywordPattern` agrupando todos os tokens aceitos. Documenta EN/PT/ES + abreviacoes. Compartilhada entre o strip e o gender column parser para nao divergir.
+- `_stripGenderKeyword` agora usa a constante na regex `(?:\s+|\s*-+\s*)(?:<pattern>)$`. Continua exigindo separador (espaco ou hifen) antes do keyword — entao `"ArgM"` (sem separador) nao e tocado e cai como nome desconhecido.
+- `_genderFromString` (gender column) trocou os ifs hard-coded por dois `Set<String>` (`_maleGenderTokens`, `_femaleGenderTokens`) com a mesma cobertura.
+- Tokens reconhecidos:
+  - **Male**: `m`, `male`, `males`, `man`, `men`, `mans`, `mens`, `man's`, `men's`, `masculine`, `masculino`, `masculina`, `masc`, `mas`.
+  - **Female**: `f`, `w`, `female`, `females`, `woman`, `women`, `womans`, `womens`, `woman's`, `women's`, `feminine`, `feminino`, `feminina`, `femenino`, `femenina`, `fem`.
+
+**Mudancas no `CountryResolverService`:**
+
+- USA: `"united states america"` (sem o "of"), `"estados unidos de america"`, `"eua"` (abreviacao PT).
+- China: `"prc"`.
+- Iran: `"iri"` (codigo IOC, complemento ao IRN do ISO).
+- South Korea: `"korea republic"` (inversao de `"republic of korea"`).
+- Great Britain: `"gb"`, `"britain"`.
+
+Edge case considerado:
+- O codigo IOC `MAS` (Malaysia) coincide com o token `mas` para masculino, **mas so no `_genderFromString` que le a coluna `gender` por atleta**. O `CountryResolverService` ja resolve `MAS` para Malaysia antes — `_stripGenderKeyword` so e chamado no `team_name`, nao no codigo da coluna gender. Sem cruzamento real.
+
+Arquivos alterados:
+
+- `lib/services/spreadsheet_parser_service.dart` — `_genderKeywordPattern`, `_maleGenderTokens`/`_femaleGenderTokens`, regex do `_stripGenderKeyword` reescrita, `_genderFromString` simplificado via Set lookup.
+- `lib/services/country_resolver_service.dart` — aliases extras para USA, China, Iran, South Korea, Great Britain.
+- `test/services/country_resolver_service_test.dart` — assertion nova `"United States America"`, `"EUA"`; teste agrupando `PRC`, `IRI`, `Korea Republic`, `GB`, `Britain`.
+- `test/services/spreadsheet_parser_service_test.dart` — grupo novo `"variantes de genero (entrada 0030)"`:
+  - 13 sufixos male validados (`Argentina M`, `Argentina Men`, `Argentina Mens`, `Argentina Men's`, `Argentina Man`, `Argentina Mans`, `Argentina Male`, `Argentina Males`, `Argentina Masculine`, `Argentina Masculino`, `Argentina Masculina`, `Argentina Masc`, `Argentina MAS`).
+  - 15 sufixos female validados (`Argentina F`, `Argentina W`, `Argentina Women`, `Argentina Womens`, `Argentina Women's`, `Argentina Woman`, `Argentina Womans`, `Argentina Female`, `Argentina Females`, `Argentina Feminine`, `Argentina Feminino`, `Argentina Feminina`, `Argentina Femenino`, `Argentina Femenina`, `Argentina Fem`).
+  - Combinacoes `Arg Man`, `ARG Mens`, `ARG F`.
+  - Hifen com keyword curto: `Arg - M`, `Argentina-W`.
+  - Gender column aceita `Mens`, `Masc`, `Woman`, `Femenino`.
+  - Caso longo USA: planilha com `United States America Men`, `USA M`, `US Fem` produz 2 times (`USA - Men` com 2 atletas, `USA - Women` com 1).
+  - Negativo: `ArgM` (sem separador) NAO e stripado — fica literal e gera warning unknownTeam.
+- `docs/AI_WORK_LOG.md` — esta entrada + tabela de estado.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI valida no push.
+
+Pendencias / smoke test:
+
+- Usuario validar com uma planilha real misturando variantes (algumas linhas com `team_name = "Argentina Masculino"`, outras com `team_name = "Argentina"` + gender column `MASC`).
+
+Proximo passo recomendado:
+
+- Aguardar feedback do usuario. Se a cobertura ainda nao for suficiente, ampliar Sets/Regex sem refatorar o parser.
 
 ### 0029 - 2026-05-14 - Fase 5 - quinta rodada: Chile + cobertura IWBF, displayName com hifen, dialog Men vs Women
 
