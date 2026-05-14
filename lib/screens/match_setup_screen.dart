@@ -51,10 +51,20 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
 
   List<Team> get _availableTeams {
     final List<Team>? raw = widget.teams;
-    if (raw != null) return raw;
-    final MatchState? r = widget.restored;
-    if (r != null) return <Team>[r.teamA, r.teamB];
-    return const <Team>[];
+    final List<Team> source;
+    if (raw != null) {
+      source = raw;
+    } else {
+      final MatchState? r = widget.restored;
+      if (r != null) {
+        source = <Team>[r.teamA, r.teamB];
+      } else {
+        return const <Team>[];
+      }
+    }
+    return <Team>[...source]
+      ..sort((Team a, Team b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
   }
 
   String? get _competitionName =>

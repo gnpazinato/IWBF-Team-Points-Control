@@ -2,11 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../theme/iwbf_theme.dart';
 
-/// Logo IWBF na versão branca (pensada para fundos escuros).
+/// Logo IWBF vertical na versão branca (pensada para fundos escuros).
 const String kIwbfLogoWhiteAsset = 'assets/images/iwbf-logo-white.png';
 
-/// Logo IWBF na versão preta/escura (pensada para fundos claros).
+/// Logo IWBF vertical na versão preta/escura (pensada para fundos claros).
+/// Usada no [IwbfBrandHeader] da home, onde há espaço vertical.
 const String kIwbfLogoBlackAsset = 'assets/images/iwbf-logo-black.png';
+
+/// Logo IWBF horizontal preta/escura para `AppBar` (faixa baixa).
+///
+/// Aspect ratio ~1.89:1 — em barras pequenas (32-40dp de altura) renderiza
+/// muito mais nítida que a vertical, porque aproveita a largura natural
+/// do espaço disponível em vez de "encolher" o logo vertical até virar
+/// um borrão.
+const String kIwbfLogoHorizontalBlackAsset =
+    'assets/images/iwbf-logo-horizontal-black.png';
 
 /// Cabeçalho institucional usado na home (`LoadSpreadsheetScreen`).
 ///
@@ -68,9 +78,11 @@ class IwbfBrandHeader extends StatelessWidget {
   }
 }
 
-/// Título compacto para `AppBar` — logo pequeno + texto.
+/// Título compacto para `AppBar` — logo horizontal IWBF + texto.
 ///
 /// Usar como `appBar: AppBar(title: const IwbfAppBarTitle(text: '...'))`.
+/// Combinado com `centerTitle: true` (definido no `iwbf_theme`), fica
+/// centralizado horizontalmente no AppBar.
 class IwbfAppBarTitle extends StatelessWidget {
   const IwbfAppBarTitle({super.key, required this.text});
 
@@ -83,10 +95,11 @@ class IwbfAppBarTitle extends StatelessWidget {
       children: <Widget>[
         SizedBox(
           key: const Key('iwbf-appbar-logo'),
-          height: 32,
+          height: 28,
           child: Image.asset(
-            kIwbfLogoBlackAsset,
+            kIwbfLogoHorizontalBlackAsset,
             fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
             semanticLabel: 'IWBF logo',
           ),
         ),

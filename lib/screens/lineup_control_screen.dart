@@ -243,50 +243,55 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? titleStyle = Theme.of(context).textTheme.titleMedium;
+    final TextStyle teamStyle = Theme.of(context)
+            .textTheme
+            .titleSmall
+            ?.copyWith(fontWeight: FontWeight.w700) ??
+        const TextStyle(fontWeight: FontWeight.w700);
     final String? compName = state.competitionName;
     return Material(
       color: IwbfColors.offWhiteElevated,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             if (compName != null && compName.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: 2),
                 child: Text(
                   compName,
-                  style: titleStyle,
+                  style: teamStyle,
                   textAlign: TextAlign.center,
                 ),
               ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                CountryFlag(rawName: state.teamA.teamName, size: 18),
-                const SizedBox(width: 6),
+                CountryFlag(rawName: state.teamA.teamName, size: 16),
+                const SizedBox(width: 4),
                 Flexible(
                   child: Text(
                     state.teamA.displayName,
-                    style: titleStyle,
+                    style: teamStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text('  vs  ', style: titleStyle),
+                Text('  vs  ', style: teamStyle),
                 Flexible(
                   child: Text(
                     state.teamB.displayName,
-                    style: titleStyle,
+                    style: teamStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 6),
-                CountryFlag(rawName: state.teamB.teamName, size: 18),
+                const SizedBox(width: 4),
+                CountryFlag(rawName: state.teamB.teamName, size: 16),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Expanded(
                   child: _ScoreCell(
@@ -308,15 +313,21 @@ class _Header extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                const Text('Point Limit:'),
-                const SizedBox(width: 8),
+                const Text('Point Limit:', style: TextStyle(fontSize: 13)),
+                const SizedBox(width: 6),
                 DropdownButton<double>(
                   key: const Key('lineup-point-limit-dropdown'),
                   value: state.pointLimit,
+                  isDense: true,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: IwbfColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                   items: kAcceptedPointLimits
                       .map(
                         (double v) => DropdownMenuItem<double>(
@@ -359,34 +370,49 @@ class _ScoreCell extends StatelessWidget {
         isOver ? IwbfColors.alertRed : IwbfColors.textPrimary;
     return Container(
       key: Key(keyName),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: isOver ? IwbfColors.alertRedSurface : Colors.transparent,
         border: Border.all(
           color: isOver ? IwbfColors.alertRed : Colors.black12,
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
           Text(
             '${total.toStringAsFixed(1)} / ${limit.toStringAsFixed(1)}',
             style: TextStyle(
               color: textColor,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
             ),
           ),
-          if (isOver)
-            const Text(
-              'Point limit exceeded.',
-              style: TextStyle(
-                color: IwbfColors.alertRed,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          // Espaço fixo reservado pro alerta — mantém os dois boxes com a
+          // mesma altura mesmo quando só um time estoura o limite.
+          SizedBox(
+            height: 14,
+            child: isOver
+                ? const Text(
+                    'Point limit exceeded.',
+                    style: TextStyle(
+                      color: IwbfColors.alertRed,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  )
+                : null,
+          ),
         ],
       ),
     );
@@ -496,19 +522,24 @@ class _TeamPlayerList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 4),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              CountryFlag(rawName: team.teamName, size: 18),
-              const SizedBox(width: 6),
-              Expanded(
+              CountryFlag(rawName: team.teamName, size: 16),
+              const SizedBox(width: 4),
+              Flexible(
                 child: Text(
                   team.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
@@ -544,11 +575,11 @@ class _PlayerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Material(
         color: selected ? cs.primaryContainer : Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           side: BorderSide(
             color: selected ? cs.primary : Colors.black12,
           ),
@@ -556,27 +587,32 @@ class _PlayerCard extends StatelessWidget {
         child: InkWell(
           key: Key('player-card-${player.id}'),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           child: Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             child: Row(
               children: <Widget>[
                 PlayerJerseyIcon(
                   player: player,
                   isTeamA: isTeamA,
-                  size: 36,
+                  size: 26,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     player.displayName,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
                 Text(
                   player.playerClass.toStringAsFixed(1),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

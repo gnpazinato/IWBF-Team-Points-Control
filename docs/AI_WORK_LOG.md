@@ -14,11 +14,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Data da ultima atualizacao | 2026-05-13 |
-| Status geral | **Fase 5 — 4 itens entregues em 1 sessao (logo, jerseys, templates, bandeiras, chip da quadra).** Aguarda nova rodada de teste manual no preview Web. |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — itens 1-4 da entrada 0023 entregues.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Se aparecerem ajustes novos, abrir nova sessao com os detalhes. |
-| Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI deve rodar `flutter analyze` + `flutter test` + `flutter build web` no push. Mudancas em testes pre-existentes foram feitas para acompanhar as mudancas estruturais (header agora monta nome+bandeira em widgets separados; chip da quadra usa `PlayerJerseyIcon`). |
+| Data da ultima atualizacao | 2026-05-14 |
+| Status geral | **Fase 5 — segunda rodada de ajustes pos-teste do usuario: jersey virou vetor, logo horizontal no AppBar, court sem estrela, ordenacao alfabetica, expansao por equipe na summary, layout compacto pra caber 12 jogadores.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. |
+| Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
 ## Ritual obrigatorio para a IA
@@ -521,6 +521,66 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0025 - 2026-05-14 - Fase 5 - segunda rodada de ajustes pos-teste
+
+Resumo:
+
+- Usuario testou o preview Web e reportou multiplos ajustes em sequencia. Resolvi todos em uma sessao.
+
+Itens:
+
+1. **Centralizar nome da competicao + AppBar.** Texto da competicao no header agora usa `textAlign: TextAlign.center`. `centerTitle: true` foi setado globalmente no `AppBarTheme` do `iwbf_theme`, centralizando o logo + texto em todas as telas.
+
+2. **Logo IWBF na versao horizontal.** Usuario forneceu `Horizontal IWBF Logo Coloured Black.png` via Drive. Salvo como `assets/images/iwbf-logo-horizontal-black.png`. `IwbfAppBarTitle` agora usa a versao horizontal (aspect ratio ~1.89:1) com `FilterQuality.high` — renderiza muito mais nitida no AppBar do que a vertical encolhida. `IwbfBrandHeader` (home) continua com a vertical, onde tem espaco. Constante `kIwbfLogoHorizontalBlackAsset` adicionada.
+
+3. **Nova quadra sem estrela.** Usuario forneceu novo `court.png` via Drive. Substituido o anterior (1716x917, sem o canto-estrela que estava antes).
+
+4. **Player icon vetorial (CustomPainter).** Decisao do usuario apos ver os PNGs antigos com muito detalhe e numero ilegivel. `PlayerJerseyIcon` reescrita como `CustomPainter` desenhando uma camiseta tank-top (decote em V, alcas, A-line) com numero grande no peito. Branco com numero preto pro Team A; preto com numero branco pro Team B; borda dourada IWBF. Nitida em qualquer tamanho, sem PNG.
+
+5. **PNGs de cadeira-de-rodas removidos.** `team-a/b-men/women.png` deletados (eram ~85-95KB cada, agora 0 — alem do icone vetorial ser superior).
+
+6. **Score boxes Team A/Team B com mesma altura.** Antes, quando uma equipe estourava o limite, sua box ficava mais alta (tinha texto "Point limit exceeded." extra). Agora cada `_ScoreCell` reserva sempre `SizedBox(height: 14)` pro texto de alerta — ele aparece dentro quando estoura, fica vazio quando nao. Resultado: os dois boxes sempre tem altura identica.
+
+7. **Ordem alfabetica em todas as listas de equipes.** `ValidationSummaryScreen._teamTiles` e `MatchSetupScreen._availableTeams` agora ordenam por `team.displayName` case-insensitive. Argentina vem antes de Brazil, Brazil antes de Canada, etc.
+
+8. **Expansao por equipe na Summary.** Cada card de equipe em "Teams found" agora e um `ExpansionTile`. Ao clicar, abre lista de jogadores ordenada por numero da camiseta com `#NUMERO  SURNAME, FirstName` + `DOB DD/MM/YYYY  •  Class X.Y`. Helper `_formatDob` formata datas.
+
+9. **Layout compacto pra mostrar 12 jogadores.** Usuario reportou que so 9 jogadores apareciam em retrato (uso principal). Tudo apertado:
+   - `_Header`: padding 12→8/6, `titleMedium`→`titleSmall`, `flag size 18→16`, `Point Limit` em isDense + fontSize 14, spacing entre rows reduzido.
+   - `_ScoreCell`: padding 8→6/4, fontSize 20→18, label fontSize 12, alert reservado em 14dp.
+   - `_TeamPlayerList`: padding 8→6/4, header bottom 8→4, **centralizado** (mainAxisAlignment.center, antes era Expanded esquerda), flag 18→16, fontSize 13.
+   - `_PlayerCard`: outer padding vertical 2→1, inner 12/8→6/3, icon 36→26, fontSize 12, maxLines: 1.
+   - Resultado estimado: ~36dp por card vs ~56dp antes. Cabem 12 cards com folga em portrait ~800dp.
+
+Arquivos alterados:
+
+- `assets/images/iwbf-logo-horizontal-black.png` (novo, ~108KB).
+- `assets/images/court.png` (substituido — nova quadra sem estrela).
+- `assets/images/team-a-men.png`, `team-a-women.png`, `team-b-men.png`, `team-b-women.png` **REMOVIDOS** (PNG antigos nao usados mais).
+- `lib/widgets/iwbf_logo_header.dart` (constante `kIwbfLogoHorizontalBlackAsset`, `IwbfAppBarTitle` usa horizontal).
+- `lib/widgets/player_jersey_icon.dart` (reescrita completa — agora `CustomPainter` vetorial).
+- `lib/theme/iwbf_theme.dart` (`centerTitle: true`).
+- `lib/screens/lineup_control_screen.dart` (header centralizado/compactado, score boxes c/ altura fixa, team header centralizado, player cards compactos, court chip ja usa `PlayerJerseyIcon`).
+- `lib/screens/match_setup_screen.dart` (ordenacao alfabetica via `_availableTeams`).
+- `lib/screens/validation_summary_screen.dart` (ordenacao alfabetica, `ExpansionTile` por equipe, lista de jogadores ordenada por shirt).
+- `test/widgets/player_jersey_icon_test.dart` (reescrito — testes de `resolveJerseyAsset` removidos, novos testes pro icone vetorial).
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI no push.
+
+Pendencias:
+
+- Validar visualmente no preview Web pos-deploy:
+  - 12 jogadores cabendo na tela em portrait;
+  - icones vetoriais nitidos em qualquer DPR;
+  - score boxes alinhadas em ambos os estados;
+  - alfabetacao funcionando.
+
+Proximo passo recomendado:
+
+- Smoke test no preview Web. Eventuais novos ajustes em uma rodada nova.
 
 ### 0024 - 2026-05-13 - Fase 5 (itens 2 a 5): templates, jerseys limpos, bandeiras Unicode, chip da quadra com icone
 

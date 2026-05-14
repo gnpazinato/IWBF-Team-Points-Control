@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/player.dart';
 import '../models/team.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
@@ -109,6 +110,9 @@ class ValidationSummaryScreen extends StatelessWidget {
 
   List<Widget> _teamTiles() {
     if (result.teams.isEmpty) return const <Widget>[];
+    final List<Team> sorted = <Team>[...result.teams]
+      ..sort((Team a, Team b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     return <Widget>[
       const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
@@ -117,15 +121,58 @@ class ValidationSummaryScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
       ),
-      ...result.teams.map((Team team) => Card(
-            child: ListTile(
+      ...sorted.map((Team team) => Card(
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              key: Key('team-tile-${team.id}'),
               leading: CountryFlag(rawName: team.teamName, size: 24),
               title: Text(team.displayName),
               subtitle:
                   Text('${team.players.length} player(s) imported'),
+              children: _playerRows(team),
             ),
           )),
     ];
+  }
+
+  List<Widget> _playerRows(Team team) {
+    if (team.players.isEmpty) {
+      return const <Widget>[
+        Padding(
+          padding: EdgeInsets.all(12),
+          child: Text('No players imported for this team.'),
+        ),
+      ];
+    }
+    final List<Player> sorted = <Player>[...team.players]
+      ..sort((Player a, Player b) =>
+          a.shirtNumber.compareTo(b.shirtNumber));
+    return <Widget>[
+      const Divider(height: 1),
+      for (final Player p in sorted)
+        ListTile(
+          dense: true,
+          leading: SizedBox(
+            width: 36,
+            child: Text(
+              '#${p.shirtNumber}',
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          title: Text(p.displayName),
+          subtitle: Text(
+            'DOB ${_formatDob(p.dateOfBirth)}  •  Class ${p.playerClass.toStringAsFixed(1)}',
+          ),
+        ),
+    ];
+  }
+
+  static String _formatDob(DateTime? dob) {
+    if (dob == null) return '—';
+    final String day = dob.day.toString().padLeft(2, '0');
+    final String month = dob.month.toString().padLeft(2, '0');
+    return '$day/$month/${dob.year}';
   }
 
   Future<void> _openMissingData(BuildContext context) async {

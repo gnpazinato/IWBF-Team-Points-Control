@@ -19,45 +19,8 @@ Player _player({
     );
 
 void main() {
-  group('resolveJerseyAsset', () {
-    test('Team A masculino', () {
-      expect(
-        resolveJerseyAsset(isTeamA: true, gender: PlayerGender.male),
-        kTeamAMenAsset,
-      );
-    });
-    test('Team A feminino', () {
-      expect(
-        resolveJerseyAsset(isTeamA: true, gender: PlayerGender.female),
-        kTeamAWomenAsset,
-      );
-    });
-    test('Team B masculino', () {
-      expect(
-        resolveJerseyAsset(isTeamA: false, gender: PlayerGender.male),
-        kTeamBMenAsset,
-      );
-    });
-    test('Team B feminino', () {
-      expect(
-        resolveJerseyAsset(isTeamA: false, gender: PlayerGender.female),
-        kTeamBWomenAsset,
-      );
-    });
-    test('gender unspecified cai no masculino (default da equipe)', () {
-      expect(
-        resolveJerseyAsset(isTeamA: true, gender: PlayerGender.unspecified),
-        kTeamAMenAsset,
-      );
-      expect(
-        resolveJerseyAsset(isTeamA: false, gender: PlayerGender.unspecified),
-        kTeamBMenAsset,
-      );
-    });
-  });
-
-  group('PlayerJerseyIcon', () {
-    testWidgets('exibe número da camiseta sobre o ícone',
+  group('PlayerJerseyIcon (vetor)', () {
+    testWidgets('exibe o numero da camiseta sobre o desenho',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -73,47 +36,71 @@ void main() {
       );
 
       expect(find.text('12'), findsOneWidget);
-      expect(find.byType(Image), findsOneWidget);
+      expect(find.byType(CustomPaint), findsWidgets);
     });
 
-    testWidgets('usa asset masculino para gender unspecified',
+    testWidgets('renderiza numero diferente quando o shirtNumber muda',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: <Widget>[
+                PlayerJerseyIcon(player: _player(shirt: 4), isTeamA: true),
+                PlayerJerseyIcon(player: _player(shirt: 23), isTeamA: false),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('4'), findsOneWidget);
+      expect(find.text('23'), findsOneWidget);
+    });
+
+    testWidgets('numero usa cor escura no Team A (camiseta clara)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PlayerJerseyIcon(player: _player(shirt: 9), isTeamA: true),
+          ),
+        ),
+      );
+
+      final Text text = tester.widget(find.text('9'));
+      // No Team A o texto deve ser escuro (preto/textPrimary).
+      expect(text.style?.color, isNot(equals(Colors.white)));
+    });
+
+    testWidgets('numero usa cor branca no Team B (camiseta escura)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PlayerJerseyIcon(player: _player(shirt: 9), isTeamA: false),
+          ),
+        ),
+      );
+
+      final Text text = tester.widget(find.text('9'));
+      expect(text.style?.color, equals(Colors.white));
+    });
+
+    testWidgets('o desenho nao depende de PNG (zero Image widgets)',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: PlayerJerseyIcon(
               player: _player(),
-              isTeamA: false,
-            ),
-          ),
-        ),
-      );
-
-      final Image image = tester.widget(find.byType(Image));
-      expect(
-        (image.image as AssetImage).assetName,
-        kTeamBMenAsset,
-      );
-    });
-
-    testWidgets('usa asset feminino quando gender = female',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerJerseyIcon(
-              player: _player(gender: PlayerGender.female),
               isTeamA: true,
             ),
           ),
         ),
       );
 
-      final Image image = tester.widget(find.byType(Image));
-      expect(
-        (image.image as AssetImage).assetName,
-        kTeamAWomenAsset,
-      );
+      expect(find.byType(Image), findsNothing);
     });
   });
 }
