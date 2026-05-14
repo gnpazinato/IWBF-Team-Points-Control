@@ -579,14 +579,15 @@ class SpreadsheetParserService {
   }
 
   /// Remove sufixos comuns de gênero do nome bruto da equipe
-  /// (`"Brazil Women"` → `"Brazil"`). Aceita `men`, `women`, `male`,
-  /// `female`, `masculino`, `feminino` e a variação possessiva `men's`/
-  /// `women's`. O gênero real vem do gênero dos atletas.
+  /// (`"Brazil Women"` → `"Brazil"`, `"Brazil - Men"` → `"Brazil"`).
+  /// Aceita `men`, `women`, `male`, `female`, `masculino`, `feminino` e a
+  /// variação possessiva `men's`/`women's`, separadas por espaço, hífen ou
+  /// ambos. O gênero real vem do gênero dos atletas.
   String _stripGenderKeyword(String raw) {
     final String trimmed = raw.trim();
     if (trimmed.isEmpty) return trimmed;
     final RegExp pattern = RegExp(
-      r"\s+(?:men'?s?|women'?s?|male|female|masculino|feminino)$",
+      r"(?:\s+|\s*-+\s*)(?:men'?s?|women'?s?|male|female|masculino|feminino)$",
       caseSensitive: false,
     );
     return trimmed.replaceAll(pattern, '').trim();

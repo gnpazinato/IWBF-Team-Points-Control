@@ -63,6 +63,49 @@ void main() {
           equals('Great Britain'));
     });
 
+    test('reconhece Chile (regressao do bug "unknown team: Chile")', () {
+      expect(resolver.resolveCanonical('Chile'), equals('Chile'));
+      expect(resolver.resolveCanonical('chile'), equals('Chile'));
+      expect(resolver.resolveCanonical('CHI'), equals('Chile'));
+      expect(resolver.resolveCanonical('CHL'), equals('Chile'));
+      expect(resolver.isKnown('Chile'), isTrue);
+    });
+
+    test('reconhece todos os paises usados no template oficial', () {
+      // Template gera 8 paises (entrada 0027 do AI_WORK_LOG).
+      // Nenhum deles pode disparar warning "unknown team".
+      const List<String> templateCountries = <String>[
+        'Argentina',
+        'Brazil',
+        'Canada',
+        'Chile',
+        'Colombia',
+        'Mexico',
+        'United States of America',
+        'Venezuela',
+      ];
+      for (final String name in templateCountries) {
+        expect(resolver.isKnown(name), isTrue,
+            reason: 'Pais do template nao foi reconhecido: $name');
+      }
+    });
+
+    test('cobre todas as zonas IWBF', () {
+      // Smoke test rapido de cobertura — uma amostra de cada zona.
+      // Americas
+      expect(resolver.isKnown('Cuba'), isTrue);
+      expect(resolver.isKnown('Puerto Rico'), isTrue);
+      // Europa
+      expect(resolver.isKnown('Poland'), isTrue);
+      expect(resolver.isKnown('Sweden'), isTrue);
+      // Asia / Oceania
+      expect(resolver.isKnown('New Zealand'), isTrue);
+      expect(resolver.isKnown('Chinese Taipei'), isTrue);
+      // Africa
+      expect(resolver.isKnown('South Africa'), isTrue);
+      expect(resolver.isKnown('Egypt'), isTrue);
+    });
+
     test('retorna null para nome desconhecido', () {
       expect(resolver.resolveCanonical('Marte'), isNull);
       expect(resolver.resolveCanonical('Equipe X'), isNull);

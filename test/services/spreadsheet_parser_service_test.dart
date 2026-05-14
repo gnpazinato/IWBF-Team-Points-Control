@@ -280,16 +280,16 @@ void main() {
       final teamWomen = result.teams.firstWhere(
           (Team t) => t.gender == TeamGender.women);
       expect(teamMen.teamName, equals('Brazil'));
-      expect(teamMen.displayName, equals('Brazil Men'));
+      expect(teamMen.displayName, equals('Brazil - Men'));
       expect(teamMen.players, hasLength(1));
-      expect(teamWomen.displayName, equals('Brazil Women'));
+      expect(teamWomen.displayName, equals('Brazil - Women'));
       expect(teamWomen.players, hasLength(1));
     });
 
     test('strip do "Men"/"Women" no team_name não duplica o sufixo', () {
       // Usuário escreveu "Brazil Women" no team_name mas a coluna gender
       // confirma female. O parser deve canonicalizar para "Brazil" e
-      // adicionar "Women" apenas via displayName.
+      // adicionar "- Women" apenas via displayName.
       final SheetData sheet = _sheet('Players', <List<String?>>[
         _row(<String?>[
           'team_name', 'shirt_number', 'surname', 'first_name',
@@ -304,8 +304,31 @@ void main() {
       expect(result.hasBlockingIssues, isFalse);
       expect(result.teams, hasLength(1));
       expect(result.teams.first.teamName, equals('Brazil'));
-      expect(result.teams.first.displayName, equals('Brazil Women'));
+      expect(result.teams.first.displayName, equals('Brazil - Women'));
       expect(result.teams.first.gender, equals(TeamGender.women));
+    });
+
+    test('strip aceita formato "Brazil - Women" com hífen', () {
+      // Confere que o regex tambem cobre o novo separador. Importante
+      // porque o displayName agora ja sai com " - " e o usuario pode
+      // copiar de volta para o team_name.
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>[
+          'Brazil - Women', '7', 'Silva', 'Maria', '2.5', '1998-01-02', 'female',
+        ]),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse);
+      expect(result.teams, hasLength(1));
+      expect(result.teams.first.teamName, equals('Brazil'));
+      expect(result.teams.first.displayName, equals('Brazil - Women'));
     });
 
     test('sem coluna gender → equipe fica unspecified (compat)', () {
@@ -324,6 +347,69 @@ void main() {
       expect(result.teams, hasLength(1));
       expect(result.teams.first.gender, equals(TeamGender.unspecified));
       expect(result.teams.first.displayName, equals('Brazil'));
+    });
+  });
+
+  group('SpreadsheetParserService - regressao Chile (entrada 0029)', () {
+    final SpreadsheetParserService parser = SpreadsheetParserService();
+
+    test('aba unica com Chile NAO gera warning "unknown team"', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>[
+          'Chile', '7', 'Soto', 'Diego', '2.5', '1998-01-02', 'male',
+        ]),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse);
+      final List<ParseIssue> unknowns = result.issues
+          .where((ParseIssue i) =>
+              i.category == ParseIssueCategory.unknownTeam)
+          .toList();
+      expect(unknowns, isEmpty,
+          reason:
+              'Chile esta na lista oficial — nao deveria gerar warning.');
+      expect(result.teams.first.teamName, equals('Chile'));
+      expect(result.teams.first.displayName, equals('Chile - Men'));
+    });
+
+    test('per-team com abas "Chile Men" / "Chile Women" sem warning', () {
+      final SheetData men = _sheet('Chile Men', <List<String?>>[
+        _row(<String?>[
+          'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>['7', 'Soto', 'Diego', '2.5', '1998-01-02', 'male']),
+      ]);
+      final SheetData women = _sheet('Chile Women', <List<String?>>[
+        _row(<String?>[
+          'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>['9', 'Diaz', 'Sofia', '3.0', '1996-05-10', 'female']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[men, women]);
+
+      final List<ParseIssue> unknowns = result.issues
+          .where((ParseIssue i) =>
+              i.category == ParseIssueCategory.unknownTeam)
+          .toList();
+      expect(unknowns, isEmpty,
+          reason:
+              'Abas "Chile Men"/"Chile Women" devem ser reconhecidas via '
+              'strip do sufixo de genero.');
+      expect(result.teams, hasLength(2));
+      final Set<String> names =
+          result.teams.map((Team t) => t.displayName).toSet();
+      expect(names, containsAll(<String>['Chile - Men', 'Chile - Women']));
     });
   });
 

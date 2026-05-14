@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — quarta rodada: gender por equipe, templates pre-preenchidos com 8 paises x 2 generos, Point Limit ampliado, separador "or" na home.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025+0026+0027 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Apos validacao, abrir PR `claude/review-and-continue-9ZK5v -> main` e mergear pra oficializar. |
+| Status geral | **Fase 5 — quinta rodada: Chile na lista oficial, cobertura IWBF expandida, displayName com hifen, dialog Men vs Women.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025+0026+0027+0028+0029 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy (Chile sem warning, dropdown mostrando `Brazil - Men`, dialogo Men vs Women). |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
@@ -547,6 +547,59 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0029 - 2026-05-14 - Fase 5 - quinta rodada: Chile + cobertura IWBF, displayName com hifen, dialog Men vs Women
+
+Resumo:
+
+- Sessao dedicada a tres ajustes reportados pelo usuario apos testar os templates novos da rodada anterior (entrada 0027).
+
+**1. Bug "unknown team: Chile" (e variantes "Chile Men"/"Chile Women").** Era um bug real: o template pre-preenchido (rodada 4) trazia Chile entre os 8 paises, mas Chile **NAO estava** no `CountryResolverService`. Resultado: a planilha single-sheet gerava `Unknown team: Chile` e a per-team gerava `Unknown team: Chile Men` / `Unknown team: Chile Women` (a string de warning usa o nome bruto antes do strip de genero, por isso aparece o sufixo no caso per-team).
+   - Correcao direta: adicionar `chile`/`chi`/`chl` ao mapa de aliases e `Chile: CL` ao mapa de codigos alpha-2.
+
+**2. Cobertura IWBF expandida.** Ao corrigir Chile o usuario pediu para garantir que nenhum outro pais oficial dispare o mesmo warning. Reescrevi `_defaultAliases` para cobrir as quatro zonas IWBF:
+   - **Americas** (22 paises): Argentina, Bolivia, Brazil, Canada, **Chile**, Colombia, Costa Rica, Cuba, Dominican Republic, Ecuador, El Salvador, Guatemala, Haiti, Honduras, Mexico, Nicaragua, Panama, Paraguay, Peru, Puerto Rico, USA, Uruguay, Venezuela.
+   - **Europa** (32 paises): Austria, Belgium, Bosnia and Herzegovina, Croatia, Czech Republic, Denmark, Estonia, Finland, France, Germany, Great Britain, Greece, Hungary, Iceland, Ireland, Israel, Italy, Latvia, Lithuania, Luxembourg, Netherlands, Norway, Poland, Portugal, Romania, Russia, Serbia, Slovakia, Slovenia, Spain, Sweden, Switzerland, Turkey, Ukraine.
+   - **Asia/Oceania** (29 paises): Afghanistan, Australia, Cambodia, China, Chinese Taipei, Hong Kong, India, Indonesia, Iran, Iraq, Japan, Jordan, Kazakhstan, Lebanon, Malaysia, Mongolia, New Zealand, Pakistan, Philippines, Qatar, Saudi Arabia, Singapore, South Korea, Sri Lanka, Syria, Thailand, Uzbekistan, Vietnam.
+   - **Africa** (13 paises): Algeria, Cameroon, Cote d'Ivoire, Egypt, Ethiopia, Kenya, Morocco, Nigeria, Senegal, South Africa, Tunisia, Uganda, Zimbabwe.
+   - Total: ~96 paises com alias + alpha-2. Cobre todos os membros recorrentes em campeonatos zonais e Paralimpiadas.
+   - Aliases incluem nome local quando relevante (`Brasil`, `Espana`, `Suomi`, `Turkiye`, `Hrvatska`) e codigos IOC/ISO 3 letras (`BRA`, `KOR`, `KSA`).
+   - Pegadinha de normalizacao: `_normalize` derruba apostrofes **sem inserir espaco**, entao `Cote d'Ivoire` vira `cote divoire` (com `d` colado em `ivoire`). Adicionei o alias na forma normalizada **e** a forma com espaco para cobrir variacoes manuais. Mesma logica para Bosnia: cobertura `bosnia and herzegovina` + `bosnia herzegovina` (sem o "and").
+
+**3. Separador hifen no `Team.displayName`.** Pedido visual do usuario: nomes longos como `United States of America Women` viravam parede de texto no dropdown. Trocado para `"<Pais> - Men"` / `"<Pais> - Women"` / `"<Pais> - Mixed"`. Exemplo: `Argentina - Men`, `United States of America - Men`. Sem genero (unspecified), continua `"<Pais>"` sem sufixo.
+   - Tambem expandi o regex de `_stripGenderKeyword` no parser para aceitar `\s*-+\s*` alem de `\s+` antes do keyword. Cobre os tres formatos: `Brazil Women`, `Brazil-Women`, `Brazil - Women`. Importante porque o `displayName` agora sai com `" - "` e o usuario pode copiar de volta para o `team_name` da planilha.
+
+**4. Dialog de confirmacao Men vs Women.** Quando Team A e Men e Team B e Women (ou vice-versa), o app agora:
+   - mostra um aviso inline (caixa vermelha clara com icone de warning) abaixo dos dropdowns, indicando que oficialmente so se joga same-gender;
+   - intercepta o `Start Match` com um `AlertDialog` que tem dois botoes: `Cancel` (mantem na tela) e `Continue anyway` (segue para o LineupControl).
+   - Casos com `mixed` ou `unspecified` em qualquer um dos dois lados NAO disparam o aviso — sem dado, sem alarme. Same-gender (Men x Men, Women x Women) tambem nao dispara.
+   - Implementacao via `_hasGenderMismatch` getter + `_onStartPressed` async que chama `showDialog<bool>` e so navega quando o retorno e `true`.
+
+Arquivos alterados:
+
+- `lib/services/country_resolver_service.dart` — `_defaultAliases` expandido para ~96 paises das 4 zonas IWBF; `_countryCodes` com todos os alpha-2 correspondentes; aliases extras para nomes com apostrofe (`Cote d'Ivoire`) e variacoes regionais.
+- `lib/models/team.dart` — `displayName` agora usa `" - "` como separador antes do sufixo de genero. Docstring atualizada.
+- `lib/services/spreadsheet_parser_service.dart` — regex de `_stripGenderKeyword` aceita `\s*-+\s*` alem de `\s+` antes do keyword. Comentario na docstring atualizado.
+- `lib/screens/match_setup_screen.dart` — getter `_hasGenderMismatch`, callback async `_onStartPressed`, dialog `_showGenderMismatchDialog`, caixa de aviso inline `Key('gender-mismatch-warning')` quando Men x Women.
+- `test/services/country_resolver_service_test.dart` — teste de regressao explicito para Chile, teste cobrindo os 8 paises do template oficial, smoke test das 4 zonas IWBF.
+- `test/models/team_test.dart` — assertions atualizadas para o novo formato `"Brazil - Men"`; teste novo para nome longo (`United States of America - Men`).
+- `test/services/spreadsheet_parser_service_test.dart` — assertions atualizadas no grupo "genero"; teste novo confirmando que `Brazil - Women` (com hifen) e stripado para `Brazil`; grupo novo "regressao Chile" com dois testes (single sheet e per-team) confirmando que Chile nao gera mais warning.
+- `test/screens/match_setup_screen_test.dart` — `_team` helper agora aceita `gender`; novo grupo "gender mismatch" com 4 testes (warning + dialog em Men x Women, Cancel mantem, Continue avanca, Men x Men nao dispara).
+- `docs/AI_WORK_LOG.md` — esta entrada e tabela de estado atualizada.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI valida no push.
+
+Pendencias / smoke test pos-deploy:
+
+- Confirmar no preview Web que o template per-team com 16 abas (incluindo Chile Men e Chile Women) carrega sem warning "Unknown team".
+- Confirmar que o dropdown de Team A/B mostra os 16 nomes no formato `Pais - Genero`.
+- Confirmar que selecionar `Brazil - Men` em Team A e `Argentina - Women` em Team B exibe a caixa vermelha inline + dispara o dialog ao clicar Start Match.
+
+Proximo passo recomendado:
+
+- Aguardar smoke test do usuario. Se OK, considerar fechar o ciclo da Fase 5 e abrir PR `claude/review-and-continue-9ZK5v -> main` para mergear o codigo.
 
 ### 0028 - 2026-05-14 - Docs-only PR para main (#2): branch warning persistente
 

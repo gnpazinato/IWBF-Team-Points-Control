@@ -76,6 +76,58 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   bool get _canStart =>
       _teamA != null && _teamB != null && !_teamsAreSame;
 
+  /// Pareamento oficial IWBF: Men vs Men, Women vs Women. Se o usuario
+  /// monta Men x Women (ou Women x Men), o app pergunta antes de seguir.
+  /// Casos com `mixed` ou `unspecified` nao disparam o alerta porque
+  /// nao da pra afirmar conflito sem dados.
+  bool get _hasGenderMismatch {
+    final Team? a = _teamA;
+    final Team? b = _teamB;
+    if (a == null || b == null) return false;
+    if (a == b) return false;
+    final TeamGender ga = a.gender;
+    final TeamGender gb = b.gender;
+    return (ga == TeamGender.men && gb == TeamGender.women) ||
+        (ga == TeamGender.women && gb == TeamGender.men);
+  }
+
+  Future<void> _onStartPressed() async {
+    if (!_canStart) return;
+    if (_hasGenderMismatch) {
+      final bool? confirm = await _showGenderMismatchDialog();
+      if (confirm != true) return;
+    }
+    _startMatch();
+  }
+
+  Future<bool?> _showGenderMismatchDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        key: const Key('gender-mismatch-dialog'),
+        title: const Text('Gender mismatch'),
+        content: Text(
+          'You selected ${_teamA!.displayName} vs ${_teamB!.displayName}. '
+          "Official IWBF matches are played between teams of the same "
+          "gender (Men vs Men or Women vs Women). Do you want to continue "
+          "anyway?",
+        ),
+        actions: <Widget>[
+          TextButton(
+            key: const Key('gender-mismatch-cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('gender-mismatch-continue'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue anyway'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _startMatch() {
     final Team a = _teamA!;
     final Team b = _teamB!;
@@ -145,6 +197,40 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                     style: TextStyle(color: IwbfColors.alertRed),
                   ),
                 ),
+              if (_hasGenderMismatch)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Container(
+                    key: const Key('gender-mismatch-warning'),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: IwbfColors.alertRed.withValues(alpha: 0.08),
+                      border: Border.all(
+                        color: IwbfColors.alertRed.withValues(alpha: 0.6),
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: IwbfColors.alertRed,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'You picked a Men\'s team against a Women\'s team. '
+                            'Official IWBF matches are same-gender. '
+                            'You can continue, but a confirmation will be asked.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               const Spacer(),
               if (teams.isEmpty)
                 const Padding(
@@ -162,7 +248,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
           padding: const EdgeInsets.all(16),
           child: FilledButton.icon(
             key: const Key('start-match-button'),
-            onPressed: _canStart ? _startMatch : null,
+            onPressed: _canStart ? _onStartPressed : null,
             icon: const Icon(Icons.play_arrow),
             label: const Text('Start Match'),
           ),

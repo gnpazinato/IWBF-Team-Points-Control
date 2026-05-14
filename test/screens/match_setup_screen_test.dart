@@ -15,9 +15,12 @@ Player _player(String teamId, int shirt, double cls) => Player(
       playerClass: cls,
     );
 
-Team _team(String id, String name, {int playerCount = 1}) => Team(
+Team _team(String id, String name,
+        {int playerCount = 1, TeamGender gender = TeamGender.unspecified}) =>
+    Team(
       id: id,
       teamName: name,
+      gender: gender,
       players: <Player>[
         for (int i = 0; i < playerCount; i++) _player(id, i + 1, 2.5),
       ],
@@ -244,6 +247,134 @@ void main() {
       expect(find.text('Argentina'), findsWidgets);
       expect(find.text('  vs  '), findsOneWidget);
       expect(find.text('Point Limit:'), findsOneWidget);
+    });
+  });
+
+  group('MatchSetupScreen — gender mismatch', () {
+    testWidgets('Men vs Women mostra aviso inline e pede confirmação',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil-men', 'Brazil', gender: TeamGender.men),
+          _team('team-argentina-women', 'Argentina',
+              gender: TeamGender.women),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil - Men',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina - Women',
+      );
+
+      expect(find.byKey(const Key('gender-mismatch-warning')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('start-match-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('gender-mismatch-dialog')), findsOneWidget);
+      expect(find.byKey(const Key('gender-mismatch-cancel')), findsOneWidget);
+      expect(
+          find.byKey(const Key('gender-mismatch-continue')), findsOneWidget);
+    });
+
+    testWidgets('Cancel no diálogo mantém o usuário na tela de setup',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil-men', 'Brazil', gender: TeamGender.men),
+          _team('team-argentina-women', 'Argentina',
+              gender: TeamGender.women),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil - Men',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina - Women',
+      );
+
+      await tester.tap(find.byKey(const Key('start-match-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('gender-mismatch-cancel')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('gender-mismatch-dialog')), findsNothing);
+      expect(find.text('Match Setup'), findsOneWidget);
+      expect(find.text('Lineup Control'), findsNothing);
+    });
+
+    testWidgets('Continue anyway segue para a partida',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil-men', 'Brazil', gender: TeamGender.men),
+          _team('team-argentina-women', 'Argentina',
+              gender: TeamGender.women),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil - Men',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina - Women',
+      );
+
+      await tester.tap(find.byKey(const Key('start-match-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('gender-mismatch-continue')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lineup Control'), findsOneWidget);
+    });
+
+    testWidgets('Men vs Men não dispara aviso nem diálogo',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil-men', 'Brazil', gender: TeamGender.men),
+          _team('team-argentina-men', 'Argentina', gender: TeamGender.men),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil - Men',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina - Men',
+      );
+
+      expect(find.byKey(const Key('gender-mismatch-warning')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('start-match-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('gender-mismatch-dialog')), findsNothing);
+      expect(find.text('Lineup Control'), findsOneWidget);
     });
   });
 }

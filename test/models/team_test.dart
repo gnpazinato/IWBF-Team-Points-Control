@@ -53,15 +53,24 @@ void main() {
       expect(restored.players.first.shirtNumber, equals(7));
     });
 
-    test('displayName ganha sufixo Men/Women conforme o gênero', () {
+    test('displayName ganha sufixo "- Men"/"- Women" conforme o gênero', () {
       final Team men = Team(id: 't1', teamName: 'Brazil', gender: TeamGender.men);
       final Team women = Team(id: 't2', teamName: 'Brazil', gender: TeamGender.women);
       final Team mixed = Team(id: 't3', teamName: 'Brazil', gender: TeamGender.mixed);
       final Team neutral = Team(id: 't4', teamName: 'Brazil');
-      expect(men.displayName, equals('Brazil Men'));
-      expect(women.displayName, equals('Brazil Women'));
-      expect(mixed.displayName, equals('Brazil Mixed'));
+      expect(men.displayName, equals('Brazil - Men'));
+      expect(women.displayName, equals('Brazil - Women'));
+      expect(mixed.displayName, equals('Brazil - Mixed'));
       expect(neutral.displayName, equals('Brazil'));
+    });
+
+    test('displayName preserva separador hífen para nomes longos', () {
+      final Team usa = Team(
+        id: 't1',
+        teamName: 'United States of America',
+        gender: TeamGender.men,
+      );
+      expect(usa.displayName, equals('United States of America - Men'));
     });
 
     test('gender persiste no roundtrip JSON', () {
@@ -69,7 +78,7 @@ void main() {
           Team(id: 't1', teamName: 'Brazil', gender: TeamGender.women);
       final Team restored = Team.fromJson(original.toJson());
       expect(restored.gender, equals(TeamGender.women));
-      expect(restored.displayName, equals('Brazil Women'));
+      expect(restored.displayName, equals('Brazil - Women'));
     });
 
     test('JSON sem campo gender retorna unspecified (compat)', () {

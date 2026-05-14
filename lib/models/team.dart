@@ -55,17 +55,19 @@ class Team {
   final TeamGender gender;
   final List<Player> players;
 
-  /// Nome exibido ao usuário: `"<País> Men"`, `"<País> Women"` ou apenas
-  /// `"<País>"` quando o gênero é desconhecido. `mixed` recebe o sufixo
-  /// `"Mixed"` para deixar claro que a equipe não é single-gender.
+  /// Nome exibido ao usuário: `"<País> - Men"`, `"<País> - Women"` ou
+  /// apenas `"<País>"` quando o gênero é desconhecido. `mixed` recebe o
+  /// sufixo `"- Mixed"` para deixar claro que a equipe não é single-gender.
+  /// O hífen separa visualmente país e gênero para nomes longos
+  /// (`United States of America - Men`).
   String get displayName {
     switch (gender) {
       case TeamGender.men:
-        return '$teamName Men';
+        return '$teamName - Men';
       case TeamGender.women:
-        return '$teamName Women';
+        return '$teamName - Women';
       case TeamGender.mixed:
-        return '$teamName Mixed';
+        return '$teamName - Mixed';
       case TeamGender.unspecified:
         return teamName;
     }
