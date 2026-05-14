@@ -24,11 +24,13 @@ responsivos + FittedBox em nomes longos).
 
 ## Estado atual (resumo)
 
-- **Fase atual:** Fase 5 com 9 rodadas de ajustes pós-teste
-  (entradas 0023..0031 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
-  Última rodada (0031) ajustou: chips da quadra responsivos por largura
-  (evita sobreposição em tablet portrait estreito) + FittedBox em nomes
-  longos do card lateral (encolhe em vez de cortar com "...").
+- **Fase atual:** Fase 5 com 10 rodadas de ajustes pós-teste
+  (entradas 0023..0032 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
+  Última rodada (0032) reforçou a 0031: chips da quadra com tamanho
+  FIXO uniforme (SizedBox externo idêntico para todos), auto-shrink
+  robusto de nomes longos via `_AutoShrinkText` (LayoutBuilder +
+  TextPainter, substituindo FittedBox que falhava em alguns layouts),
+  slots reposicionados para mais gap vertical.
 - **Testers externos:** 2 pessoas têm o link do preview Web
   (https://gnpazinato.github.io/IWBF-Team-Points-Control/), compartilhado
   em 2026-05-14. Aguardando feedback antes de avançar.
@@ -43,7 +45,7 @@ responsivos + FittedBox em nomes longos).
    2. `docs/PLANO_DESENVOLVIMENTO_IA.md` (fases e estratégia);
    3. `docs/AI_WORK_LOG.md` (fonte da verdade — estado, decisões,
       convenções, histórico). Em particular: tabela "Estado atual" no
-      topo + entradas 0023..0031 (Fase 5 inteira) + seção
+      topo + entradas 0023..0032 (Fase 5 inteira) + seção
       "Prompt curto de continuidade — Fase 5 fechada / aguardando
       testers" no fim.
 3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +

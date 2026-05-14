@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — setima rodada (entrada 0031): chips da quadra escalam com a largura para evitar sobreposicao em tablets portrait estreitos; nomes longos no card lateral usam FittedBox em vez de ellipsis.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0031 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy (simular tablet portrait estreito e validar que: nao ha sobreposicao na quadra; nomes longos como "MACDONALD, Olivier" e "WILLIAMS, Benjamin" aparecem inteiros encolhidos). |
+| Status geral | **Fase 5 — oitava rodada (entrada 0032): chips da quadra com tamanho FIXO uniforme via SizedBox; auto-shrink robusto de nomes longos via _AutoShrinkText (LayoutBuilder + TextPainter) substitui FittedBox que não escalava em alguns layouts; slots reposicionados para dar mais gap vertical.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0032 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Validar: (a) todos os chips da quadra com mesmo tamanho externo independente do comprimento do surname; (b) sem sobreposicao em tablets portrait estreitos; (c) nomes longos como "GONZALEZ, Sebastian" / "MACDONALD, Olivier" aparecem INTEIROS encolhidos no card lateral, sem "...". |
 | Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
@@ -548,6 +548,67 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0032 - 2026-05-14 - Fase 5 - oitava rodada: chips da quadra com tamanho FIXO + auto-shrink robusto via TextPainter
+
+Resumo:
+
+- Usuario validou a entrada 0031 no preview Web e reportou que a correcao falhou em DOIS pontos visiveis no print:
+  1. **Nomes longos ainda cortados com "..."** ("GONZALEZ, Seba...", "MACDONALD, Oliv...", "WILLIAMS, Benja...") — `FittedBox(scaleDown)` dentro de `Align` dentro de `Expanded` recebe constraints frouxas e nao escala confiavelmente em todos os cenarios. Conclusao: FittedBox nao e o approach robusto aqui.
+  2. **Chips da quadra com tamanhos diferentes E sobrepondo** — `ConstrainedBox(maxWidth, maxHeight)` permitia o chip encolher conforme o conteudo, criando variacao visual. Alem disso, o gap vertical entre row 2 (y=0.28) e center (y=0.40) era apenas 0.12 * h, insuficiente para chips de 0.17 * h.
+
+**1. Auto-shrink robusto: novo widget `_AutoShrinkText`.**
+   - Usa `LayoutBuilder` para obter o `BoxConstraints` real da posicao no layout.
+   - Mede a largura natural do texto via `TextPainter.layout()` com o `maxFontSize` configurado.
+   - Calcula `finalFontSize = maxFontSize * maxWidth / naturalWidth` quando excede, clamped por `minFontSize`.
+   - Renderiza um `Text` puro com o `fontSize` calculado — sem `TextOverflow.ellipsis`, sem corte.
+   - Por que e mais robusto que `FittedBox(scaleDown)`: medicao explicita do `TextPainter` funciona mesmo quando o pai da constraints frouxas (`Align`, `Container` sem dimensoes fixas, etc.). Tambem dispensa o wrapper `Align`.
+
+   Aplicado em dois lugares:
+   - `_PlayerCard` (lista lateral): `Expanded > _AutoShrinkText(displayName, maxFontSize: fontSize, minFontSize: 8)`. Substitui o `Align > FittedBox > Text` da entrada 0031.
+   - `_CourtPlayerChip` (chip da quadra): substitui o `FittedBox > Text` do surname.
+
+**2. Chips da quadra com tamanho FIXO uniforme.**
+   - `_CourtView` agora computa `slotMaxWidth = (w * 0.34).clamp(60, 150)` e `slotMaxHeight = (h * 0.12).clamp(46, 110)` — clamps adicionais evitam chip minusculo em viewports muito pequenos e chip gigante em telas wide.
+   - `_CourtPlayerChip` agora usa `SizedBox(width: maxWidth, height: maxHeight)` em vez de `ConstrainedBox` — **forca todos os chips a terem EXATAMENTE as mesmas dimensoes externas**.
+   - Dentro do `SizedBox`, Column com `mainAxisAlignment.center + mainAxisSize.max` centraliza o conteudo verticalmente. Quando o surname e curto, o chip ainda tem o tamanho cheio; o surname so encolhe se o `_AutoShrinkText` precisar (independente do tamanho externo do chip).
+   - Formulas internas conservadoras (`iconSize = base * 0.46`, `fontSize = base * 0.15`, etc.) garantem que a soma das alturas dos filhos < maxHeight mesmo no piso 46dp.
+
+**3. Slots reposicionados para mais gap vertical.**
+   - Antes: Team A em y=(0.10, 0.28, 0.40); gap row2→center = 0.12 * h. Apertado.
+   - Depois: Team A em y=(0.08, 0.26, 0.42); gap row2→center = 0.16 * h. Folgado.
+   - Tambem afastei a coluna horizontal de 0.30/0.70 para 0.28/0.72 — gap horizontal aumenta de 0.40 para 0.44 * w.
+   - Team B mirror: y=(0.92, 0.74, 0.58). Gap entre os dois centers (Team A 0.42 vs Team B 0.58) = 0.16 * h.
+   - Com chip maxHeight = 0.12 * h, sobra 0.04 * h de gap em todos os pares — visivel mesmo em h_court pequeno.
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart`:
+  - novo widget `_AutoShrinkText` no fim do arquivo;
+  - `_PlayerCard`: trocou Align/FittedBox por `_AutoShrinkText`;
+  - `_CourtView`: clamps adicionais em `slotMaxWidth`/`slotMaxHeight`, slots reposicionados;
+  - `_CourtPlayerChip`: `SizedBox` em vez de `ConstrainedBox`, `_AutoShrinkText` no surname, formulas internas conservadoras.
+
+- `test/screens/lineup_control_screen_test.dart`:
+  - grupo `"responsive court chips (entrada 0032)"` substitui o de 0031:
+    - 5 surnames presentes em viewport 720x1280;
+    - regressao explicita: todos os 5 chips na quadra renderizam (court-view key presente);
+    - regressao do bug do print: nenhum Text descendente do card lateral usa `TextOverflow.ellipsis`.
+
+- `docs/AI_WORK_LOG.md` — esta entrada + tabela de estado atualizada.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI valida no push.
+
+Pendencias / smoke test:
+
+- Tablet portrait estreito (720x1280): chips na quadra com tamanho identico, sem sobreposicao, nomes longos no card lateral aparecem inteiros encolhidos.
+- Desktop wide (>1200dp): chips mantem tamanho controlado pelos clamps (max 150x110), proporcional.
+
+Proximo passo recomendado:
+
+- Aguardar smoke test do usuario.
 
 ### 0031 - 2026-05-14 - Fase 5 - setima rodada: chips da quadra escalam por largura + FittedBox em nomes longos
 

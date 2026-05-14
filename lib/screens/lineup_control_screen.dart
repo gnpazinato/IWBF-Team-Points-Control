@@ -644,24 +644,20 @@ class _PlayerCard extends StatelessWidget {
                   size: iconSize,
                 ),
                 const SizedBox(width: 6),
-                // FittedBox + alignment.centerLeft preserva o "encolher
-                // em vez de cortar com ...". Para nomes longos como
-                // "MACDONALD, Olivier" ou "WILLIAMS, Benjamin" a fonte
-                // reduz proporcionalmente antes de chegar no Expanded.
+                // _AutoShrinkText mede o texto com TextPainter e reduz
+                // o fontSize proporcionalmente à largura disponível,
+                // até o piso `minFontSize`. Mais confiável que
+                // FittedBox/ellipsis dentro de Expanded — nomes longos
+                // como "MACDONALD, Olivier" aparecem inteiros encolhidos.
                 Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        player.displayName,
-                        maxLines: 1,
-                        style: TextStyle(fontSize: fontSize),
-                      ),
-                    ),
+                  child: _AutoShrinkText(
+                    text: player.displayName,
+                    maxFontSize: fontSize,
+                    minFontSize: 8.0,
+                    textAlign: TextAlign.left,
                   ),
                 ),
+                const SizedBox(width: 4),
                 Text(
                   player.playerClass.toStringAsFixed(1),
                   style: TextStyle(
@@ -699,22 +695,27 @@ class _CourtView extends StatelessWidget {
 
   /// Posições fracionárias (x, y) para os 5 jogadores da Team A na metade
   /// superior (y < 0.5). Convenção: 2 perto da tabela, 2 mais à frente,
-  /// 1 no centro próximo da linha de meio-campo.
+  /// 1 perto do meio-campo (point guard). Espaçamento vertical entre
+  /// fileiras é 0.18 (linha 1 → linha 2) e 0.16 (linha 2 → centro), com
+  /// o ponto guardado a 0.42 — gap suficiente para chips com altura
+  /// até ≈ 0.13 * h sem encostarem mesmo em tablets portrait estreitos.
   static const List<Offset> _teamATargets = <Offset>[
-    Offset(0.30, 0.10),
-    Offset(0.70, 0.10),
-    Offset(0.30, 0.28),
-    Offset(0.70, 0.28),
-    Offset(0.50, 0.40),
+    Offset(0.28, 0.08),
+    Offset(0.72, 0.08),
+    Offset(0.28, 0.26),
+    Offset(0.72, 0.26),
+    Offset(0.50, 0.42),
   ];
 
-  /// Espelho simétrico da Team A para a metade inferior.
+  /// Espelho simétrico da Team A para a metade inferior. O point guard
+  /// da Team B fica a 0.58, dando gap 0.16 entre os dois centros — ainda
+  /// acomoda chips de 0.13 * h sem encostarem.
   static const List<Offset> _teamBTargets = <Offset>[
-    Offset(0.30, 0.90),
-    Offset(0.70, 0.90),
-    Offset(0.30, 0.72),
-    Offset(0.70, 0.72),
-    Offset(0.50, 0.60),
+    Offset(0.28, 0.92),
+    Offset(0.72, 0.92),
+    Offset(0.28, 0.74),
+    Offset(0.72, 0.74),
+    Offset(0.50, 0.58),
   ];
 
   @override
@@ -740,15 +741,18 @@ class _CourtView extends StatelessWidget {
               builder: (BuildContext _, BoxConstraints c) {
                 final double w = c.maxWidth;
                 final double h = c.maxHeight;
-                // O passo horizontal entre dois slots (slot lateral
-                // esquerdo em 0.30 x slot lateral direito em 0.70) é
-                // 0.40 * w. Reservamos uma margem para evitar que dois
-                // chips encostem. Para a vertical, o passo entre as
-                // duas fileiras da mesma equipe é 0.18 * h (de 0.10
-                // para 0.28). Usamos a dimensão mais restritiva para
-                // calcular o tamanho do chip.
-                final double slotMaxWidth = w * 0.34;
-                final double slotMaxHeight = h * 0.17;
+                // Passo horizontal entre os slots laterais (0.28 e
+                // 0.72) é 0.44 * w — reservamos 0.34 * w para o chip
+                // e 0.10 * w de gap. Passo vertical mais apertado é
+                // 0.16 * h (linha 2 → centro). Reservamos 0.12 * h
+                // para o chip e 0.04 * h de gap. Os clamps cobrem
+                // limites razoáveis: viewports muito pequenos ainda
+                // têm chip legível (>=46dp); telas grandes não criam
+                // chip gigante (<=110dp). Como TODOS os chips usam
+                // EXATAMENTE estas dimensões via SizedBox, ficam com
+                // tamanho idêntico.
+                final double slotMaxWidth = (w * 0.34).clamp(60.0, 150.0);
+                final double slotMaxHeight = (h * 0.12).clamp(46.0, 110.0);
                 return Stack(
                   alignment: Alignment.center,
                   children: <Widget>[
@@ -886,20 +890,23 @@ class _CourtPlayerChip extends StatelessWidget {
     final Color fg = isTeamA ? IwbfColors.textPrimary : Colors.white;
     final Color border = isTeamA ? IwbfColors.goldDeep : IwbfColors.textPrimary;
 
-    // Derivamos icone, fonte e padding do menor lado disponivel para o
-    // slot. Isso garante que em tablets estreitos (portrait) os chips
-    // encolhem proporcionalmente em vez de sobreporem. Limites baixos
-    // garantem legibilidade minima; limites altos evitam icone
-    // gigante em desktops largos.
-    final double base = maxHeight.clamp(40.0, 96.0).toDouble();
-    final double iconSize = (base * 0.50).clamp(20.0, 44.0);
-    final double fontSize = (base * 0.16).clamp(7.5, 11.0);
-    final double horizontalPad = (base * 0.07).clamp(3.0, 8.0);
-    final double verticalPad = (base * 0.05).clamp(2.0, 6.0);
-    final double gap = (base * 0.03).clamp(1.0, 3.0);
+    // Dimensões internas derivam APENAS de `maxHeight` para que TODOS os
+    // chips fiquem com tamanho idêntico (o SizedBox externo abaixo fixa
+    // width × height = maxWidth × maxHeight). A diferença visual entre
+    // chips fica restrita ao sobrenome (que pode encolher via
+    // _AutoShrinkText). Formulas conservadoras: garantem que a soma das
+    // alturas (icone + gap + surname + classe + 2*padding) é sempre <
+    // maxHeight, mesmo no piso 46dp.
+    final double base = maxHeight;
+    final double iconSize = (base * 0.46).clamp(18.0, 42.0);
+    final double fontSize = (base * 0.15).clamp(7.5, 11.5);
+    final double horizontalPad = (base * 0.06).clamp(2.0, 6.0);
+    final double verticalPad = (base * 0.04).clamp(1.5, 4.0);
+    final double gap = (base * 0.02).clamp(0.5, 2.0);
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
+    return SizedBox(
+      width: maxWidth,
+      height: maxHeight,
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: horizontalPad,
@@ -918,7 +925,8 @@ class _CourtPlayerChip extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             PlayerJerseyIcon(
               player: player,
@@ -926,20 +934,18 @@ class _CourtPlayerChip extends StatelessWidget {
               size: iconSize,
             ),
             SizedBox(height: gap),
-            // FittedBox encolhe nomes longos (`MACDONALD`, `HERNANDEZ`) ao
-            // inves de cortar com "...". Isso e visualmente mais limpo
-            // num chip pequeno do que ellipsis.
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                player.surname.toUpperCase(),
-                maxLines: 1,
-                style: TextStyle(
-                  color: fg,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            // _AutoShrinkText mede o sobrenome e reduz proporcionalmente
+            // o fontSize quando excede a largura do chip. Mantém o chip
+            // visualmente uniforme: todos com o mesmo tamanho externo,
+            // o sobrenome é o único elemento que muda de tamanho
+            // proporcional ao seu comprimento.
+            _AutoShrinkText(
+              text: player.surname.toUpperCase(),
+              maxFontSize: fontSize,
+              minFontSize: 6.0,
+              color: fg,
+              fontWeight: FontWeight.w600,
+              textAlign: TextAlign.center,
             ),
             Text(
               player.playerClass.toStringAsFixed(1),
@@ -1009,6 +1015,71 @@ class _OperationalButtons extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Renderiza texto em uma única linha, encolhendo proporcionalmente o
+/// `fontSize` se a largura natural exceder o espaço disponível. Mantém
+/// `maxFontSize` quando o texto cabe. Diferente de
+/// `Text(overflow: TextOverflow.ellipsis)`, que cortaria com "...", e
+/// diferente de `FittedBox(BoxFit.scaleDown)`, que em alguns layouts
+/// (especialmente dentro de `Align`/`Expanded` com constraints
+/// frouxas) não escala confiavelmente. Aqui medimos com `TextPainter`
+/// e calculamos o `fontSize` final explicitamente — funciona em
+/// qualquer composição de pais.
+class _AutoShrinkText extends StatelessWidget {
+  const _AutoShrinkText({
+    required this.text,
+    required this.maxFontSize,
+    this.minFontSize = 7.0,
+    this.fontWeight,
+    this.color,
+    this.textAlign = TextAlign.left,
+  });
+
+  final String text;
+  final double maxFontSize;
+  final double minFontSize;
+  final FontWeight? fontWeight;
+  final Color? color;
+  final TextAlign textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final TextStyle style = TextStyle(
+          fontSize: maxFontSize,
+          fontWeight: fontWeight,
+          color: color,
+        );
+        final TextPainter painter = TextPainter(
+          text: TextSpan(text: text, style: style),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+
+        double finalFontSize = maxFontSize;
+        if (constraints.maxWidth.isFinite &&
+            painter.size.width > constraints.maxWidth &&
+            painter.size.width > 0) {
+          final double scaled =
+              maxFontSize * constraints.maxWidth / painter.size.width;
+          finalFontSize = scaled.clamp(minFontSize, maxFontSize);
+        }
+
+        return Text(
+          text,
+          maxLines: 1,
+          textAlign: textAlign,
+          style: TextStyle(
+            fontSize: finalFontSize,
+            fontWeight: fontWeight,
+            color: color,
+          ),
+        );
+      },
     );
   }
 }
