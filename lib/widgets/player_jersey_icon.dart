@@ -54,12 +54,13 @@ class PlayerJerseyIcon extends StatelessWidget {
             ),
             // Número no peito da camiseta — área entre a base do decote
             // e a barra inferior. `FittedBox` escala para qualquer largura
-            // de dígitos (1, 2 ou 3 dígitos) sem cortar.
+            // de dígitos (1, 2 ou 3 dígitos) sem cortar. Área generosa
+            // para deixar o número como elemento visual dominante.
             Positioned(
-              left: size * 0.22,
-              right: size * 0.22,
-              top: size * 0.42,
-              bottom: size * 0.18,
+              left: size * 0.18,
+              right: size * 0.18,
+              top: size * 0.38,
+              bottom: size * 0.14,
               child: FittedBox(
                 fit: BoxFit.contain,
                 child: Text(
@@ -68,6 +69,7 @@ class PlayerJerseyIcon extends StatelessWidget {
                     color: text,
                     fontWeight: FontWeight.w900,
                     height: 1,
+                    letterSpacing: -1,
                   ),
                 ),
               ),

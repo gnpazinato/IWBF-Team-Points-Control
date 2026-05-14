@@ -15,8 +15,8 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — segunda rodada de ajustes pos-teste do usuario: jersey virou vetor, logo horizontal no AppBar, court sem estrela, ordenacao alfabetica, expansao por equipe na summary, layout compacto pra caber 12 jogadores.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025 fechadas.** |
+| Status geral | **Fase 5 — terceira rodada: lista lateral por shirt, slots adaptativos, numero mais destacado, court com slots fixos, hot-fix do body em branco no Start Match.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025+0026 fechadas.** |
 | Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
@@ -521,6 +521,52 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0026 - 2026-05-14 - Fase 5 - terceira rodada: ordem por shirt, slots adaptativos, court posicionamento por slot
+
+Resumo:
+
+- Quinta rodada de feedback pos-teste do usuario. Cinco itens:
+
+1. **Lista lateral ordenada por shirt number.** `_TeamPlayerList` agora ordena `team.players` por `shirtNumber` antes de renderizar — mesma regra ja aplicada na Summary. Resolve caso do screenshot onde o atleta 55 aparecia no topo.
+
+2. **Cards adaptativos pelo tamanho da tela.** `_TeamPlayerList` envolve a lista em `LayoutBuilder` e calcula `slotHeight = (listHeight / playerCount).clamp(28, 56)`. `ListView.builder` com `itemExtent: slotHeight`. `_PlayerCard` recebe `height` e deriva `iconSize`, `fontSize` e `verticalPadding` proporcionalmente. Times com 6 atletas mostram cards maiores; times com 12 cabem com folga. Acaba o espaco vazio no rodape e o numero da camiseta cresce junto.
+
+3. **Numero do icone mais destacado.** `PlayerJerseyIcon`: area do numero ampliada (margens 0.18 vs 0.22) e `letterSpacing: -1` pra numeros de 2 digitos ficarem mais compactos sem perder peso. O peso `w900` foi mantido. Com cards maiores (item 2), o numero ganha presenca natural.
+
+4. **Court com posicionamento por slot fixo.** `MatchState` reescrito: trocou `Set<String> _selectedTeamA/B` por `List<String?> _teamASlots/_teamBSlots` (length 5). `togglePlayer` agora:
+   - Se atleta ja esta num slot → nula o slot (sai da quadra, espaço fica vazio).
+   - Se nao esta → preenche o primeiro slot `null` (entra na primeira vaga livre).
+   - Se todos os slots cheios → bloqueia.
+   Resultado: ao remover o atleta 2, sua posicao em quadra fica vazia ate o proximo clique. O atleta novo vai exatamente para aquela vaga vazia. A API antiga (`selectedTeamAIds`, `selectedTeamAPlayers`, etc.) foi mantida derivada dos slots — testes existentes continuam validos. `_CourtView` agora itera `state.teamASlotPlayers` (length 5, com nulls) em vez da lista filtrada — slot `i` cai exatamente na coordenada `_teamATargets[i]`.
+
+5. **Hot-fix do bug "Start Match → tela em branco"** (na verdade ja entrou no commit 5f31d96 da rodada anterior, registrado aqui pra fechar o ciclo). Causa: `Row(crossAxisAlignment: CrossAxisAlignment.stretch)` nos score cells sem altura bounded gerava erro de layout no Flutter Web e silenciosamente nao renderizava o body. Com os dois cells tendo a mesma altura natural via `SizedBox(height: 14)` reservado, a stretch ja era redundante — bastou remover.
+
+Sobre serializacao do cache:
+- Novo formato: `teamASlots: List<String?>` e `teamBSlots: List<String?>`.
+- Mantida compat retroativa: se o JSON ainda tiver `selectedTeamA/B` (formato antigo, antes desta entrada), o `MatchState.fromJson` aceita e converte pra slots preenchendo as primeiras posicoes. Caches anteriores nao quebram.
+
+Arquivos alterados:
+
+- `lib/models/match_state.dart` — refatoracao slot-based + compat de serializacao.
+- `lib/screens/lineup_control_screen.dart`:
+  - `_TeamPlayerList` ordena por shirt + `LayoutBuilder` com `slotHeight` adaptativo.
+  - `_PlayerCard` aceita `height` e dimensiona icon/font/padding proporcionalmente.
+  - `_CourtView` itera `teamASlotPlayers` (5 com nulls) em vez de lista compacta.
+- `lib/widgets/player_jersey_icon.dart` — margens do numero mais agressivas + `letterSpacing: -1`.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). Os testes de `MatchState` foram revisados manualmente — todos usam `selectedTeamAIds`/`selectedTeamAPlayers` (Set/lista filtrada), que continuam funcionando com a refatoracao slot-based. CI valida no push.
+
+Pendencias / observacoes:
+
+- Usuario confirmou que documentacao em `AI_WORK_LOG.md` continua obrigatoria. Ja estava sendo feita — entradas 0023, 0024, 0025 e agora 0026 cobrem toda a Fase 5.
+- Em portrait sem espaco para 12 jogadores (telas muito pequenas, <600dp altura), o clamp(28, 56) deixa o slot em 28dp e ListView vira scrollavel mesmo com poucos atletas. Aceitavel — alternativa seria reduzir min para 24dp se aparecer.
+
+Proximo passo recomendado:
+
+- Smoke test no preview Web pos-deploy. Apos validar, partir pra Fase 6 (proximas etapas que o usuario mencionou).
 
 ### 0025 - 2026-05-14 - Fase 5 - segunda rodada de ajustes pos-teste
 

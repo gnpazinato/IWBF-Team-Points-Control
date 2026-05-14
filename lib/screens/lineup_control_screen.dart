@@ -520,39 +520,76 @@ class _TeamPlayerList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CountryFlag(rawName: team.teamName, size: 16),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  team.displayName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+    // Lista lateral ordenada por número da camiseta (em ordem crescente),
+    // mesma ordem usada na Summary.
+    final List<Player> sortedPlayers = <Player>[...team.players]
+      ..sort((Player a, Player b) =>
+          a.shirtNumber.compareTo(b.shirtNumber));
+
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // Reserva uma faixa para o header (bandeira + nome do país).
+        const double headerHeight = 28;
+        final double listHeight = constraints.maxHeight - headerHeight;
+        // Para garantir que TODOS os atletas caibam, dividimos a altura
+        // disponível pelo número de atletas — com piso/teto razoáveis.
+        // Se o time tem 12 atletas e a faixa é grande, cada card fica
+        // confortável; se o time tem 6, os cards ficam ainda maiores.
+        final int playerCount = sortedPlayers.length;
+        final double rawSlotHeight = playerCount > 0
+            ? listHeight / playerCount
+            : 0;
+        // Bordas: nunca menos que 28dp (toque mínimo) nem mais que 56dp
+        // (perde elegância em times pequenos).
+        final double slotHeight = rawSlotHeight.clamp(28.0, 56.0);
+
+        return Column(
+          mainAxisSize: MainAxisSize.max,
+          children: <Widget>[
+            SizedBox(
+              height: headerHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    CountryFlag(rawName: team.teamName, size: 16),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        team.displayName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-        ...team.players.map(
-          (Player p) => _PlayerCard(
-            player: p,
-            isTeamA: isTeamA,
-            selected: selectedIds.contains(p.id),
-            onTap: () => onPlayerTap(p),
-          ),
-        ),
-      ],
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                itemCount: sortedPlayers.length,
+                itemExtent: slotHeight,
+                itemBuilder: (BuildContext _, int i) {
+                  final Player p = sortedPlayers[i];
+                  return _PlayerCard(
+                    player: p,
+                    isTeamA: isTeamA,
+                    selected: selectedIds.contains(p.id),
+                    height: slotHeight,
+                    onTap: () => onPlayerTap(p),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -562,19 +599,26 @@ class _PlayerCard extends StatelessWidget {
     required this.player,
     required this.isTeamA,
     required this.selected,
+    required this.height,
     required this.onTap,
   });
 
   final Player player;
   final bool isTeamA;
   final bool selected;
+  final double height;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    // Tamanhos derivados da altura disponível para o slot, mantendo
+    // proporções legíveis em qualquer tamanho.
+    final double iconSize = (height * 0.78).clamp(22.0, 44.0);
+    final double fontSize = (height * 0.32).clamp(11.0, 14.0);
+    final double verticalPadding = (height * 0.08).clamp(2.0, 6.0);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
+      padding: EdgeInsets.symmetric(vertical: verticalPadding * 0.4),
       child: Material(
         color: selected ? cs.primaryContainer : Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -588,14 +632,16 @@ class _PlayerCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(6),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: EdgeInsets.symmetric(
+              horizontal: 6,
+              vertical: verticalPadding,
+            ),
             child: Row(
               children: <Widget>[
                 PlayerJerseyIcon(
                   player: player,
                   isTeamA: isTeamA,
-                  size: 26,
+                  size: iconSize,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -603,14 +649,14 @@ class _PlayerCard extends StatelessWidget {
                     player.displayName,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: fontSize),
                   ),
                 ),
                 Text(
                   player.playerClass.toStringAsFixed(1),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                    fontSize: fontSize,
                   ),
                 ),
               ],
@@ -663,8 +709,14 @@ class _CourtView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Player> teamA = state.selectedTeamAPlayers;
-    final List<Player> teamB = state.selectedTeamBPlayers;
+    // Posições alinhadas ao slot do `MatchState`: o slot 0 sempre cai
+    // na coordenada _teamATargets[0], slot 1 em [1], etc. Slots vazios
+    // (null) deixam o lugar em branco em quadra — quando um jogador
+    // sai, a posição dele fica vazia até alguém entrar no slot.
+    final List<Player?> teamA = state.teamASlotPlayers;
+    final List<Player?> teamB = state.teamBSlotPlayers;
+    final bool teamAEmpty = teamA.every((Player? p) => p == null);
+    final bool teamBEmpty = teamB.every((Player? p) => p == null);
 
     return Center(
       key: const Key('court-view'),
@@ -690,32 +742,34 @@ class _CourtView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (teamA.isEmpty)
+                    if (teamAEmpty)
                       const Align(
                         alignment: Alignment(0, -0.55),
                         child: _CourtHint(text: 'Tap players in Team A list'),
                       ),
-                    if (teamB.isEmpty)
+                    if (teamBEmpty)
                       const Align(
                         alignment: Alignment(0, 0.55),
                         child: _CourtHint(text: 'Tap players in Team B list'),
                       ),
-                    for (int i = 0; i < teamA.length && i < 5; i++)
-                      _CourtPlayerSlot(
-                        player: teamA[i],
-                        isTeamA: true,
-                        target: _teamATargets[i],
-                        width: w,
-                        height: h,
-                      ),
-                    for (int i = 0; i < teamB.length && i < 5; i++)
-                      _CourtPlayerSlot(
-                        player: teamB[i],
-                        isTeamA: false,
-                        target: _teamBTargets[i],
-                        width: w,
-                        height: h,
-                      ),
+                    for (int i = 0; i < 5; i++)
+                      if (teamA[i] != null)
+                        _CourtPlayerSlot(
+                          player: teamA[i]!,
+                          isTeamA: true,
+                          target: _teamATargets[i],
+                          width: w,
+                          height: h,
+                        ),
+                    for (int i = 0; i < 5; i++)
+                      if (teamB[i] != null)
+                        _CourtPlayerSlot(
+                          player: teamB[i]!,
+                          isTeamA: false,
+                          target: _teamBTargets[i],
+                          width: w,
+                          height: h,
+                        ),
                   ],
                 );
               },
