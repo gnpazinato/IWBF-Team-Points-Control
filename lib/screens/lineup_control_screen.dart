@@ -291,7 +291,6 @@ class _Header extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Expanded(
                   child: _ScoreCell(
