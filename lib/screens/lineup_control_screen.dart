@@ -653,7 +653,11 @@ class _PlayerCard extends StatelessWidget {
                   child: _AutoShrinkText(
                     text: player.displayName,
                     maxFontSize: fontSize,
-                    minFontSize: 8.0,
+                    // 7dp ainda é legível em tablet; permite que
+                    // "MACDONALD, Olivier" / "WILLIAMS, Benjamin"
+                    // caibam encolhidos sem cair em ellipsis quando
+                    // ainda há espaço.
+                    minFontSize: 7.0,
                     textAlign: TextAlign.left,
                   ),
                 ),
@@ -1019,15 +1023,23 @@ class _OperationalButtons extends StatelessWidget {
   }
 }
 
-/// Renderiza texto em uma única linha, encolhendo proporcionalmente o
-/// `fontSize` se a largura natural exceder o espaço disponível. Mantém
-/// `maxFontSize` quando o texto cabe. Diferente de
-/// `Text(overflow: TextOverflow.ellipsis)`, que cortaria com "...", e
-/// diferente de `FittedBox(BoxFit.scaleDown)`, que em alguns layouts
-/// (especialmente dentro de `Align`/`Expanded` com constraints
-/// frouxas) não escala confiavelmente. Aqui medimos com `TextPainter`
-/// e calculamos o `fontSize` final explicitamente — funciona em
-/// qualquer composição de pais.
+/// Renderiza texto em uma única linha aplicando, nesta ordem:
+///
+/// 1. **Caber tamanho natural**: se a largura natural do texto a
+///    `maxFontSize` couber, mantém `maxFontSize`.
+/// 2. **Auto-shrink proporcional**: se não couber, calcula
+///    `idealFontSize = maxFontSize * maxWidth / naturalWidth` e usa
+///    esse valor — texto continua inteiro, fonte menor.
+/// 3. **Ellipsis no piso**: se o `idealFontSize` ficaria abaixo de
+///    `minFontSize` (texto muito longo para ser legível mesmo
+///    encolhido), trava no piso e aplica `TextOverflow.ellipsis`
+///    como fallback final — "THOMPSON, Et…" é melhor do que
+///    desaparecer.
+///
+/// `softWrap: false` impede que o `Text` quebre o nome em duas
+/// linhas e esconda a segunda com `maxLines: 1` (esse era o bug do
+/// "first name some sem ellipsis": o Flutter wrapava em
+/// "THOMPSON,/Ethan" e cortava a segunda linha invisivelmente).
 class _AutoShrinkText extends StatelessWidget {
   const _AutoShrinkText({
     required this.text,
@@ -1049,30 +1061,44 @@ class _AutoShrinkText extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final TextStyle style = TextStyle(
+        final TextStyle baseStyle = TextStyle(
           fontSize: maxFontSize,
           fontWeight: fontWeight,
           color: color,
         );
         final TextPainter painter = TextPainter(
-          text: TextSpan(text: text, style: style),
+          text: TextSpan(text: text, style: baseStyle),
           textDirection: TextDirection.ltr,
           maxLines: 1,
         )..layout();
 
         double finalFontSize = maxFontSize;
-        if (constraints.maxWidth.isFinite &&
-            painter.size.width > constraints.maxWidth &&
-            painter.size.width > 0) {
-          final double scaled =
-              maxFontSize * constraints.maxWidth / painter.size.width;
-          finalFontSize = scaled.clamp(minFontSize, maxFontSize);
+        bool useEllipsis = false;
+
+        if (constraints.maxWidth.isFinite && painter.size.width > 0) {
+          if (painter.size.width > constraints.maxWidth) {
+            final double idealFontSize =
+                maxFontSize * constraints.maxWidth / painter.size.width;
+            if (idealFontSize < minFontSize) {
+              // Mesmo no piso o texto não cabe → trava no piso e
+              // aplica ellipsis. Melhor "THOMPSON, Eth..." do que
+              // texto cortado/sumindo silenciosamente.
+              finalFontSize = minFontSize;
+              useEllipsis = true;
+            } else {
+              // Pequena margem de seguranca (98%) pra evitar 1-2px
+              // de overflow por arredondamento.
+              finalFontSize = idealFontSize * 0.98;
+            }
+          }
         }
 
         return Text(
           text,
           maxLines: 1,
+          softWrap: false,
           textAlign: textAlign,
+          overflow: useEllipsis ? TextOverflow.ellipsis : TextOverflow.clip,
           style: TextStyle(
             fontSize: finalFontSize,
             fontWeight: fontWeight,

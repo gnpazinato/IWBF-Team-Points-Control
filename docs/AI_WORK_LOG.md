@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — oitava rodada (entrada 0032): chips da quadra com tamanho FIXO uniforme via SizedBox; auto-shrink robusto de nomes longos via _AutoShrinkText (LayoutBuilder + TextPainter) substitui FittedBox que não escalava em alguns layouts; slots reposicionados para dar mais gap vertical.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0032 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Validar: (a) todos os chips da quadra com mesmo tamanho externo independente do comprimento do surname; (b) sem sobreposicao em tablets portrait estreitos; (c) nomes longos como "GONZALEZ, Sebastian" / "MACDONALD, Olivier" aparecem INTEIROS encolhidos no card lateral, sem "...". |
+| Status geral | **Fase 5 — nona rodada (entrada 0033): hotfix do auto-shrink que estava cortando o first name silenciosamente. `softWrap: false` impede wrap em duas linhas + ellipsis fallback quando o minFontSize não cabe — "THOMPSON, Eth..." em vez de só "THOMPSON,".** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0033 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Validar especificamente que "MACDONALD, Olivier" e "WILLIAMS, Benjamin" aparecem inteiros ou com ellipsis explicito (nunca cortados em silencio). |
 | Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
@@ -548,6 +548,47 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0033 - 2026-05-14 - Fase 5 - nona rodada: hotfix do auto-shrink (first name sumindo silenciosamente)
+
+Resumo:
+
+- Usuario testou a entrada 0032 no preview Web e mandou dois prints mostrando que nomes longos como `MACDONALD, Olivier`, `WILLIAMS, Benjamin`, `THOMPSON, Ethan` apareciam cortados sem ellipsis: na tela aparecia apenas `MACDONALD,` (com a virgula no fim), e o first name simplesmente sumia. Pior que ellipsis — silencioso, sem aviso visual de que tem mais conteudo.
+
+- **Causa raiz**: o `Text` widget dentro de `_AutoShrinkText` tinha `maxLines: 1` mas `softWrap` no default (`true`). Quando o texto natural era maior que a largura disponivel mesmo apos o auto-shrink, o Flutter quebrava `"MACDONALD, Olivier"` em duas linhas (`["MACDONALD,", "Olivier"]`), e o `maxLines: 1` escondia a segunda linha sem indicador visual.
+
+- **Correcao** em `_AutoShrinkText`:
+  - **`softWrap: false`** no Text → impede a quebra em multiplas linhas. Texto sempre numa linha unica.
+  - **Ellipsis fallback explicito**: o calculo do `idealFontSize` agora detecta quando ele cairia abaixo do `minFontSize`. Quando isso acontece, trava no piso E aplica `TextOverflow.ellipsis`. Resultado: `"THOMPSON, Eth..."` em vez de `"THOMPSON,"` silenciosamente cortado.
+  - **Margem de seguranca 98%**: quando o `idealFontSize` e usado, multiplico por 0.98 para evitar 1-2px de overflow por arredondamento de fonte.
+  - **`minFontSize` no card lateral baixou de 8.0 para 7.0**: da mais espaco antes de cair no ellipsis. 7dp ainda e legivel em tablet.
+
+- **Fluxo final do `_AutoShrinkText`**:
+  1. Mede `naturalWidth` do texto a `maxFontSize` via `TextPainter`.
+  2. Se cabe na largura disponivel → renderiza no `maxFontSize`.
+  3. Se nao cabe, calcula `idealFontSize = maxFontSize * maxWidth / naturalWidth`.
+  4. Se `idealFontSize >= minFontSize` → renderiza em `idealFontSize * 0.98` (texto inteiro, fonte menor).
+  5. Se `idealFontSize < minFontSize` → renderiza em `minFontSize` com `TextOverflow.ellipsis`.
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart`:
+  - `_AutoShrinkText`: `softWrap: false` no Text, branching idealFontSize vs minFontSize, ellipsis fallback, margem 98%;
+  - `_PlayerCard`: `minFontSize` do `_AutoShrinkText` baixou de 8.0 para 7.0.
+
+- `docs/AI_WORK_LOG.md` — esta entrada + tabela de estado.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI valida no push. Os testes existentes da entrada 0032 continuam validos (incluindo a verificacao de que nenhum Text do card usa ellipsis quando nao precisa — agora ellipsis so aparece quando o texto realmente nao cabe nem no piso).
+
+Pendencias / smoke test:
+
+- Tablet portrait estreito: nomes ate ~17 chars devem caber inteiros encolhidos; nomes muito longos (>17-20 chars dependendo da largura) caem em ellipsis explicito (`"...`"), nunca somem sem aviso.
+
+Proximo passo recomendado:
+
+- Smoke test do usuario com os mesmos prints anteriores.
 
 ### 0032 - 2026-05-14 - Fase 5 - oitava rodada: chips da quadra com tamanho FIXO + auto-shrink robusto via TextPainter
 
