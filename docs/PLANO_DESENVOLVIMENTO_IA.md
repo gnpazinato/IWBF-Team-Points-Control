@@ -3,6 +3,20 @@
 Este plano complementa o arquivo principal `IWBF_Team_Points_Control_Planejamento.md`.
 Ele transforma o planejamento inicial em um roteiro curto, testavel e facil de continuar com Codex, Claude Code ou outra IA de desenvolvimento.
 
+> ## ⚠️ ATENCAO — BRANCH ATIVA ⚠️
+>
+> **TODO o trabalho de Fase 1-5 esta na branch `claude/review-and-continue-9ZK5v`.**
+> A `main` so tem o scaffold inicial. Antes de qualquer coisa:
+>
+> ```bash
+> git fetch origin
+> git checkout claude/review-and-continue-9ZK5v
+> git pull --ff-only
+> ```
+>
+> Se voce abrir `lib/main.dart` e ver apenas um placeholder de scaffold,
+> voce esta na branch errada. Nao reimplemente — apenas troque.
+
 ## Regra principal
 
 Antes de qualquer nova tarefa de desenvolvimento, a IA deve ler, nesta ordem:

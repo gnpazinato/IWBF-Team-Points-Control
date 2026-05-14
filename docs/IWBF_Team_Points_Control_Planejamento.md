@@ -2,6 +2,26 @@
 
 > Documento de planejamento para conferência, ajustes e posterior uso como base para desenvolvimento com Flutter, Claude Code, Codex ou outra ferramenta de programação assistida por IA.
 
+> ## ⚠️ ATENCAO — LEIA ANTES DE CODAR ⚠️
+>
+> **TODO o trabalho de Fase 1-5 ja existe na branch `claude/review-and-continue-9ZK5v`.**
+> A `main` ainda esta com o scaffold inicial (commit `a2cc748`). Se voce
+> abrir `lib/main.dart` e ver so um placeholder, voce esta na branch
+> errada — nao reimplemente do zero, apenas troque:
+>
+> ```bash
+> git fetch origin
+> git checkout claude/review-and-continue-9ZK5v
+> git pull --ff-only origin claude/review-and-continue-9ZK5v
+> ```
+>
+> Confirme com `git log --oneline -5` que voce ve commits `feat(fase-5)...`,
+> nao apenas o scaffold.
+>
+> Detalhes completos do estado atual estao em `docs/AI_WORK_LOG.md`
+> (entradas 0001-0027). **Sempre leia esse log antes de qualquer
+> alteracao.** Sao 27 entradas que mostram exatamente onde paramos.
+
 ---
 
 ## 1. Visão geral
