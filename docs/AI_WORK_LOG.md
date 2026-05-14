@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 fechada com 8 rodadas de ajustes (entradas 0023..0030). MVP completo na branch. Usuario compartilhou o preview Web com 2 testers externos — aguardando feedback antes de avancar.** |
-| Fase atual | **Fase 5 fechada (ajustes pos-teste manual). Aguardando feedback externo.** |
-| Proximo passo recomendado | **Duas trilhas possiveis — usuario decide:** (A) testers acharam bugs/melhorias → nova rodada de ajustes (entrada 0031+ na mesma branch); (B) sem feedback ou feedback ja absorvido → fechar ciclo MVP abrindo PR `claude/review-and-continue-9ZK5v -> main` e mergeando. |
+| Status geral | **Fase 5 — setima rodada (entrada 0031): chips da quadra escalam com a largura para evitar sobreposicao em tablets portrait estreitos; nomes longos no card lateral usam FittedBox em vez de ellipsis.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0031 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy (simular tablet portrait estreito e validar que: nao ha sobreposicao na quadra; nomes longos como "MACDONALD, Olivier" e "WILLIAMS, Benjamin" aparecem inteiros encolhidos). |
 | Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
@@ -548,6 +548,57 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0031 - 2026-05-14 - Fase 5 - setima rodada: chips da quadra escalam por largura + FittedBox em nomes longos
+
+Resumo:
+
+- Usuario testou o preview Web simulando tablet portrait estreito e reportou dois problemas visuais:
+  1. **Cards na quadra se sobrepondo** — os chips dos jogadores estavam com tamanho fixo (`PlayerJerseyIcon(size: 36)` + padding/fontes hard-coded) enquanto a quadra encolhia, causando overlap horizontal e vertical.
+  2. **Nomes longos cortados com "..."** na lista lateral (ex.: `MACDONALD, Olivi...`, `WILLIAMS, Benjam...`). Usuario sugeriu reduzir o tamanho da fonte antes de cortar — eu fui de FittedBox + scaleDown, que e a versao mais profissional dessa ideia (encolhe proporcionalmente, mantem a legibilidade do nome inteiro).
+
+**1. Quadra responsiva.** `_CourtView` agora calcula `slotMaxWidth = w * 0.34` e `slotMaxHeight = h * 0.17` (passo entre slots adjacentes — 0.40w horizontal e 0.18h vertical, com margem para nao encostar) e propaga essas dimensoes para `_CourtPlayerSlot` → `_CourtPlayerChip`. O chip:
+   - usa `ConstrainedBox(maxWidth, maxHeight)` para nunca exceder o slot;
+   - deriva `iconSize`, `fontSize`, `horizontalPad`, `verticalPad` e `gap` do `base = maxHeight.clamp(40, 96)`. Limites baixos garantem legibilidade minima em telas muito pequenas; limites altos evitam icone gigante em desktop largo;
+   - envolve o surname num `FittedBox(scaleDown)` para que nomes como `MACDONALD`/`HERNANDEZ`/`SUAREZ` encolham proporcionalmente em vez de cortar.
+
+   Em tablet portrait estreito (~720x1280), com a quadra ocupando ~280x520, o chip cai para ~40dp de icone e ~10dp de fonte — cinco chips por equipe cabem confortavelmente. Em desktop wide, o chip estende para o teto de 44dp de icone + 11dp de fonte (limite do clamp). A imagem PNG da quadra continua usando `AspectRatio + BoxFit.cover`, entao a quadra escala junto sem distorcer.
+
+**2. Auto-shrink nos cards laterais.** `_PlayerCard` trocou `Text(overflow: ellipsis)` por `Align(centerLeft) + FittedBox(scaleDown, alignment: centerLeft) + Text`. Resultado:
+   - nomes curtos renderizam no tamanho natural (fontSize derivado da altura do slot, como antes);
+   - nomes longos encolhem proporcionalmente ate caberem, sem "..." e sem cortar letras.
+   - O `alignment: centerLeft` no FittedBox preserva a aparencia esquerda-justificada que o `Expanded` ja tinha.
+
+Decisao de design: `FittedBox(scaleDown)` foi escolhido em vez de "reduzir fontSize por contagem de caracteres" porque (a) e visualmente proporcional a largura disponivel real, nao a heuristica; (b) suporta variacoes de DPR sem ajuste manual; (c) e a forma idiomatica de auto-shrink em Flutter.
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart`:
+  - `_CourtView` calcula `slotMaxWidth` e `slotMaxHeight` no `LayoutBuilder` e propaga;
+  - `_CourtPlayerSlot` ganha `slotMaxWidth`/`slotMaxHeight` no construtor e repassa pro chip;
+  - `_CourtPlayerChip` reescrito: dimensoes derivadas do `maxHeight`, ConstrainedBox, FittedBox no surname;
+  - `_PlayerCard` (lista lateral): `Align(centerLeft) + FittedBox(scaleDown)` em vez de `TextOverflow.ellipsis`.
+
+- `test/screens/lineup_control_screen_test.dart`:
+  - Novo grupo "responsive court chips (entrada 0031)" com 2 testes:
+    - chip da quadra: 5 jogadores cabem em tela 720x1280, surnames `SURNAME1`..`SURNAME5` todos encontraveis;
+    - card lateral: descendente FittedBox presente no widget tree, comprovando o mecanismo de auto-shrink.
+
+- `docs/AI_WORK_LOG.md` — esta entrada + tabela de estado atualizada.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI valida no push.
+
+Pendencias / smoke test:
+
+- Validar visualmente no preview Web pos-deploy:
+  - tablet portrait estreito (Galaxy Tab A9+ em portrait, ~800x1340 dpr-aware): chips na quadra cabem sem overlap, nomes longos da lista lateral aparecem inteiros encolhidos;
+  - desktop wide (>1200dp): chips mantem tamanho confortavel pelo teto do clamp.
+
+Proximo passo recomendado:
+
+- Aguardar feedback. Se OK, considerar fechar o ciclo MVP (Trilha B do prompt de continuidade) e abrir PR `claude/review-and-continue-9ZK5v -> main`.
 
 ### 0030 - 2026-05-14 - Fase 5 - sexta rodada: variantes de genero amplas + aliases extras (USA, PRC, IRI, GB)
 

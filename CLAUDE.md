@@ -19,12 +19,16 @@ git log --oneline -10
 ```
 
 Você deve ver commits `feat(fase-5)...`, `fix(fase-5)...`, `docs(...)...`.
-O mais recente em 2026-05-14 é o `docs: prompt de continuidade pos-Fase 5`.
+O mais recente em 2026-05-14 cobre a entrada 0031 (court chips
+responsivos + FittedBox em nomes longos).
 
 ## Estado atual (resumo)
 
-- **Fase atual:** Fase 5 fechada com 8 rodadas de ajustes pós-teste
-  (entradas 0023..0030 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
+- **Fase atual:** Fase 5 com 9 rodadas de ajustes pós-teste
+  (entradas 0023..0031 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
+  Última rodada (0031) ajustou: chips da quadra responsivos por largura
+  (evita sobreposição em tablet portrait estreito) + FittedBox em nomes
+  longos do card lateral (encolhe em vez de cortar com "...").
 - **Testers externos:** 2 pessoas têm o link do preview Web
   (https://gnpazinato.github.io/IWBF-Team-Points-Control/), compartilhado
   em 2026-05-14. Aguardando feedback antes de avançar.
@@ -39,7 +43,7 @@ O mais recente em 2026-05-14 é o `docs: prompt de continuidade pos-Fase 5`.
    2. `docs/PLANO_DESENVOLVIMENTO_IA.md` (fases e estratégia);
    3. `docs/AI_WORK_LOG.md` (fonte da verdade — estado, decisões,
       convenções, histórico). Em particular: tabela "Estado atual" no
-      topo + entradas 0023..0030 (Fase 5 inteira) + seção
+      topo + entradas 0023..0031 (Fase 5 inteira) + seção
       "Prompt curto de continuidade — Fase 5 fechada / aguardando
       testers" no fim.
 3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +

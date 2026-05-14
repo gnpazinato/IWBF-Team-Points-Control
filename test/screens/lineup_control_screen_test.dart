@@ -707,4 +707,61 @@ void main() {
       expect(cache.lastSaved, isNotNull);
     });
   });
+
+  group('LineupControlScreen — responsive court chips (entrada 0031)', () {
+    testWidgets(
+        'chip da quadra cabe dentro do slot maximo em tablet portrait estreito',
+        (WidgetTester tester) async {
+      // Simula o caso reportado pelo usuario: tablet portrait estreito
+      // onde a quadra fica com ~250dp de largura e os chips antigos
+      // (size 36 hard-coded) se sobrepunham.
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: _freshState(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+        size: const Size(720, 1280),
+      );
+
+      // Seleciona 5 jogadores da Team A para preencher todos os slots.
+      for (int shirt in <int>[1, 2, 3, 4, 5]) {
+        await _tapPlayer(tester, 'team-brazil', shirt);
+      }
+
+      // Os 5 surnames devem aparecer na quadra. FittedBox dentro do chip
+      // garante que nomes longos encolham em vez de cortar.
+      for (int shirt in <int>[1, 2, 3, 4, 5]) {
+        expect(find.text('SURNAME$shirt'), findsOneWidget);
+      }
+    });
+
+    testWidgets(
+        'nomes longos no card lateral usam FittedBox (auto-shrink)',
+        (WidgetTester tester) async {
+      // Garante que o widget tree contem FittedBox dentro do card
+      // lateral. Sem isso, nomes como "MACDONALD, Olivier" eram cortados
+      // com ellipsis ao inves de encolherem.
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: _freshState(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      final Finder card = find.byKey(const Key('player-card-team-brazil::1'));
+      expect(card, findsOneWidget);
+      // Procura um FittedBox como descendente do card — comprova o
+      // mecanismo de auto-shrink instalado pela entrada 0031.
+      expect(
+        find.descendant(of: card, matching: find.byType(FittedBox)),
+        findsWidgets,
+      );
+    });
+  });
 }

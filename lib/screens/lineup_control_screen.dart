@@ -644,12 +644,22 @@ class _PlayerCard extends StatelessWidget {
                   size: iconSize,
                 ),
                 const SizedBox(width: 6),
+                // FittedBox + alignment.centerLeft preserva o "encolher
+                // em vez de cortar com ...". Para nomes longos como
+                // "MACDONALD, Olivier" ou "WILLIAMS, Benjamin" a fonte
+                // reduz proporcionalmente antes de chegar no Expanded.
                 Expanded(
-                  child: Text(
-                    player.displayName,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: TextStyle(fontSize: fontSize),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        player.displayName,
+                        maxLines: 1,
+                        style: TextStyle(fontSize: fontSize),
+                      ),
+                    ),
                   ),
                 ),
                 Text(
@@ -730,6 +740,15 @@ class _CourtView extends StatelessWidget {
               builder: (BuildContext _, BoxConstraints c) {
                 final double w = c.maxWidth;
                 final double h = c.maxHeight;
+                // O passo horizontal entre dois slots (slot lateral
+                // esquerdo em 0.30 x slot lateral direito em 0.70) é
+                // 0.40 * w. Reservamos uma margem para evitar que dois
+                // chips encostem. Para a vertical, o passo entre as
+                // duas fileiras da mesma equipe é 0.18 * h (de 0.10
+                // para 0.28). Usamos a dimensão mais restritiva para
+                // calcular o tamanho do chip.
+                final double slotMaxWidth = w * 0.34;
+                final double slotMaxHeight = h * 0.17;
                 return Stack(
                   alignment: Alignment.center,
                   children: <Widget>[
@@ -760,6 +779,8 @@ class _CourtView extends StatelessWidget {
                           target: _teamATargets[i],
                           width: w,
                           height: h,
+                          slotMaxWidth: slotMaxWidth,
+                          slotMaxHeight: slotMaxHeight,
                         ),
                     for (int i = 0; i < 5; i++)
                       if (teamB[i] != null)
@@ -769,6 +790,8 @@ class _CourtView extends StatelessWidget {
                           target: _teamBTargets[i],
                           width: w,
                           height: h,
+                          slotMaxWidth: slotMaxWidth,
+                          slotMaxHeight: slotMaxHeight,
                         ),
                   ],
                 );
@@ -814,6 +837,8 @@ class _CourtPlayerSlot extends StatelessWidget {
     required this.target,
     required this.width,
     required this.height,
+    required this.slotMaxWidth,
+    required this.slotMaxHeight,
   });
 
   final Player player;
@@ -821,6 +846,8 @@ class _CourtPlayerSlot extends StatelessWidget {
   final Offset target;
   final double width;
   final double height;
+  final double slotMaxWidth;
+  final double slotMaxHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -829,59 +856,97 @@ class _CourtPlayerSlot extends StatelessWidget {
       top: height * target.dy,
       child: FractionalTranslation(
         translation: const Offset(-0.5, -0.5),
-        child: _CourtPlayerChip(player: player, isTeamA: isTeamA),
+        child: _CourtPlayerChip(
+          player: player,
+          isTeamA: isTeamA,
+          maxWidth: slotMaxWidth,
+          maxHeight: slotMaxHeight,
+        ),
       ),
     );
   }
 }
 
 class _CourtPlayerChip extends StatelessWidget {
-  const _CourtPlayerChip({required this.player, required this.isTeamA});
+  const _CourtPlayerChip({
+    required this.player,
+    required this.isTeamA,
+    required this.maxWidth,
+    required this.maxHeight,
+  });
 
   final Player player;
   final bool isTeamA;
+  final double maxWidth;
+  final double maxHeight;
 
   @override
   Widget build(BuildContext context) {
     final Color bg = isTeamA ? Colors.white : IwbfColors.textPrimary;
     final Color fg = isTeamA ? IwbfColors.textPrimary : Colors.white;
     final Color border = isTeamA ? IwbfColors.goldDeep : IwbfColors.textPrimary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: border, width: 1.2),
-        borderRadius: BorderRadius.circular(6),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          PlayerJerseyIcon(
-            player: player,
-            isTeamA: isTeamA,
-            size: 36,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            player.surname.toUpperCase(),
-            style: TextStyle(
-              color: fg,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+
+    // Derivamos icone, fonte e padding do menor lado disponivel para o
+    // slot. Isso garante que em tablets estreitos (portrait) os chips
+    // encolhem proporcionalmente em vez de sobreporem. Limites baixos
+    // garantem legibilidade minima; limites altos evitam icone
+    // gigante em desktops largos.
+    final double base = maxHeight.clamp(40.0, 96.0).toDouble();
+    final double iconSize = (base * 0.50).clamp(20.0, 44.0);
+    final double fontSize = (base * 0.16).clamp(7.5, 11.0);
+    final double horizontalPad = (base * 0.07).clamp(3.0, 8.0);
+    final double verticalPad = (base * 0.05).clamp(2.0, 6.0);
+    final double gap = (base * 0.03).clamp(1.0, 3.0);
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPad,
+          vertical: verticalPad,
+        ),
+        decoration: BoxDecoration(
+          color: bg,
+          border: Border.all(color: border, width: 1.2),
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
-          ),
-          Text(
-            player.playerClass.toStringAsFixed(1),
-            style: TextStyle(color: fg, fontSize: 10),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            PlayerJerseyIcon(
+              player: player,
+              isTeamA: isTeamA,
+              size: iconSize,
+            ),
+            SizedBox(height: gap),
+            // FittedBox encolhe nomes longos (`MACDONALD`, `HERNANDEZ`) ao
+            // inves de cortar com "...". Isso e visualmente mais limpo
+            // num chip pequeno do que ellipsis.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                player.surname.toUpperCase(),
+                maxLines: 1,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Text(
+              player.playerClass.toStringAsFixed(1),
+              style: TextStyle(color: fg, fontSize: fontSize),
+            ),
+          ],
+        ),
       ),
     );
   }
