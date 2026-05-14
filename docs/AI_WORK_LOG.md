@@ -548,6 +548,29 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0028 - 2026-05-14 - Docs-only PR para main (#2): branch warning persistente
+
+Resumo:
+
+- Push direto na `main` foi bloqueado (HTTP 403 — proteção da branch). Solução: branch nova `docs/sync-warning-to-main` com apenas os 4 arquivos de doc atualizados, PR #2 aberto em https://github.com/gnpazinato/IWBF-Team-Points-Control/pull/2.
+- Quando o usuário mergear, qualquer chat futuro que pousar em `main` lê os docs com o aviso de branch e o estado real de Fase 1-5 — não vai mais cair no equívoco de "Fase 1 ainda pendente".
+
+Arquivos no PR (modificados em `main`):
+
+- `README.md`
+- `docs/IWBF_Team_Points_Control_Planejamento.md`
+- `docs/PLANO_DESENVOLVIMENTO_IA.md`
+- `docs/AI_WORK_LOG.md`
+
+`lib/`, `pubspec.yaml`, `android/`, `web/`, workflows, assets — intocados em `main`.
+
+Quando o ciclo MVP fechar e o PR de **código** (`claude/review-and-continue-9ZK5v → main`) for mergeado, os blocos de aviso podem ser removidos.
+
+Próximo passo recomendado:
+
+- Usuário merge o PR #2 (docs).
+- Continuar Fase 5 com novos ajustes na branch `claude/review-and-continue-9ZK5v`.
+
 ### 0027 - 2026-05-14 - Fase 5 - quarta rodada: gender por equipe, templates ricos, Point Limit ampliado, "or" na home + branch warning nos docs
 
 Resumo:
