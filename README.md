@@ -15,7 +15,10 @@ App Android offline (Flutter) para comissários conferirem a soma dos pontos de 
 >
 > Depois leia, em ordem: `docs/IWBF_Team_Points_Control_Planejamento.md`,
 > `docs/PLANO_DESENVOLVIMENTO_IA.md`, `docs/AI_WORK_LOG.md` (esta última
-> tem 27 entradas com o estado exato).
+> tem 30 entradas, sendo as 0023..0030 toda a Fase 5 — 8 rodadas de
+> ajustes pós-teste manual). O prompt de continuidade está na seção
+> "Prompt curto de continuidade — Fase 5 fechada / aguardando testers"
+> no fim do log.
 
 Veja [`docs/IWBF_Team_Points_Control_Planejamento.md`](docs/IWBF_Team_Points_Control_Planejamento.md) para o plano completo.
 

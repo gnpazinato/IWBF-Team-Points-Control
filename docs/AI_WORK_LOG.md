@@ -41,9 +41,10 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — sexta rodada: variantes de genero (M/F/W/Man/Mens/Masc/Femenino...) + aliases extras (USA "United States America", PRC, IRI, GB, Korea Republic) aceitos no parser.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0030 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario com planilha contendo variantes mistas (ex.: "Arg Men", "USA F", "Argentina Masculino"). |
+| Status geral | **Fase 5 fechada com 8 rodadas de ajustes (entradas 0023..0030). MVP completo na branch. Usuario compartilhou o preview Web com 2 testers externos — aguardando feedback antes de avancar.** |
+| Fase atual | **Fase 5 fechada (ajustes pos-teste manual). Aguardando feedback externo.** |
+| Proximo passo recomendado | **Duas trilhas possiveis — usuario decide:** (A) testers acharam bugs/melhorias → nova rodada de ajustes (entrada 0031+ na mesma branch); (B) sem feedback ou feedback ja absorvido → fechar ciclo MVP abrindo PR `claude/review-and-continue-9ZK5v -> main` e mergeando. |
+| Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
@@ -1506,7 +1507,11 @@ Comece pelo proximo passo recomendado do AI_WORK_LOG e me confirme
 em uma frase qual e o estado atual antes de codar.
 ```
 
-## Prompt curto de continuidade — Fase 5
+## Prompt curto de continuidade — Fase 5 fechada / aguardando testers (atual)
+
+> Este prompt e o que o usuario deve colar numa nova conversa. Ele
+> assume que o chat anterior fechou a Fase 5 (entradas 0023..0030).
+> Nao precisa pedir prompt novo — esta secao e a fonte de verdade.
 
 ```text
 Você está retomando o IWBF Team Points Control (Flutter offline para
@@ -1515,57 +1520,92 @@ comissários de basquete em cadeira de rodas).
 Antes de qualquer coisa, leia nesta ordem:
 1. docs/IWBF_Team_Points_Control_Planejamento.md
 2. docs/PLANO_DESENVOLVIMENTO_IA.md
-3. docs/AI_WORK_LOG.md  ← fonte da verdade (estado, decisões, convenções, próximo passo)
+3. docs/AI_WORK_LOG.md  ← fonte da verdade. Em particular: a tabela
+   "Estado atual" (topo) e as entradas 0023..0030 que cobrem TODA a
+   Fase 5 (8 rodadas de ajustes pos-teste manual).
 
-Branch de trabalho: claude/review-and-continue-9ZK5v (já existe no remoto)
-Repositório: gnpazinato/iwbf-team-points-control
+Branch de trabalho: claude/review-and-continue-9ZK5v (já existe no
+remoto, sincronizada). Repositório: gnpazinato/iwbf-team-points-control.
 
-Estado atual: Fase 4 completa. Preview Web em
-https://gnpazinato.github.io/IWBF-Team-Points-Control/ ativo.
-flutter analyze 0 issues, flutter test 145 passed, build web OK.
-Item 1 da Fase 5 (logo IWBF preto sobre fundo claro) ja foi resolvido
-na sessao anterior. Veja entrada 0023 do AI_WORK_LOG para a lista
-completa de itens da Fase 5.
+Confirme o estado executando antes de codar qualquer coisa:
+  git fetch origin
+  git checkout claude/review-and-continue-9ZK5v
+  git pull --ff-only origin claude/review-and-continue-9ZK5v
+  git log --oneline -10
+Você deve ver commits "feat(fase-5)..." recentes — o último é o da
+entrada 0030 ("variantes de genero amplas + aliases extras"). Se a
+única coisa que aparecer for o scaffold inicial, VOCÊ ESTÁ NA BRANCH
+ERRADA — não reimplemente do zero, troque de branch.
 
-Próximo passo: Fase 5 — Ajustes de polimento visual pós-teste manual.
-Lista de bugs/ajustes (entrada 0023 do AI_WORK_LOG tem detalhes):
+Estado atual:
+- Fase 5 fechada com 8 rodadas (entradas 0023..0030). MVP completo:
+  upload de planilha .xlsx, validação, correção, Match Setup com
+  bandeira + gender no dropdown, dialog de confirmação Men vs Women,
+  Lineup Control com quadra real (court.png + slots fixos), vibração
+  no cruzamento de limite, cache, wakelock, templates pre-preenchidos
+  com 16 equipes (8 países x 2 gêneros x 12 atletas), aliases de
+  países cobrindo as 4 zonas IWBF (~96 países), variantes de gênero
+  (M/F/W/Men/Mens/Man/Mans/Male/Females/Masculino/Femenino/Masc/Fem
+  etc.) no team_name e na coluna gender.
+- Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/
+  servido a partir desta branch — atualiza a cada push.
+- Usuário compartilhou o link com 2 testers externos em 2026-05-14.
 
-2. PlayerJerseyIcon: os assets team-a/b-men/women.png ja tem numero 10
-   estampado. Overlay numerico fica por cima do 10 e fica ilegivel.
-   Decidir: trocar assets (preferencia SVG) OU reposicionar overlay.
+Há DUAS trilhas possíveis. Pergunte ao usuário qual aplica:
 
-3. Icones pixelados/borrados no preview. Investigar filterQuality,
-   dimensoes, ou regerar como SVG (flutter_svg).
+▸ TRILHA A — Testers reportaram bugs / melhorias.
+  Comportamento: peça a lista detalhada de bugs/sugestões dos testers
+  antes de codar. Para cada item, decida se é:
+    - bug visual → ajuste no widget afetado;
+    - bug de lógica → ajuste no service/parser/model + teste novo;
+    - sugestão de copy/UX → ajuste pontual.
+  Continue na mesma branch. Adicione entrada ### 0031 (ou superior)
+  no AI_WORK_LOG. Convenção de commit: feat(fase-5):... / fix(fase-5):...
 
-4. Quadra sem icones dos jogadores: _CourtPlayerChip mostra so texto.
-   Planejamento pede icone na quadra. Trocar por PlayerJerseyIcon
-   apos resolver item 2.
+▸ TRILHA B — Sem feedback (ou já absorvido) / usuário quer encerrar
+  o ciclo MVP.
+  Comportamento:
+    1. Confirme com o usuário que TRILHA B é o que ele quer.
+    2. Verifique git status limpo + push em dia.
+    3. Abra PR `claude/review-and-continue-9ZK5v -> main` via GitHub
+       MCP (mcp__github__create_pull_request). Título sugerido:
+       "feat: IWBF Team Points Control MVP — Fases 1-5 completas".
+       Body com resumo das 5 fases (use o checklist do log) +
+       link para o preview Web + nota sobre o branch warning nos
+       docs que devera ser removido apos merge.
+    4. NÃO mergeie sozinho — peça aprovação do usuário antes.
+    5. Após o merge, abra entrada nova no log registrando o fechamento
+       do ciclo MVP e proponha próximos passos (estatísticas, scoring,
+       Play Store, refactor — pedir ao usuário qual direção).
 
-5. Template .xlsx com dados pre-preenchidos incorretos. Pedir lista
-   detalhada do que esta errado em _sampleRoster (lib/services/
-   template_generator_service.dart) antes de codar.
+Regras de trabalho (não revisitar sem motivo técnico):
+- Flutter local em /root/flutter/bin/flutter quando disponível.
+  Se faltar, validação cai na CI no push.
+- Sempre rodar localmente (quando Flutter disponível): flutter pub get
+  → flutter analyze --no-fatal-infos (0 issues) → flutter test
+  (tudo verde). Se Flutter ausente no sandbox, push direto — CI valida.
+- Não commit pubspec.lock se mudou só por pub get local
+  (git restore pubspec.lock antes do commit).
+- Plugins de plataforma sempre via callback/serviço injetável
+  (VibrationService, WakelockController, FilePicker callback, etc.).
+- Em widget tests, NUNCA await Navigator.push(...) — o Future só
+  completa quando a rota é popada, causa timeout.
+- Capture Navigator.of(context) antes do primeiro await em handlers
+  assíncronos para evitar use_build_context_synchronously.
+- Color.withValues(alpha: x), nunca .withOpacity(x) (deprecated).
+- DropdownButtonFormField.initialValue, nunca .value (deprecated).
+- PopScope.onPopInvokedWithResult, nunca .onPopInvoked (deprecated).
+- Cores de alerta sempre via IwbfColors (alertRed, alertRedSurface,
+  goldDeep) — não Colors.red.shade*.
 
-6. Usuario mencionou outros pequenos ajustes alem destes — pedir a
-   lista completa antes de codar.
+Rotina por incremento: implementa o menor pedaço útil → analyze +
+test verdes (ou push se Flutter ausente, deixando CI validar) →
+atualiza AI_WORK_LOG.md (nova entrada ### 00NN + tabela de estado +
+arquivos alterados + testes + próximo passo) → commit + push em
+claude/review-and-continue-9ZK5v → me reporta em 4-8 linhas.
 
-Regras (não revisitar sem motivo técnico):
-- Flutter local em /root/flutter/bin/flutter (se faltar, ver snippet
-  no log).
-- Sempre flutter pub get → analyze --no-fatal-infos (0 issues) →
-  test (tudo verde) antes do push.
-- Não commit pubspec.lock se mudou só pelo pub get local.
-- Plugins de plataforma sempre via callback/serviço injetável.
-- Não pedir validação manual; sua validação é analyze + test.
-- Em widget tests, nunca await Navigator.push(...).
-- Commits convencionais: feat(fase-5):..., fix(fase-5):..., chore(fase-5):...
-
-Rotina por incremento: implementa o menor pedaço útil → analyze + test
-local verdes → atualiza AI_WORK_LOG.md (nova entrada ### 00NN +
-checklist da Fase 5 + arquivos alterados + testes + próximo passo) →
-commit + push em claude/review-and-continue-9ZK5v → me reporta em 4-8
-linhas.
-
-Comece confirmando que leu os docs e pedindo (a) a lista detalhada
-do que esta errado no template (item 5) e (b) a lista completa dos
-"outros pequenos ajustes" (item 6) antes de codar o item 2.
+Comece confirmando em UMA frase:
+- Qual o último commit que você vê (sha + título);
+- Qual trilha (A ou B) aplica.
+Só depois disso, pergunte ou implemente.
 ```

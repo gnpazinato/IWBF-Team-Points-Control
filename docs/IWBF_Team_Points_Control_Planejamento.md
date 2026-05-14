@@ -19,8 +19,11 @@
 > nao apenas o scaffold.
 >
 > Detalhes completos do estado atual estao em `docs/AI_WORK_LOG.md`
-> (entradas 0001-0027). **Sempre leia esse log antes de qualquer
-> alteracao.** Sao 27 entradas que mostram exatamente onde paramos.
+> (entradas 0001-0030). **Sempre leia esse log antes de qualquer
+> alteracao.** Sao 30 entradas que mostram exatamente onde paramos.
+> O prompt de continuidade pronto para uso esta na ultima secao do
+> log ("Prompt curto de continuidade — Fase 5 fechada / aguardando
+> testers").
 
 ---
 
