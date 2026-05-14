@@ -1663,7 +1663,7 @@ em uma frase qual e o estado atual antes de codar.
 ## Prompt curto de continuidade — Fase 5 fechada / aguardando testers (atual)
 
 > Este prompt e o que o usuario deve colar numa nova conversa. Ele
-> assume que o chat anterior fechou a Fase 5 (entradas 0023..0030).
+> assume que o chat anterior fechou a Fase 5 (entradas 0023..0033).
 > Nao precisa pedir prompt novo — esta secao e a fonte de verdade.
 
 ```text
@@ -1674,8 +1674,8 @@ Antes de qualquer coisa, leia nesta ordem:
 1. docs/IWBF_Team_Points_Control_Planejamento.md
 2. docs/PLANO_DESENVOLVIMENTO_IA.md
 3. docs/AI_WORK_LOG.md  ← fonte da verdade. Em particular: a tabela
-   "Estado atual" (topo) e as entradas 0023..0030 que cobrem TODA a
-   Fase 5 (8 rodadas de ajustes pos-teste manual).
+   "Estado atual" (topo) e as entradas 0023..0033 que cobrem TODA a
+   Fase 5 (11 rodadas de ajustes pos-teste manual).
 
 Branch de trabalho: claude/review-and-continue-9ZK5v (já existe no
 remoto, sincronizada). Repositório: gnpazinato/iwbf-team-points-control.
@@ -1691,7 +1691,7 @@ entrada 0030 ("variantes de genero amplas + aliases extras"). Se a
 ERRADA — não reimplemente do zero, troque de branch.
 
 Estado atual:
-- Fase 5 fechada com 8 rodadas (entradas 0023..0030). MVP completo:
+- Fase 5 fechada com 11 rodadas (entradas 0023..0033). MVP completo:
   upload de planilha .xlsx, validação, correção, Match Setup com
   bandeira + gender no dropdown, dialog de confirmação Men vs Women,
   Lineup Control com quadra real (court.png + slots fixos), vibração
@@ -1699,7 +1699,11 @@ Estado atual:
   com 16 equipes (8 países x 2 gêneros x 12 atletas), aliases de
   países cobrindo as 4 zonas IWBF (~96 países), variantes de gênero
   (M/F/W/Men/Mens/Man/Mans/Male/Females/Masculino/Femenino/Masc/Fem
-  etc.) no team_name e na coluna gender.
+  etc.) no team_name e na coluna gender, chips da quadra com tamanho
+  fixo uniforme + auto-shrink robusto via _AutoShrinkText (Layout
+  Builder + TextPainter + softWrap:false + ellipsis fallback) — nomes
+  longos como "MACDONALD, Olivier" encolhem ou caem em ellipsis,
+  nunca somem sem aviso.
 - Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/
   servido a partir desta branch — atualiza a cada push.
 - Usuário compartilhou o link com 2 testers externos em 2026-05-14.
@@ -1712,7 +1716,7 @@ Há DUAS trilhas possíveis. Pergunte ao usuário qual aplica:
     - bug visual → ajuste no widget afetado;
     - bug de lógica → ajuste no service/parser/model + teste novo;
     - sugestão de copy/UX → ajuste pontual.
-  Continue na mesma branch. Adicione entrada ### 0031 (ou superior)
+  Continue na mesma branch. Adicione entrada ### 0034 (ou superior)
   no AI_WORK_LOG. Convenção de commit: feat(fase-5):... / fix(fase-5):...
 
 ▸ TRILHA B — Sem feedback (ou já absorvido) / usuário quer encerrar

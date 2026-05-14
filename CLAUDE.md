@@ -19,8 +19,8 @@ git log --oneline -10
 ```
 
 Você deve ver commits `feat(fase-5)...`, `fix(fase-5)...`, `docs(...)...`.
-O mais recente em 2026-05-14 cobre a entrada 0031 (court chips
-responsivos + FittedBox em nomes longos).
+O mais recente em 2026-05-14 é `ab7c654 fix(fase-5): hotfix do
+auto-shrink — first name sumindo sem ellipsis` (entrada 0033).
 
 ## Estado atual (resumo)
 
