@@ -170,10 +170,33 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
 
   List<Widget> _teamTiles() {
     if (_teams.isEmpty) return const <Widget>[];
-    final List<Team> sorted = <Team>[..._teams]
-      ..sort((Team a, Team b) =>
-          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
-    return <Widget>[
+
+    final List<Team> menTeams = <Team>[];
+    final List<Team> womenTeams = <Team>[];
+    final List<Team> mixedTeams = <Team>[];
+    final List<Team> otherTeams = <Team>[];
+
+    for (final Team t in _teams) {
+      switch (t.gender) {
+        case TeamGender.men:
+          menTeams.add(t);
+        case TeamGender.women:
+          womenTeams.add(t);
+        case TeamGender.mixed:
+          mixedTeams.add(t);
+        case TeamGender.unspecified:
+          otherTeams.add(t);
+      }
+    }
+
+    int alphaSort(Team a, Team b) =>
+        a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+    menTeams.sort(alphaSort);
+    womenTeams.sort(alphaSort);
+    mixedTeams.sort(alphaSort);
+    otherTeams.sort(alphaSort);
+
+    final List<Widget> tiles = <Widget>[
       const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
@@ -181,18 +204,45 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
       ),
-      ...sorted.map((Team team) => Card(
-            clipBehavior: Clip.antiAlias,
-            child: ExpansionTile(
-              key: Key('team-tile-${team.id}'),
-              leading: CountryFlag(rawName: team.teamName, size: 24),
-              title: Text(team.displayName),
-              subtitle:
-                  Text('${team.players.length} player(s) imported'),
-              children: _playerRows(team),
-            ),
-          )),
     ];
+    if (menTeams.isNotEmpty) {
+      tiles.add(const _SectionHeader(label: "Men's Teams"));
+      tiles.addAll(menTeams.map(_teamCard));
+    }
+    if (womenTeams.isNotEmpty) {
+      tiles.add(const _SectionHeader(label: "Women's Teams"));
+      tiles.addAll(womenTeams.map(_teamCard));
+    }
+    if (mixedTeams.isNotEmpty) {
+      tiles.add(const _SectionHeader(label: 'Mixed Teams'));
+      tiles.addAll(mixedTeams.map(_teamCard));
+    }
+    if (otherTeams.isNotEmpty) {
+      // Quando os outros grupos existem, distinguimos "Other". Quando só
+      // este existe (planilha sem coluna gender), omitimos o header e
+      // mostramos os times direto.
+      final bool hasGenderedGroups = menTeams.isNotEmpty ||
+          womenTeams.isNotEmpty ||
+          mixedTeams.isNotEmpty;
+      if (hasGenderedGroups) {
+        tiles.add(const _SectionHeader(label: 'Other Teams'));
+      }
+      tiles.addAll(otherTeams.map(_teamCard));
+    }
+    return tiles;
+  }
+
+  Widget _teamCard(Team team) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: Key('team-tile-${team.id}'),
+        leading: CountryFlag(rawName: team.teamName, size: 24),
+        title: Text(team.displayName),
+        subtitle: Text('${team.players.length} player(s) imported'),
+        children: _playerRows(team),
+      ),
+    );
   }
 
   List<Widget> _playerRows(Team team) {
@@ -553,6 +603,29 @@ class _IssueBlock extends StatelessWidget {
             trailing!,
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Cabeçalho de subseção em "Teams found" — separa Men's / Women's /
+/// Mixed / Other quando a planilha tem atletas de gêneros diferentes.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }

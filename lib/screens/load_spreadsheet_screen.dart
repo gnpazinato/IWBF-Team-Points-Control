@@ -223,7 +223,7 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
                 icon: const Icon(Icons.download_outlined),
                 label: const Text('Download Template — Single Sheet'),
               ),
-              const SizedBox(height: 8),
+              const _OrDivider(),
               OutlinedButton.icon(
                 key: const Key('download-template-per-team'),
                 onPressed: _busy
@@ -248,3 +248,29 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
   }
 }
 
+/// Separador "or" entre os dois botões de download de template.
+/// Deixa explícito que as duas planilhas são alternativas equivalentes.
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle? style = Theme.of(context)
+        .textTheme
+        .bodySmall
+        ?.copyWith(fontWeight: FontWeight.w600);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: <Widget>[
+          const Expanded(child: Divider(thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text('or', style: style),
+          ),
+          const Expanded(child: Divider(thickness: 1)),
+        ],
+      ),
+    );
+  }
+}

@@ -196,8 +196,7 @@ class SpreadsheetParserService {
       );
     }
 
-    final Map<String, List<Player>> playersByTeamId = <String, List<Player>>{};
-    final Map<String, String> teamIdToName = <String, String>{};
+    final Map<String, _TeamBucket> buckets = <String, _TeamBucket>{};
     String? competitionName;
 
     for (int i = header.firstDataRow; i < sheet.rows.length; i++) {
@@ -220,19 +219,27 @@ class SpreadsheetParserService {
       competitionName ??=
           _readOptionalString(row, header.columnIndex['competition_name']);
 
-      final String teamDisplay = resolver.displayNameFor(rawTeam);
-      final String teamId = _teamIdFromName(teamDisplay);
-      teamIdToName[teamId] = teamDisplay;
-      if (!resolver.isKnown(rawTeam)) {
+      // Quem decide o gênero do time é o gênero do atleta, não o nome
+      // bruto. O "Brasil Men" do `team_name` é só uma dica — strippamos
+      // pra usar o "Brasil" canônico.
+      final String strippedTeam = _stripGenderKeyword(rawTeam);
+      final String baseDisplay = resolver.displayNameFor(strippedTeam);
+      final PlayerGender playerGender = _genderFromString(
+          _readOptionalString(row, header.columnIndex['gender']));
+      final TeamGender teamGender =
+          _teamGenderFromPlayerGender(playerGender);
+      final String teamId = _teamIdWithGender(baseDisplay, teamGender);
+
+      if (!resolver.isKnown(strippedTeam)) {
         if (!issues.any((ParseIssue x) =>
             x.category == ParseIssueCategory.unknownTeam &&
-            x.teamName == teamDisplay)) {
+            x.teamName == baseDisplay)) {
           issues.add(ParseIssue(
             category: ParseIssueCategory.unknownTeam,
             severity: ParseIssueSeverity.warning,
             message: 'Unknown team: "$rawTeam"',
             sheetName: sheet.name,
-            teamName: teamDisplay,
+            teamName: baseDisplay,
           ));
         }
       }
@@ -243,22 +250,30 @@ class SpreadsheetParserService {
         sheetName: sheet.name,
         rowNumber: i + 1,
         teamId: teamId,
-        teamName: teamDisplay,
+        teamName: baseDisplay,
         issues: issues,
       );
       if (player != null) {
-        playersByTeamId.putIfAbsent(teamId, () => <Player>[]).add(player);
+        final _TeamBucket bucket = buckets.putIfAbsent(
+          teamId,
+          () => _TeamBucket(
+            id: teamId,
+            displayName: baseDisplay,
+            gender: teamGender,
+          ),
+        );
+        bucket.players.add(player);
       }
     }
 
-    final List<Team> teams = <Team>[];
-    teamIdToName.forEach((String teamId, String teamName) {
-      teams.add(Team(
-        id: teamId,
-        teamName: teamName,
-        players: playersByTeamId[teamId] ?? const <Player>[],
-      ));
-    });
+    final List<Team> teams = buckets.values
+        .map((_TeamBucket b) => Team(
+              id: b.id,
+              teamName: b.displayName,
+              gender: b.gender,
+              players: b.players,
+            ))
+        .toList();
 
     _detectDuplicateShirtNumbers(teams, issues, sheet.name);
 
@@ -319,19 +334,24 @@ class SpreadsheetParserService {
         teamName = rawTeamFromColumn;
       }
 
-      final String teamDisplay = resolver.displayNameFor(teamName);
-      final String teamId = _teamIdFromName(teamDisplay);
-      if (!resolver.isKnown(teamName)) {
+      // Strip do "Men"/"Women" do nome da aba (caso a planilha esteja
+      // explícita) — o gênero verdadeiro vem do gênero do atleta.
+      final String strippedTeam = _stripGenderKeyword(teamName);
+      final String baseDisplay = resolver.displayNameFor(strippedTeam);
+      if (!resolver.isKnown(strippedTeam)) {
         issues.add(ParseIssue(
           category: ParseIssueCategory.unknownTeam,
           severity: ParseIssueSeverity.warning,
           message: 'Unknown team: "$teamName"',
           sheetName: sheet.name,
-          teamName: teamDisplay,
+          teamName: baseDisplay,
         ));
       }
 
-      final List<Player> teamPlayers = <Player>[];
+      // Players agrupados por gênero dentro da aba. Em planilhas oficiais
+      // single-gender, todos caem no mesmo bucket. Em planilhas mistas,
+      // a aba vira 2 (ou 3) equipes (Men/Women/Unspecified).
+      final Map<String, _TeamBucket> buckets = <String, _TeamBucket>{};
       for (int i = header.firstDataRow; i < sheet.rows.length; i++) {
         final List<String?> row = sheet.rows[i];
         if (!_rowHasContent(row)) continue;
@@ -339,23 +359,42 @@ class SpreadsheetParserService {
         competitionName ??=
             _readOptionalString(row, header.columnIndex['competition_name']);
 
+        final PlayerGender playerGender = _genderFromString(
+            _readOptionalString(row, header.columnIndex['gender']));
+        final TeamGender teamGender =
+            _teamGenderFromPlayerGender(playerGender);
+        final String teamId = _teamIdWithGender(baseDisplay, teamGender);
+
         final Player? player = _buildPlayer(
           row: row,
           header: header,
           sheetName: sheet.name,
           rowNumber: i + 1,
           teamId: teamId,
-          teamName: teamDisplay,
+          teamName: baseDisplay,
           issues: issues,
         );
-        if (player != null) teamPlayers.add(player);
+        if (player != null) {
+          final _TeamBucket bucket = buckets.putIfAbsent(
+            teamId,
+            () => _TeamBucket(
+              id: teamId,
+              displayName: baseDisplay,
+              gender: teamGender,
+            ),
+          );
+          bucket.players.add(player);
+        }
       }
 
-      teams.add(Team(
-        id: teamId,
-        teamName: teamDisplay,
-        players: teamPlayers,
-      ));
+      for (final _TeamBucket bucket in buckets.values) {
+        teams.add(Team(
+          id: bucket.id,
+          teamName: bucket.displayName,
+          gender: bucket.gender,
+          players: bucket.players,
+        ));
+      }
     }
 
     _detectDuplicateShirtNumbers(teams, issues, null);
@@ -520,6 +559,48 @@ class SpreadsheetParserService {
       }
     }
     return buffer.toString();
+  }
+
+  /// ID determinístico do time considerando o sufixo de gênero (`-men`,
+  /// `-women`, vazio quando unspecified, `-mixed` quando misto). Garante
+  /// que `Brazil` masculino e `Brazil` feminino têm ids distintos.
+  String _teamIdWithGender(String baseName, TeamGender gender) {
+    final String base = _teamIdFromName(baseName);
+    switch (gender) {
+      case TeamGender.men:
+        return '$base-men';
+      case TeamGender.women:
+        return '$base-women';
+      case TeamGender.mixed:
+        return '$base-mixed';
+      case TeamGender.unspecified:
+        return base;
+    }
+  }
+
+  /// Remove sufixos comuns de gênero do nome bruto da equipe
+  /// (`"Brazil Women"` → `"Brazil"`). Aceita `men`, `women`, `male`,
+  /// `female`, `masculino`, `feminino` e a variação possessiva `men's`/
+  /// `women's`. O gênero real vem do gênero dos atletas.
+  String _stripGenderKeyword(String raw) {
+    final String trimmed = raw.trim();
+    if (trimmed.isEmpty) return trimmed;
+    final RegExp pattern = RegExp(
+      r"\s+(?:men'?s?|women'?s?|male|female|masculino|feminino)$",
+      caseSensitive: false,
+    );
+    return trimmed.replaceAll(pattern, '').trim();
+  }
+
+  TeamGender _teamGenderFromPlayerGender(PlayerGender gender) {
+    switch (gender) {
+      case PlayerGender.male:
+        return TeamGender.men;
+      case PlayerGender.female:
+        return TeamGender.women;
+      case PlayerGender.unspecified:
+        return TeamGender.unspecified;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -701,4 +782,19 @@ class _HeaderInfo {
   const _HeaderInfo({required this.columnIndex, required this.firstDataRow});
   final Map<String, int> columnIndex;
   final int firstDataRow;
+}
+
+/// Acumulador interno enquanto agrupamos atletas por (equipe canonica,
+/// gênero). Convertido em `Team` ao final da iteração.
+class _TeamBucket {
+  _TeamBucket({
+    required this.id,
+    required this.displayName,
+    required this.gender,
+  });
+
+  final String id;
+  final String displayName;
+  final TeamGender gender;
+  final List<Player> players = <Player>[];
 }

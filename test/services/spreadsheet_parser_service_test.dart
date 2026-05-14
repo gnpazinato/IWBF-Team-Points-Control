@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart' as xlsx;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/services/spreadsheet_parser_service.dart';
 
 SheetData _sheet(String name, List<List<String?>> rows) =>
@@ -250,6 +251,79 @@ void main() {
       final missing = result.issues
           .firstWhere((i) => i.category == ParseIssueCategory.missingRequiredColumn);
       expect(missing.sheetName, equals('Argentina'));
+    });
+  });
+
+  group('SpreadsheetParserService - genero', () {
+    final SpreadsheetParserService parser = SpreadsheetParserService();
+
+    test('separa por gênero atletas que estavam num único team_name', () {
+      // Brasil com 1 atleta masculino e 1 feminino vira 2 equipes
+      // distintas: Brazil Men e Brazil Women.
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '1998-01-02', 'male']),
+        _row(<String?>['Brazil', '8', 'Souza', 'Maria', '3.0', '1996-05-10', 'female']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams, hasLength(2));
+      final teamMen = result.teams.firstWhere(
+          (Team t) => t.gender == TeamGender.men);
+      final teamWomen = result.teams.firstWhere(
+          (Team t) => t.gender == TeamGender.women);
+      expect(teamMen.teamName, equals('Brazil'));
+      expect(teamMen.displayName, equals('Brazil Men'));
+      expect(teamMen.players, hasLength(1));
+      expect(teamWomen.displayName, equals('Brazil Women'));
+      expect(teamWomen.players, hasLength(1));
+    });
+
+    test('strip do "Men"/"Women" no team_name não duplica o sufixo', () {
+      // Usuário escreveu "Brazil Women" no team_name mas a coluna gender
+      // confirma female. O parser deve canonicalizar para "Brazil" e
+      // adicionar "Women" apenas via displayName.
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob', 'gender',
+        ]),
+        _row(<String?>['Brazil Women', '7', 'Silva', 'Maria', '2.5', '1998-01-02', 'female']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse);
+      expect(result.teams, hasLength(1));
+      expect(result.teams.first.teamName, equals('Brazil'));
+      expect(result.teams.first.displayName, equals('Brazil Women'));
+      expect(result.teams.first.gender, equals(TeamGender.women));
+    });
+
+    test('sem coluna gender → equipe fica unspecified (compat)', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'shirt_number', 'surname', 'first_name',
+          'player_class', 'dob',
+        ]),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '1998-01-02']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse);
+      expect(result.teams, hasLength(1));
+      expect(result.teams.first.gender, equals(TeamGender.unspecified));
+      expect(result.teams.first.displayName, equals('Brazil'));
     });
   });
 

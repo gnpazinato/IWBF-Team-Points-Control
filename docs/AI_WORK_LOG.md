@@ -2,6 +2,31 @@
 
 Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude Code ou outra IA.
 
+> ## ⚠️ ATENCAO — LEIA ANTES DE QUALQUER COISA ⚠️
+>
+> **TODO o codigo de produto vive na branch `claude/review-and-continue-9ZK5v`.**
+> A `main` ainda tem APENAS o scaffold inicial (commit `a2cc748`) — nao tem
+> tela de upload, parser, Summary, Match Setup, Lineup Control nem nada do
+> Phase 1-5.
+>
+> **Antes de fazer qualquer alteracao:**
+>
+> 1. `git fetch origin && git checkout claude/review-and-continue-9ZK5v`
+> 2. `git pull --ff-only origin claude/review-and-continue-9ZK5v`
+> 3. Confirmar com `git log --oneline -5` que voce esta vendo commits
+>    `feat(fase-5)...`, `fix(fase-5)...` etc. — nao apenas o scaffold.
+>
+> **Preview Web:** `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
+> e servido a partir desta branch (a regra do environment `github-pages`
+> esta em "No restriction" — qualquer push em `claude/**` ou `main` publica;
+> ver entrada 0022).
+>
+> Se voce esta vendo apenas o scaffold em `lib/main.dart`, voce esta na
+> branch ERRADA. Nao "implemente do zero" — apenas troque de branch.
+>
+> Quando o ciclo MVP terminar, abriremos PR para `main` e mergeamos.
+> Ate la, **NUNCA** trabalhe a partir do `main`.
+
 Antes de qualquer nova tarefa, a IA deve ler:
 
 1. `IWBF_Team_Points_Control_Planejamento.md`
@@ -14,10 +39,11 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
+| Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — terceira rodada: lista lateral por shirt, slots adaptativos, numero mais destacado, court com slots fixos, hot-fix do body em branco no Start Match.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025+0026 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. |
+| Status geral | **Fase 5 — quarta rodada: gender por equipe, templates pre-preenchidos com 8 paises x 2 generos, Point Limit ampliado, separador "or" na home.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023+0024+0025+0026+0027 fechadas.** |
+| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Apos validacao, abrir PR `claude/review-and-continue-9ZK5v -> main` e mergear pra oficializar. |
 | Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
 
@@ -521,6 +547,63 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0027 - 2026-05-14 - Fase 5 - quarta rodada: gender por equipe, templates ricos, Point Limit ampliado, "or" na home + branch warning nos docs
+
+Resumo:
+
+- Sessão dedicada a 4 ajustes pos-teste do usuário **+ uma medida preventiva** depois de outro chat ter olhado a `main` (que só tem o scaffold) e diagnosticado erradamente que "nada estava implementado".
+
+**0. Branch warning nos docs.** Topo do `docs/AI_WORK_LOG.md` e do `docs/PLANO_DESENVOLVIMENTO_IA.md` agora carregam um bloco em destaque explicando que **TODO o trabalho está em `claude/review-and-continue-9ZK5v`** e que `main` é só scaffold. Inclui comandos `git checkout` exatos. Estado atual da tabela passa a listar `Branch de trabalho` explicitamente.
+
+**1. Separador "or" entre os botões de download de template** na home (`LoadSpreadsheetScreen`). Novo widget `_OrDivider` com dois `Divider`s laterais e o texto "or" centralizado.
+
+**2. Templates `.xlsx` pre-preenchidos com 16 equipes (8 países × 2 gêneros) × 12 atletas = 192 entradas.**
+   - Países: Argentina, Brazil, Canada, Chile, Colombia, Mexico, United States of America, Venezuela.
+   - Cada equipe tem 12 atletas com nomes culturalmente apropriados (latino-americanos / norte-americanos), shirt numbers 4-15, classes oficiais `[1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0×3, 4.5×3]` (soma 35.5/equipe), DOBs variadas entre 1988-2004.
+   - `competition_name`: `"IWBF America's Cup"`.
+   - Single sheet: 192 linhas numa aba `Players`.
+   - Per-team: 16 abas (`Argentina Men`, `Argentina Women`, `Brazil Men`, ...) com 12 linhas cada.
+   - O usuário pode importar o template direto e testar o app sem digitar dados.
+
+**3. Gender por equipe.** Mudança grande, em camadas:
+   - `Team` ganhou `enum TeamGender { men, women, mixed, unspecified }` e o campo `gender`. `displayName` agora retorna `"Brazil Men"`, `"Brazil Women"`, `"Brazil Mixed"` ou apenas `"Brazil"` conforme o gênero. `toJson`/`fromJson` persistem o campo; ausência cai em `unspecified` (backward compat).
+   - **Parser** agora agrupa por `(country_canonico, player_gender)`. Helpers:
+     - `_stripGenderKeyword`: remove `Men`/`Women`/`Male`/`Female`/`Masculino`/`Feminino`/`Men's`/`Women's` no final do `team_name` ou nome da aba.
+     - `_teamGenderFromPlayerGender`: mapeia o gênero do atleta pro gênero do time.
+     - `_teamIdWithGender`: id determinístico com sufixo `-men`/`-women`/`-mixed`/vazio.
+   - Resultado: se a planilha tem Argentina com atletas mistos, o parser produz `Argentina Men` e `Argentina Women` como teams distintos. Sem coluna `gender`, vira um time `unspecified` (compat).
+   - **Summary** agrupa as equipes em seções `Men's Teams`, `Women's Teams`, `Mixed Teams` e `Other Teams` (esta última só aparece se houver gêneros mistos no resultado). Cada seção ordena alfabeticamente. Implementado via novo `_SectionHeader`.
+   - **Match Setup, Lineup Control e lista lateral** já usam `team.displayName` — então automaticamente passam a mostrar `"Argentina Women"` etc. sem mudança extra.
+
+**4. Point Limit ampliado de 7.0 até 16.0** em incrementos de 0.5 (`kAcceptedPointLimits` agora tem 19 valores em vez de 7). Default permanece 14.0. Cobre categorias menos restritivas (júnior/escolar/mistas) sem perder os limites IWBF oficiais (13.0–16.0).
+
+Arquivos alterados:
+
+- `docs/AI_WORK_LOG.md`, `docs/PLANO_DESENVOLVIMENTO_IA.md` — branch warning + tabela atualizada.
+- `lib/constants/point_limits.dart` — faixa expandida 7.0-16.0.
+- `lib/models/team.dart` — `TeamGender`, `gender` field, `displayName` com sufixo, JSON.
+- `lib/services/spreadsheet_parser_service.dart` — agrupamento por (team, gender), helpers `_stripGenderKeyword`, `_teamGenderFromPlayerGender`, `_teamIdWithGender`, `_TeamBucket`.
+- `lib/services/template_generator_service.dart` — reescrito com `_sampleTeams` (8 países × 2 gêneros × 12 atletas).
+- `lib/screens/load_spreadsheet_screen.dart` — `_OrDivider` entre os botões de template.
+- `lib/screens/validation_summary_screen.dart` — `_teamTiles` agrupa por gênero, novo `_SectionHeader`.
+- `test/constants/point_limits_test.dart` — assertions atualizadas pra 19 valores.
+- `test/models/team_test.dart` — testes de gender suffix + roundtrip.
+- `test/services/spreadsheet_parser_service_test.dart` — grupo novo "genero" com 3 testes (split, strip, sem-coluna).
+- `test/services/template_generator_service_test.dart` — atualizado pra 16 equipes / 192 atletas / competição "IWBF America's Cup".
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK). CI valida no push.
+
+Pendencias:
+
+- Smoke test no preview Web pos-deploy para confirmar render do separador "or", os 16 cards de equipe na Summary com seções por gênero, e o dropdown de Point Limit com a faixa nova.
+- Quando o ciclo MVP fechar, abrir PR `claude/review-and-continue-9ZK5v → main` para oficializar.
+
+Proximo passo recomendado:
+
+- Aguardar feedback do usuário. Se OK, partir pra Fase 6 / próximas etapas.
 
 ### 0026 - 2026-05-14 - Fase 5 - terceira rodada: ordem por shirt, slots adaptativos, court posicionamento por slot
 
