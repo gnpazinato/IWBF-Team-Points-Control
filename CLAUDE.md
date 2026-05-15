@@ -18,22 +18,40 @@ git pull --ff-only origin claude/review-and-continue-9ZK5v
 git log --oneline -10
 ```
 
-Você deve ver commits `feat(fase-5)...`, `fix(fase-5)...`, `docs(...)...`.
-O mais recente em 2026-05-14 é `ab7c654 fix(fase-5): hotfix do
-auto-shrink — first name sumindo sem ellipsis` (entrada 0033).
+Você deve ver commits `feat(fase-5)...`, `fix(fase-5)...`, `feat(ci)...`,
+`docs(...)...`. O mais recente em 2026-05-15 é `5c38d8b fix(fase-5):
+destrava flutter test no CI` (entrada 0035), precedido por `8d6ab54
+feat(ci): deploy paralelo no Cloudflare Pages` (entrada 0034, merge
+do PR #4).
 
 ## Estado atual (resumo)
 
-- **Fase atual:** Fase 5 com 11 rodadas de ajustes pós-teste
-  (entradas 0023..0033 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
-  Última rodada (0033) corrigiu o auto-shrink que ainda cortava o
-  first name silenciosamente: `softWrap: false` no `_AutoShrinkText`
-  + ellipsis fallback quando o `minFontSize` não cabe — agora
-  "THOMPSON, Eth..." em vez de "THOMPSON," silenciosamente cortado.
-- **Testers externos:** 2 pessoas têm o link do preview Web
-  (https://gnpazinato.github.io/IWBF-Team-Points-Control/), compartilhado
-  em 2026-05-14. Aguardando feedback antes de avançar.
-- **Última atualização:** 2026-05-14.
+- **Fase atual:** Fase 5 com 13 rodadas de ajustes pós-teste / infra
+  (entradas 0023..0035 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
+  Últimas 2 rodadas:
+  - **0034 (2026-05-15):** deploy paralelo no Cloudflare Pages — URL
+    `https://iwbf-team-points-control.pages.dev/` (sem o handle pessoal
+    `gnpazinato`) servida a partir de production deploy. GH Pages
+    continua em paralelo. Job `cloudflare-pages` no
+    `.github/workflows/deploy-web.yml`. Production-branch do CF Pages
+    está em `claude/review-and-continue-9ZK5v` — trocar para `main`
+    apos merge do MVP.
+  - **0035 (2026-05-15):** destrava `flutter test` no CI. 15 widget
+    tests vinham falhando desde a entrada 0031 (sub-pixel RenderFlex
+    overflow no `_CourtPlayerChip` + assertion desatualizada sobre
+    ellipsis + dropdown com lazy-build em viewport baixa). Sem `flutter
+    test` verde o `Build release APK` não rodava — nenhum APK como
+    artifact. Corrigido com `height: 1.0` em 2 TextStyles + ajuste de
+    2 testes. **176 passed, 0 failed.** APK volta a sair no CI.
+- **Testers externos:** 2 pessoas têm o link do preview Web do GH Pages
+  (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`),
+  compartilhado em 2026-05-14. Migrar gradualmente para o link do CF
+  Pages (`https://iwbf-team-points-control.pages.dev/`).
+- **Próximo passo de validação:** baixar APK release do último run em
+  `claude/review-and-continue-9ZK5v` (artifact do workflow `Build
+  Android APK`) e subir no Firebase Test Lab — Robo test em 1 tablet
+  10" + 1 phone, portrait.
+- **Última atualização:** 2026-05-15.
 
 ## O que fazer quando o usuário abre uma nova conversa
 
@@ -44,9 +62,8 @@ auto-shrink — first name sumindo sem ellipsis` (entrada 0033).
    2. `docs/PLANO_DESENVOLVIMENTO_IA.md` (fases e estratégia);
    3. `docs/AI_WORK_LOG.md` (fonte da verdade — estado, decisões,
       convenções, histórico). Em particular: tabela "Estado atual" no
-      topo + entradas 0023..0033 (Fase 5 inteira) + seção
-      "Prompt curto de continuidade — Fase 5 fechada / aguardando
-      testers" no fim.
+      topo + entradas 0023..0035 (Fase 5 inteira + infra CF Pages +
+      destrava CI).
 3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +
    título) e qual das duas trilhas aplica.
 
