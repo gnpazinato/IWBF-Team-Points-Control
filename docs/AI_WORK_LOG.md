@@ -41,12 +41,12 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-15 |
-| Status geral | **Fase 5 — decima rodada (entrada 0034): integracao Cloudflare Pages no CI para gerar URL publica sem o handle pessoal `gnpazinato`. Job `cloudflare-pages` adicionado ao `.github/workflows/deploy-web.yml` em paralelo ao deploy do GH Pages. URL alvo apos merge: `iwbf-team-points-control.pages.dev` (sem owner no dominio).** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual + infra de testers) — entradas 0023..0034 fechadas.** |
-| Proximo passo recomendado | Validar o primeiro deploy CF Pages no PR `claude/cf-pages-deploy → claude/review-and-continue-9ZK5v` (criacao automatica do projeto via wrangler + URL preview responde com o app). Apos merge, push em `claude/review-and-continue-9ZK5v` vira production deploy e a URL `iwbf-team-points-control.pages.dev` fica ativa para compartilhar com testers. |
+| Status geral | **Fase 5 — decima primeira rodada (entrada 0035): destrava `flutter test` no CI. 15 testes do `lineup_control_screen_test.dart` + `match_setup_screen_test.dart` estavam falhando ha varios commits (desde a entrada 0031, agravado pela 0033) — APK nao saia do CI. Causas: (1) RenderFlex overflow sub-pixel no `_CourtPlayerChip` por line-height default dos Texts; (2) assertion antiga vs novo comportamento do `_AutoShrinkText` com ellipsis fallback; (3) dropdown do Point Limit nao renderizando items fora da viewport. Corrigido com `height: 1.0` nos Texts + ajuste das assertions. `flutter test` agora passa 176/176.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual + infra de testers) — entradas 0023..0035 fechadas. CI 100% verde (analyze + test + build-apk + build-web GH Pages + deploy CF Pages).** |
+| Proximo passo recomendado | APK release gerado a cada push agora sai como artifact do GitHub Actions (job `Build release APK` em `.github/workflows/build-apk.yml`). Baixar o APK do ultimo run em `claude/review-and-continue-9ZK5v` e subir no Firebase Test Lab para validacao em devices reais (sugestao: Robo test em 1 tablet 10" + 1 phone, portrait). |
 | Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). Apos validacao do CF Pages, migrar gradualmente para https://iwbf-team-points-control.pages.dev/. |
-| Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK + sem credenciais CF). CI valida no push. |
-| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e — a partir desta entrada — tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages) a cada push em `claude/**` ou `main`. |
+| Ultimos testes executados | 2026-05-15 — `flutter analyze --no-fatal-infos` (1 info pre-existente, nao bloqueante) + `flutter test` (**176 passed, 0 failed**). Flutter SDK 3.41.9 instalado localmente nesta sessao em `/root/flutter`. |
+| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
 
 ## Ritual obrigatorio para a IA
 
@@ -548,6 +548,56 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0035 - 2026-05-15 - Destrava `flutter test` no CI (15 falhas em widget tests, APK voltou a sair)
+
+Resumo:
+
+- Usuario pediu APK pra subir no Firebase Test Lab. Investigando, o job `Build release APK` (`.github/workflows/build-apk.yml`) estava falhando ha varios commits no step `flutter test`: 161 passed, **15 failed**. Sem `flutter test` verde, `flutter build apk` nao roda → nenhum APK como artifact.
+- Bisect rapido (rodando `flutter test` em `7e3faed`, antes da entrada 0033): as falhas **ja existiam ali** — nao sao regressao da entrada 0033 sozinha. A entrada 0033 piorou (assertion ellipsis quebrou) mas as 13 outras ja vinham. O autor das entradas 0031..0033 marcou "Sem flutter localmente, CI valida no push" em todas — e o CI vinha vermelho silenciosamente porque ninguem olhava o status do `build-apk.yml`.
+- Setup nesta sessao: `git clone --depth 1 --branch stable https://github.com/flutter/flutter.git /root/flutter`, `flutter pub get`. Flutter 3.41.9 stable, mesma versao que o CI usa (`subosito/flutter-action@v2 channel: stable`). Reproduzi as 15 falhas exatamente.
+
+Diagnostico das 3 causas raiz:
+
+1. **RenderFlex overflow sub-pixel no `_CourtPlayerChip`** (13 testes): o Column da linha 931 do `lineup_control_screen.dart` estava overflowando 0.39 a 1.5 pixels no bottom. Causa: a soma das alturas dos children (`PlayerJerseyIcon` + `SizedBox(gap)` + `_AutoShrinkText` + `Text(playerClass)`) ficava no limite do espaco disponivel; o **line-height default** dos Texts (geralmente 1.15 a 1.4 vezes o fontSize, dependendo da fonte) consumia a folga. Em produccao isso e invisivel (sub-pixel + clipped pela borda do chip), mas o `flutter_test` framework dispara assertion em qualquer overflow.
+
+2. **Assertion vs comportamento atual do `_AutoShrinkText`** (1 teste — `nome longo no card lateral nao usa TextOverflow.ellipsis`): o teste verificava que NENHUM Text descendente do `_PlayerCard` tinha `TextOverflow.ellipsis`. Mas a entrada 0033 introduziu fallback explicito de ellipsis quando o `idealFontSize` cai abaixo do `minFontSize` (justamente para evitar o bug do "MACDONALD, Olivier" sumindo silenciosamente). Os dois estavam em conflito direto. O comportamento atual e o correto (preferir ellipsis explicito a corte silencioso); o teste e que estava desatualizado.
+
+3. **`DropdownButtonFormField` nao renderizando items fora da viewport** (1 teste — `lista todos os limites aceitos no dropdown`): o teste abre o dropdown do Point Limit e procura `find.text('7.0')` ate `'16.0'` (19 items). Em viewport baixa (default do test runner), o overlay do dropdown lazy-builda items, entao items distantes do scroll inicial nao chegam a entrar na arvore de widgets. `find.text` retorna 0.
+
+Correcoes aplicadas:
+
+- `lib/screens/lineup_control_screen.dart`:
+  - `_AutoShrinkText.build` Text: adicionado `style: TextStyle(..., height: 1.0)`. Garante que `Text.height` (vertical line-height) seja igual ao fontSize, sem multiplicador extra. Resolve overflow sub-pixel.
+  - `_CourtPlayerChip` Text(playerClass): mesmo ajuste, `height: 1.0`.
+
+- `test/screens/lineup_control_screen_test.dart`:
+  - Teste `nome longo no card lateral nao usa TextOverflow.ellipsis` substituido por **`card lateral nunca corta nome silenciosamente (auto-shrink + ellipsis explicito como fallback)`**. Verifica que `find.text("SURNAME1, First")` encontra o Text dentro do card. (`find.text` compara `Text.data`, nao o texto pintado — entao o nome continua "presente" no widget tree mesmo quando aparece com ellipsis no canvas. Ellipsis e o **fallback aceito**, nao o **bug**.)
+
+- `test/screens/match_setup_screen_test.dart`:
+  - Teste `lista todos os limites aceitos no dropdown` agora seta `tester.view.physicalSize = Size(1200, 2400)` no inicio. Viewport alta permite que o overlay do dropdown renderize todos os 19 items sem lazy-skip. Comentario inline explica por que.
+
+Arquivos alterados:
+
+- `lib/screens/lineup_control_screen.dart` (+2 linhas: `height: 1.0` em 2 lugares).
+- `test/screens/lineup_control_screen_test.dart` (~+45/-15: teste ellipsis reescrito).
+- `test/screens/match_setup_screen_test.dart` (+11 linhas: viewport setup).
+- `docs/AI_WORK_LOG.md` (esta entrada + tabela de estado atualizada).
+
+Testes executados:
+
+- `flutter analyze --no-fatal-infos` -> 1 info-level pre-existente em `spreadsheet_parser_service_test.dart:360` (no_leading_underscores_for_local_identifiers em `_expectArgentinaTeam`), nao bloqueante e nao introduzido por esta entrada.
+- `flutter test` -> **176 passed, 0 failed, 0 skipped** (antes: 161/15).
+
+Pendencias / smoke test:
+
+- Aguardar CI do push validar: `Build Flutter Web (GitHub Pages)`, `Deploy to GitHub Pages`, `Build and Deploy to Cloudflare Pages`, `Build release APK` — todos devem ficar verdes.
+- Depois do CI verde, baixar APK release do artifact do workflow `Build Android APK`.
+- Validar APK no Firebase Test Lab via Robo test em 1 tablet 10" + 1 phone (portrait).
+
+Proximo passo recomendado:
+
+- Push imediato; checar CI; baixar APK; Firebase Test Lab.
 
 ### 0034 - 2026-05-15 - Integracao Cloudflare Pages no CI (URL publica sem o handle pessoal)
 

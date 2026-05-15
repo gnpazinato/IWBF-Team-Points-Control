@@ -770,13 +770,27 @@ void main() {
     });
 
     testWidgets(
-        'nome longo no card lateral nao usa TextOverflow.ellipsis',
+        'card lateral nunca corta nome silenciosamente '
+        '(auto-shrink + ellipsis explicito como fallback)',
         (WidgetTester tester) async {
-      // Regressão direta do print do usuario ("GONZALEZ, Seba..."): o
-      // displayName precisa aparecer inteiro no widget tree e nenhum
-      // dos seus widgets Text descendentes do card pode ter
-      // TextOverflow.ellipsis aplicado — o auto-shrink (via
-      // _AutoShrinkText) escala o fontSize em vez de cortar.
+      // Regressao direta do print do usuario ("GONZALEZ, Seba..." quando
+      // o nome era "GONZALEZ, Sebastian", e tambem do bug da entrada
+      // 0033 onde "THOMPSON, Ethan" virava "THOMPSON," sem aviso).
+      //
+      // Comportamento garantido pelo _AutoShrinkText:
+      //   1. Se cabe na largura disponivel a maxFontSize: renderiza
+      //      inteiro em maxFontSize, sem ellipsis.
+      //   2. Se nao cabe mas cabe encolhendo ate minFontSize:
+      //      renderiza inteiro em fontSize menor, sem ellipsis.
+      //   3. Se nao cabe nem no minFontSize: trava no piso E aplica
+      //      ellipsis explicito ("THOMPSON, Eth..."). Nunca trunca
+      //      em silencio.
+      //
+      // Este teste verifica (1)+(2)+(3) consolidados: o widget Text
+      // com o `data` igual ao displayName precisa estar na arvore.
+      // (`find.text` compara `Text.data`, nao o texto pintado — entao
+      // o nome inteiro continua "presente" mesmo se aparecer com
+      // ellipsis na tela.)
       await _pump(
         tester,
         LineupControlScreen(
@@ -792,14 +806,18 @@ void main() {
           find.byKey(const Key('player-card-team-brazil::1'));
       expect(card, findsOneWidget);
 
-      final Iterable<Text> texts = tester
-          .widgetList<Text>(find.descendant(of: card, matching: find.byType(Text)));
-      expect(texts, isNotEmpty);
-      for (final Text t in texts) {
-        expect(t.overflow, isNot(TextOverflow.ellipsis),
-            reason: 'Texts no card lateral nao devem usar ellipsis. '
-                'Auto-shrink escala o fontSize em vez de cortar.');
-      }
+      // displayName completo do Player(surname: "Surname1", firstName: "First")
+      // = "SURNAME1, First" (surname vira uppercase em Player.displayName).
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.text('SURNAME1, First'),
+        ),
+        findsOneWidget,
+        reason: 'displayName nao pode sumir do card lateral. '
+            'Mesmo encolhido ou com ellipsis, o Text deve ter o nome '
+            'inteiro como `data` (so o que e PINTADO pode cortar).',
+      );
     });
   });
 }

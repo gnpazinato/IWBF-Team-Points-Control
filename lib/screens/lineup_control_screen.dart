@@ -953,7 +953,7 @@ class _CourtPlayerChip extends StatelessWidget {
             ),
             Text(
               player.playerClass.toStringAsFixed(1),
-              style: TextStyle(color: fg, fontSize: fontSize),
+              style: TextStyle(color: fg, fontSize: fontSize, height: 1.0),
             ),
           ],
         ),
@@ -1103,6 +1103,7 @@ class _AutoShrinkText extends StatelessWidget {
             fontSize: finalFontSize,
             fontWeight: fontWeight,
             color: color,
+            height: 1.0,
           ),
         );
       },

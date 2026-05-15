@@ -158,6 +158,17 @@ void main() {
   group('MatchSetupScreen — Point Limit dropdown', () {
     testWidgets('lista todos os limites aceitos no dropdown',
         (WidgetTester tester) async {
+      // Viewport alta para que o overlay do dropdown caiba os 19
+      // items (7.0..16.0 em 0.5) sem precisar de scroll lazy — em
+      // viewport baixa, items fora da regiao visivel nao chegam a ser
+      // buildados e `find.text(...)` retorna 0 widgets.
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       await tester.pumpWidget(MaterialApp(
         home: MatchSetupScreen(teams: <Team>[_team('t', 'T')]),
       ));
