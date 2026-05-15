@@ -40,13 +40,13 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
-| Data da ultima atualizacao | 2026-05-14 |
-| Status geral | **Fase 5 — nona rodada (entrada 0033): hotfix do auto-shrink que estava cortando o first name silenciosamente. `softWrap: false` impede wrap em duas linhas + ellipsis fallback quando o minFontSize não cabe — "THOMPSON, Eth..." em vez de só "THOMPSON,".** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual) — entradas 0023..0033 fechadas.** |
-| Proximo passo recomendado | Aguardar smoke test do usuario no preview Web pos-deploy. Validar especificamente que "MACDONALD, Olivier" e "WILLIAMS, Benjamin" aparecem inteiros ou com ellipsis explicito (nunca cortados em silencio). |
-| Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). |
-| Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK). CI valida no push. |
-| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ tambem regenerado a cada push. |
+| Data da ultima atualizacao | 2026-05-15 |
+| Status geral | **Fase 5 — decima rodada (entrada 0034): integracao Cloudflare Pages no CI para gerar URL publica sem o handle pessoal `gnpazinato`. Job `cloudflare-pages` adicionado ao `.github/workflows/deploy-web.yml` em paralelo ao deploy do GH Pages. URL alvo apos merge: `iwbf-team-points-control.pages.dev` (sem owner no dominio).** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual + infra de testers) — entradas 0023..0034 fechadas.** |
+| Proximo passo recomendado | Validar o primeiro deploy CF Pages no PR `claude/cf-pages-deploy → claude/review-and-continue-9ZK5v` (criacao automatica do projeto via wrangler + URL preview responde com o app). Apos merge, push em `claude/review-and-continue-9ZK5v` vira production deploy e a URL `iwbf-team-points-control.pages.dev` fica ativa para compartilhar com testers. |
+| Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). Apos validacao do CF Pages, migrar gradualmente para https://iwbf-team-points-control.pages.dev/. |
+| Ultimos testes executados | Sem `flutter` localmente nesta sessao (ambiente sem Flutter SDK + sem credenciais CF). CI valida no push. |
+| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e — a partir desta entrada — tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages) a cada push em `claude/**` ou `main`. |
 
 ## Ritual obrigatorio para a IA
 
@@ -548,6 +548,47 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0034 - 2026-05-15 - Integracao Cloudflare Pages no CI (URL publica sem o handle pessoal)
+
+Resumo:
+
+- Usuario confirmou que o preview Web do GH Pages (https://gnpazinato.github.io/IWBF-Team-Points-Control/) ja esta sendo usado pelos 2 testers, mas o link expoe o handle pessoal `gnpazinato`. Para uso institucional futuro (IWBF Americas) e para nao expor o handle aos testers, criar URL paralela no Cloudflare Pages: `iwbf-team-points-control.pages.dev` (sem owner no dominio).
+- Tentativa anterior do usuario via dashboard CF caiu no fluxo Workers (UI nova empurra Workers como default no cartao "Upload your static files"), deployou os arquivos crus de `web/` (sem `flutter build web` rodar) e gerou `iwbf-team-points-control.gustavonpaz.workers.dev` — site quebrado (faltava `main.dart.js`, `flutter.js` etc.) e ainda expondo `gustavonpaz`. Worker deletado pelo usuario; PR #3 (autoconfig de Workers gerado pelo bot do CF) sera fechado sem mergear.
+- Caminho B escolhido (do plano discutido em chat): GitHub Actions ja builda Flutter Web; adicionar deploy direto para CF Pages via `wrangler pages deploy`, mantendo o GH Pages em paralelo por enquanto (testers atuais nao perdem acesso ao link antigo).
+- Diferenca importante entre os dois destinos: **GH Pages** serve em sub-path `/IWBF-Team-Points-Control/` (precisa `--base-href "/IWBF-Team-Points-Control/"` no build); **CF Pages** serve na raiz `/` (build default sem `--base-href`). Por isso o job CF roda um build separado sem a flag.
+- Secrets adicionados no GitHub (passos manuais do usuario): `CLOUDFLARE_API_TOKEN` (permissoes `Account → Cloudflare Pages → Edit` + `Account → Account Settings → Read`) e `CLOUDFLARE_ACCOUNT_ID` (copiado do Account Home no dashboard CF).
+- Production branch do projeto CF Pages configurada como `claude/review-and-continue-9ZK5v` (igual a branch ativa). Quando o MVP for fechado (merge para `main`), trocar para `main` via dashboard CF ou via `wrangler pages project edit`.
+
+Arquivos alterados:
+
+- `.github/workflows/deploy-web.yml`:
+  - nome do workflow renomeado para `Deploy Web (GitHub Pages + Cloudflare Pages)`;
+  - jobs `build` (GH Pages com base-href) e `deploy` (deploy-pages action) mantidos como estavam;
+  - novo job `cloudflare-pages` em paralelo: faz checkout + setup Flutter (com cache) + `flutter create . --platforms=web` + `flutter pub get` + `flutter build web --release` (sem base-href) + `wrangler pages project create` idempotente (`if/grep/else create`) + `wrangler pages deploy build/web --project-name=iwbf-team-points-control --branch=${GITHUB_REF_NAME}`;
+  - usa `npx --yes wrangler@latest` direto em `run:` em vez de `cloudflare/wrangler-action@v3` para ter controle do shell script idempotente de criar/listar projeto.
+
+- `docs/AI_WORK_LOG.md`:
+  - tabela de Estado atual atualizada (data 2026-05-15, status geral com a entrada 0034, fase atual estendida ate 0034, proximo passo apontando para validar deploy CF Pages, secao Testers externos com os 2 destinos, APK gerado mencionando ambos previews);
+  - esta entrada.
+
+- `CLAUDE.md`:
+  - secao "Repositorio" agora lista os dois previews (GH Pages legacy + CF Pages novo) e referencia o workflow renomeado.
+
+Testes executados:
+
+- Nenhum local (ambiente sem Flutter SDK e sem credenciais CF para teste local). Validacao acontece no primeiro push pelo CI: o job `cloudflare-pages` precisa rodar end-to-end (project create + deploy) sem erro.
+
+Pendencias / smoke test:
+
+- Primeiro run do workflow nesta branch (`claude/cf-pages-deploy`) deve criar o projeto CF Pages (`wrangler pages project create iwbf-team-points-control --production-branch=claude/review-and-continue-9ZK5v`) sem falhar — a etapa tem `if/else` que so cria se nao existir.
+- Primeiro deploy desta branch deve gerar URL preview no formato `<hash>.iwbf-team-points-control.pages.dev` (preview porque `claude/cf-pages-deploy` nao bate com a production-branch).
+- Apos merge em `claude/review-and-continue-9ZK5v`, push subsequentes nessa branch viram production deploy e a URL `iwbf-team-points-control.pages.dev` passa a servir o app.
+- Validar visualmente que o app abre na URL CF Pages com o mesmo conteudo do GH Pages (sem path prefixo).
+
+Proximo passo recomendado:
+
+- Aprovar e mergear o PR `claude/cf-pages-deploy → claude/review-and-continue-9ZK5v`. Apos merge, fazer push de qualquer commit (ou re-disparar o workflow via `workflow_dispatch`) em `claude/review-and-continue-9ZK5v` para forcar production deploy. Validar `https://iwbf-team-points-control.pages.dev/`. Quando confirmado, compartilhar URL nova com os 2 testers atuais e parar de compartilhar a do GH Pages para testers futuros.
 
 ### 0033 - 2026-05-14 - Fase 5 - nona rodada: hotfix do auto-shrink (first name sumindo silenciosamente)
 

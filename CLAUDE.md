@@ -103,7 +103,11 @@ Pergunte ao usuário qual trilha aplica antes de codar.
 ## Repositório
 
 - GitHub: `gnpazinato/iwbf-team-points-control`
-- Preview Web: `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-  (servido a partir da branch ativa, atualiza a cada push).
-- CI: `.github/workflows/build-apk.yml` valida `analyze` + `test` e gera
-  APK + bundle Web em cada push para `claude/**` ou `main`.
+- Preview Web (GH Pages — legado, expõe handle pessoal):
+  `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
+- Preview Web (CF Pages — URL neutra para testers, adicionado na entrada
+  0034 do log): `https://iwbf-team-points-control.pages.dev/`
+- Ambos são servidos a partir da branch ativa e atualizados a cada push
+  em `claude/**` ou `main` via `.github/workflows/deploy-web.yml`.
+- CI de build/test: `.github/workflows/build-apk.yml` valida `analyze` +
+  `test` e gera APK em cada push.
