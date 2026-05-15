@@ -23,8 +23,8 @@ typedef FilePickerFn = Future<Uint8List?> Function();
 /// acessível ao usuário e devolve o caminho final (ou `null` quando o
 /// usuário cancela).
 ///
-/// Em produção: grava no diretório de documentos do app via
-/// `path_provider`. Nos testes, recebe um fake em memória.
+/// Em produção: abre o diálogo "Save As" do sistema (SAF no Android)
+/// via `file_picker`. Nos testes, recebe um fake em memória.
 typedef TemplateSaveFn = Future<String?> Function(
     String filename, Uint8List bytes);
 

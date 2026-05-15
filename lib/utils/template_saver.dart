@@ -7,7 +7,9 @@ import 'template_saver_stub.dart'
 /// Salva os bytes de um template `.xlsx` no destino apropriado para a
 /// plataforma atual.
 ///
-/// - Android/iOS/desktop: grava em `getApplicationDocumentsDirectory()`.
+/// - Android/iOS/desktop: abre o diálogo "Save As" do sistema (SAF no
+///   Android) e deixa o usuário escolher onde gravar. Devolve o caminho
+///   final ou `null` se cancelar.
 /// - Web: dispara download via `<a download>` no browser.
 /// - Outras plataformas: lança `UnsupportedError`.
 Future<String?> defaultSaveTemplate(String filename, Uint8List bytes) =>

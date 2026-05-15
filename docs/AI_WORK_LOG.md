@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-15 |
-| Status geral | **Fase 5 — decima primeira rodada (entrada 0035): destrava `flutter test` no CI. 15 testes do `lineup_control_screen_test.dart` + `match_setup_screen_test.dart` estavam falhando ha varios commits (desde a entrada 0031, agravado pela 0033) — APK nao saia do CI. Causas: (1) RenderFlex overflow sub-pixel no `_CourtPlayerChip` por line-height default dos Texts; (2) assertion antiga vs novo comportamento do `_AutoShrinkText` com ellipsis fallback; (3) dropdown do Point Limit nao renderizando items fora da viewport. Corrigido com `height: 1.0` nos Texts + ajuste das assertions. `flutter test` agora passa 176/176.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual + infra de testers) — entradas 0023..0035 fechadas. CI 100% verde (analyze + test + build-apk + build-web GH Pages + deploy CF Pages).** |
-| Proximo passo recomendado | APK release gerado a cada push agora sai como artifact do GitHub Actions (job `Build release APK` em `.github/workflows/build-apk.yml`). Baixar o APK do ultimo run em `claude/review-and-continue-9ZK5v` e subir no Firebase Test Lab para validacao em devices reais (sugestao: Robo test em 1 tablet 10" + 1 phone, portrait). |
+| Status geral | **Fase 5 — decima segunda rodada (entrada 0036): primeiro run no Firebase Test Lab (Robo no Pixel 5 / API 30) foi "Aprovado" (0 falhas, sem crash) mas surfou um bug de UX real — o template `.xlsx` baixado nao reaparece no file picker do sistema porque era gravado em `getApplicationDocumentsDirectory()` (`/data/user/0/<pkg>/app_flutter/`, storage privado do app). Real user fica sem como recarregar o template no Android. No Web nao tinha esse problema (browser baixa pra pasta acessivel). Corrigido trocando `path_provider` por `FilePicker.platform.saveFile(bytes: ...)` em `template_saver_io.dart` — agora o usuario escolhe destino via SAF "Save As" (Downloads/Drive/etc.) e o file picker enxerga.** |
+| Fase atual | **Fase 5 (ajustes pos-teste manual + infra de testers + Test Lab) — entradas 0023..0036 fechadas. CI 100% verde no ultimo push (entrada 0035: 176/176 testes).** |
+| Proximo passo recomendado | Aguardar CI do push da entrada 0036 ficar verde, baixar o novo APK release do artifact `iwbf-team-points-control-apk` e re-rodar Robo Test no Firebase Test Lab — desta vez o Robo deve conseguir completar o ciclo Download Template -> Load Spreadsheet -> Match Setup -> Lineup. Idealmente expandir a matrix de devices: alem do Pixel 5 (API 30) ja rodado, adicionar 1 tablet 10" portrait (Pixel Tablet / Galaxy Tab A8) e 1 phone moderno (Pixel 8 API 34) para cobrir o espectro de testers. |
 | Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). Apos validacao do CF Pages, migrar gradualmente para https://iwbf-team-points-control.pages.dev/. |
 | Ultimos testes executados | 2026-05-15 — `flutter analyze --no-fatal-infos` (1 info pre-existente, nao bloqueante) + `flutter test` (**176 passed, 0 failed**). Flutter SDK 3.41.9 instalado localmente nesta sessao em `/root/flutter`. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
@@ -548,6 +548,59 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0036 - 2026-05-15 - Fase 5 — decima segunda rodada: fix do template inacessivel no Android (Robo Test surfou bug de UX)
+
+Resumo:
+
+- Usuario criou projeto no Firebase Test Lab, fez upload do APK release do commit 5c38d8b (entrada 0035), e rodou primeiro Robo Test no Pixel 5 API 30 portrait. Resultado da matrix: "Aprovada" (0 falhas, 1 stable, 1 device — sem crash, sem ANR).
+- "Aprovada" tecnicamente, mas o teste surfou um bug de UX que bloqueia real users no Android: ao tocar "Download Template — Single Sheet", a snackbar mostrou `Template saved to /data/user/0/com.iwbf.teampointscontrol/app_flutter/iwbf_template_single_sheet.xlsx`. Em seguida, ao tocar "Load Reference Spreadsheet", o file picker do sistema abriu vazio ("No items"). Robo nao consegue passar dali; real user idem.
+
+Causa raiz:
+
+- `lib/utils/template_saver_io.dart:11` usava `getApplicationDocumentsDirectory()` (do `path_provider`), que no Android devolve `/data/user/0/<pkg>/app_flutter/` — storage **privado** do app.
+- O file picker do sistema (Files app / SAF) so enxerga: (1) pastas publicas (Downloads, Documents, Pictures...); (2) Drive / outros providers via SAF; (3) pastas app-scoped EXTERNAS. NAO enxerga `/data/user/0/<pkg>/` de outro app.
+- Resultado: template gerado e gravado com sucesso, mas funcionalmente inacessivel pelo usuario para o re-upload. No Web isso nao acontece porque `template_saver_web.dart` dispara `<a download>` que vai pra pasta Downloads do browser, que o file picker do browser enxerga sem problema.
+
+Correcao aplicada:
+
+- `lib/utils/template_saver_io.dart` reescrito: troca `path_provider.getApplicationDocumentsDirectory()` por `FilePicker.platform.saveFile(bytes: ...)` do `file_picker ^8.1.2` (ja era dependencia do projeto, usado para o caminho de Load). Abre o dialogo nativo "Save As" — SAF no Android, document picker no iOS, save dialog no desktop. Usuario escolhe destino (Downloads, Drive, qualquer pasta visivel) e o file_picker grava via SAF — sem precisar de permissao runtime. Devolve o caminho final escolhido ou `null` se cancelar.
+- `lib/utils/template_saver.dart` (docstring): atualizado para refletir "Save As" via SAF em vez de `getApplicationDocumentsDirectory`.
+- `lib/screens/load_spreadsheet_screen.dart` (docstring do typedef `TemplateSaveFn`): mesma atualizacao.
+
+Arquitetura preservada:
+
+- A tela continua recebendo um `TemplateSaveFn` callback injetavel — testes de widget seguem usando `_FakeTemplateSaver` em memoria sem tocar a plataforma (regra do CLAUDE.md: plugins de plataforma sempre via callback/servico injetavel).
+- Web (`template_saver_web.dart`) intocado — continua funcionando via `<a download>`.
+- Contrato do `defaultSaveTemplate(filename, bytes) -> Future<String?>` nao mudou — testes existentes nao precisam de mudanca.
+
+Arquivos alterados:
+
+- `lib/utils/template_saver_io.dart` (reescrito, -3 / +9 linhas: removeu `import 'package:path_provider/...'` e `getApplicationDocumentsDirectory()`; adicionou `FilePicker.platform.saveFile` com `bytes`).
+- `lib/utils/template_saver.dart` (docstring atualizado, ~4 linhas).
+- `lib/screens/load_spreadsheet_screen.dart` (docstring do typedef, 2 linhas).
+- `docs/AI_WORK_LOG.md` (esta entrada + tabela de Estado atualizada).
+
+Testes executados:
+
+- Flutter SDK ausente no sandbox desta sessao (`/root/flutter/bin/flutter` nao existe). CI valida no push: `flutter analyze --no-fatal-infos` + `flutter test` (esperado 176/176, mesmo numero da entrada 0035 — nenhum teste novo tocou plataforma e os testes existentes usam o `FakeSaver` injetado).
+- `path_provider` continua no `pubspec.yaml` (nao removido nesta entrada para manter o escopo minimo do fix; nada mais no `lib/` ou `test/` usa o pacote, entao pode ser removido em entrada futura se desejado).
+
+Pendencias / smoke test pos-CI:
+
+- Aguardar CI do push verde: `Build Flutter Web (GitHub Pages)`, `Deploy to GitHub Pages`, `Build and Deploy to Cloudflare Pages`, `Build release APK`. Sem CI verde, APK release novo nao sai.
+- Apos APK release novo, baixar artifact `iwbf-team-points-control-apk` do workflow `Build Android APK` em `claude/review-and-continue-9ZK5v` e re-rodar Robo Test no Firebase Test Lab. Plano esperado:
+  1. Robo aperta "Download Template — Single Sheet" → dialogo SAF "Save As" abre.
+  2. Robo aceita destino default (geralmente Downloads) → arquivo salvo em `/storage/emulated/0/Download/iwbf_template_single_sheet.xlsx`.
+  3. Robo aperta "Load Reference Spreadsheet" → file picker do sistema abre.
+  4. Robo navega ate Downloads, acha o `.xlsx`, abre.
+  5. App valida planilha, navega para Match Setup, depois Lineup Control.
+  6. Robo conclui o golden path.
+- Idealmente expandir matrix no proximo run: alem do Pixel 5 / API 30 (Android 11, ja rodado), adicionar 1 tablet 10" portrait (Pixel Tablet ou Galaxy Tab A8) para validar o layout split (listas laterais + quadra central) e 1 phone moderno (Pixel 8 API 34) para Android 14.
+
+Proximo passo recomendado:
+
+- Push imediato; aguardar CI verde; baixar APK release novo; re-rodar Robo Test (mesma config Pixel 5/API 30) para confirmar que o ciclo Download → Load → Match Setup agora flui. Se passar, expandir matrix para tablet + phone modernos.
 
 ### 0035 - 2026-05-15 - Destrava `flutter test` no CI (15 falhas em widget tests, APK voltou a sair)
 
