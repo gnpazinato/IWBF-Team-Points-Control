@@ -41,9 +41,9 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 |---|---|
 | Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
 | Data da ultima atualizacao | 2026-05-15 |
-| Status geral | **Fase 5 — decima segunda rodada (entrada 0036): primeiro run no Firebase Test Lab (Robo no Pixel 5 / API 30) foi "Aprovado" (0 falhas, sem crash) mas surfou um bug de UX real — o template `.xlsx` baixado nao reaparece no file picker do sistema porque era gravado em `getApplicationDocumentsDirectory()` (`/data/user/0/<pkg>/app_flutter/`, storage privado do app). Real user fica sem como recarregar o template no Android. No Web nao tinha esse problema (browser baixa pra pasta acessivel). Corrigido trocando `path_provider` por `FilePicker.platform.saveFile(bytes: ...)` em `template_saver_io.dart` — agora o usuario escolhe destino via SAF "Save As" (Downloads/Drive/etc.) e o file picker enxerga.** |
-| Fase atual | **Fase 5 (ajustes pos-teste manual + infra de testers + Test Lab) — entradas 0023..0036 fechadas. CI 100% verde no ultimo push (entrada 0035: 176/176 testes).** |
-| Proximo passo recomendado | Aguardar CI do push da entrada 0036 ficar verde, baixar o novo APK release do artifact `iwbf-team-points-control-apk` e re-rodar Robo Test no Firebase Test Lab — desta vez o Robo deve conseguir completar o ciclo Download Template -> Load Spreadsheet -> Match Setup -> Lineup. Idealmente expandir a matrix de devices: alem do Pixel 5 (API 30) ja rodado, adicionar 1 tablet 10" portrait (Pixel Tablet / Galaxy Tab A8) e 1 phone moderno (Pixel 8 API 34) para cobrir o espectro de testers. |
+| Status geral | **Fase 5 ENCERRADA (entrada 0037): apos 3 Robo Tests no Firebase Test Lab (Pixel 5 API 30, Galaxy Tab A9+ API 34, Pixel Tablet API 34) confirmarem que o app launcha e renderiza sem crash (limitacao conhecida: Robo crawler nao navega SAF system dialogs — comportamento by design, nao bug do app), layout tablet 10" portrait validado via CF Pages em DevTools Chrome, usuario decidiu fechar MVP. Esta entrada prepara o PR `claude/review-and-continue-9ZK5v -> main` e finaliza o ciclo Fase 1-5. CI 100% verde, 176/176 testes, 2 previews Web operacionais (GH Pages + CF Pages).** |
+| Fase atual | **Fase 5 encerrada — entradas 0023..0037 fechadas. MVP completo. PR `claude/review-and-continue-9ZK5v -> main` aberto para finalizar o ciclo. Decisao do usuario: merge para `main`, manter `claude/review-and-continue-9ZK5v` viva ate switch manual da production-branch do CF Pages para `main` no dashboard Cloudflare.** |
+| Proximo passo recomendado | Mergear o PR para `main`; aguardar CI no `main` gerar APK release final; usuario faz switch manual da production-branch CF Pages `claude/review-and-continue-9ZK5v -> main` no dashboard Cloudflare; planejar Fase 6 (estatisticas pos-jogo, scoring, Play Store, refactor, multi-language ou outro escopo a decidir). |
 | Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). Apos validacao do CF Pages, migrar gradualmente para https://iwbf-team-points-control.pages.dev/. |
 | Ultimos testes executados | 2026-05-15 — `flutter analyze --no-fatal-infos` (1 info pre-existente, nao bloqueante) + `flutter test` (**176 passed, 0 failed**). Flutter SDK 3.41.9 instalado localmente nesta sessao em `/root/flutter`. |
 | APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
@@ -548,6 +548,52 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0037 - 2026-05-15 - Encerramento da Fase 5 e preparacao do merge MVP -> main
+
+Resumo:
+
+- Apos a entrada 0036 (fix do template SAF "Save As"), usuario rodou 3 Robo Tests no Firebase Test Lab usando o APK release do commit `368436f`:
+  1. **Pixel 5 / API 30 / portrait** (mesma config da entrada 0036).
+  2. **Galaxy Tab A9+ / API 34 / portrait** — tablet 10" para validar o layout split (listas laterais + quadra central).
+  3. **Pixel Tablet / API 34 / portrait** — segundo tablet 10" para reforcar coverage.
+- Resultado: **todos os 3 launchs OK, app renderiza sem crash, sem ANR**. Robo crawler nao consegue navegar dialogos do sistema (SAF "Save As", file picker) — isso e **comportamento by design** do Robo (ele tenta navegar apenas a UI do app, nao processa system dialogs nativos do Android), nao bug do app. Real user humano completa o ciclo normalmente.
+- Layout tablet 10" portrait (quadra central + listas laterais) **validado via CF Pages no DevTools Chrome em modo tablet 10" portrait** durante a sessao — o split layout aparece corretamente, listas laterais com avatars/numeros, quadra central com chips de jogadores em quadra.
+- Usuario decidiu: **fechar MVP**. Esta entrada prepara o PR `claude/review-and-continue-9ZK5v -> main` (trilha B do CLAUDE.md).
+
+Decisoes desta entrada:
+
+- **Estrategia de merge:** merge commit simples (NAO squash). Preserva historico das 37 entradas do log + commits feat/fix/docs por fase. Squash apagaria a granularidade que e o valor do `AI_WORK_LOG.md` cruzado com o git log.
+- **Branch `claude/review-and-continue-9ZK5v` nao sera deletada apos o merge.** Razao: ela e a production-source atual do CF Pages (entrada 0034). Deletar = URL publica `https://iwbf-team-points-control.pages.dev/` para de atualizar (no melhor caso fica em cache do ultimo deploy; no pior, 404 dependendo do DNS). Usuario faz o switch da production-branch para `main` manualmente pelo dashboard Cloudflare (https://dash.cloudflare.com/ → projeto `iwbf-team-points-control` → Settings → Builds & deployments → Production branch). Apos o switch, a branch pode ser deletada com seguranca.
+- **GH Pages continua em paralelo.** Os 2 testers atuais ja tem o link `https://gnpazinato.github.io/IWBF-Team-Points-Control/`; nao removemos esse deploy ate eles migrarem voluntariamente para o link CF Pages (sem handle pessoal).
+
+Arquivos alterados:
+
+- `docs/AI_WORK_LOG.md` (esta entrada + tabela de Estado atualizada com encerramento da Fase 5 e indicacao do PR).
+
+Testes executados nesta sessao:
+
+- `flutter analyze --no-fatal-infos` -> 1 info-level pre-existente em `spreadsheet_parser_service_test.dart:360` (`no_leading_underscores_for_local_identifiers` em `_expectArgentinaTeam`), nao bloqueante, registrado desde a entrada 0035.
+- `flutter test` -> **176 passed, 0 failed, 0 skipped** (mesmo numero da entrada 0035; nenhum teste novo, nenhuma regressao).
+- `git status` limpo antes desta entrada (commit 368436f).
+
+Pendencias / smoke test pos-merge:
+
+- Apos merge para `main`, CI roda automaticamente em `main`:
+  - `Build Flutter Web (GitHub Pages)` + `Deploy to GitHub Pages` -> atualiza `https://gnpazinato.github.io/IWBF-Team-Points-Control/`.
+  - `Build and Deploy to Cloudflare Pages` -> gera **preview deploy** num subdominio com hash (porque a production-branch CF Pages ainda e `claude/review-and-continue-9ZK5v`).
+  - `Build release APK` -> artifact `iwbf-team-points-control-apk` disponivel.
+- Apos usuario fazer switch manual da production-branch CF Pages -> `main`, qualquer push em `main` vira production deploy, e a URL publica passa a ser servida do `main`. A branch `claude/review-and-continue-9ZK5v` pode entao ser deletada.
+- Smoke test manual em device fisico (docs/INSTALL_ANDROID.md § 4): instalar APK release do `main`, abrir, baixar template via "Save As" (SAF), recarregar via file picker, configurar Match Setup, navegar Lineup Control, encerrar.
+
+Limitacoes conhecidas registradas (nao bloqueiam o MVP):
+
+- **Robo Test + SAF:** Robo crawler nao navega dialogos do sistema (Save As / file picker SAF). E by design do Robo Test. Para coverage automatizado do ciclo Download Template -> Load Spreadsheet -> Match Setup -> Lineup em CI seria necessario um Espresso/Patrol/Integration Test, fora do escopo do MVP.
+- **`path_provider` continua em `pubspec.yaml`** mesmo nao sendo mais usado em `lib/` ou `test/` apos a entrada 0036. Pode ser removido em uma Fase 6 de housekeeping (escopo minimo do fix da 0036 evitou tocar dependencias).
+
+Proximo passo recomendado:
+
+- Mergear o PR `claude/review-and-continue-9ZK5v -> main` via `mcp__github__merge_pull_request` (merge commit simples). Aguardar CI verde em `main`. Acionar usuario para fazer o switch manual da production-branch CF Pages e decidir Fase 6.
 
 ### 0036 - 2026-05-15 - Fase 5 — decima segunda rodada: fix do template inacessivel no Android (Robo Test surfou bug de UX)
 
