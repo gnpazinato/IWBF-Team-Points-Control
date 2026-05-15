@@ -1,0 +1,130 @@
+# IWBF Team Points Control — Contexto auto-carregado para o Claude
+
+> Este arquivo é lido automaticamente no início de cada sessão do Claude
+> Code neste repositório. Trate-o como verdade. Se algo aqui contradisser
+> seu instinto, **siga este arquivo**.
+
+## Branch ativa
+
+**TODO o código de produto está em `claude/review-and-continue-9ZK5v`.**
+A `main` ainda é apenas o scaffold inicial (commit `a2cc748`). Se você
+abrir `lib/main.dart` e ver só um placeholder, está na branch errada —
+**não reimplemente nada do zero, apenas troque:**
+
+```bash
+git fetch origin
+git checkout claude/review-and-continue-9ZK5v
+git pull --ff-only origin claude/review-and-continue-9ZK5v
+git log --oneline -10
+```
+
+Você deve ver commits `feat(fase-5)...`, `fix(fase-5)...`, `feat(ci)...`,
+`docs(...)...`. O mais recente em 2026-05-15 é `5c38d8b fix(fase-5):
+destrava flutter test no CI` (entrada 0035), precedido por `8d6ab54
+feat(ci): deploy paralelo no Cloudflare Pages` (entrada 0034, merge
+do PR #4).
+
+## Estado atual (resumo)
+
+- **Fase atual:** Fase 5 com 13 rodadas de ajustes pós-teste / infra
+  (entradas 0023..0035 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
+  Últimas 2 rodadas:
+  - **0034 (2026-05-15):** deploy paralelo no Cloudflare Pages — URL
+    `https://iwbf-team-points-control.pages.dev/` (sem o handle pessoal
+    `gnpazinato`) servida a partir de production deploy. GH Pages
+    continua em paralelo. Job `cloudflare-pages` no
+    `.github/workflows/deploy-web.yml`. Production-branch do CF Pages
+    está em `claude/review-and-continue-9ZK5v` — trocar para `main`
+    apos merge do MVP.
+  - **0035 (2026-05-15):** destrava `flutter test` no CI. 15 widget
+    tests vinham falhando desde a entrada 0031 (sub-pixel RenderFlex
+    overflow no `_CourtPlayerChip` + assertion desatualizada sobre
+    ellipsis + dropdown com lazy-build em viewport baixa). Sem `flutter
+    test` verde o `Build release APK` não rodava — nenhum APK como
+    artifact. Corrigido com `height: 1.0` em 2 TextStyles + ajuste de
+    2 testes. **176 passed, 0 failed.** APK volta a sair no CI.
+- **Testers externos:** 2 pessoas têm o link do preview Web do GH Pages
+  (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`),
+  compartilhado em 2026-05-14. Migrar gradualmente para o link do CF
+  Pages (`https://iwbf-team-points-control.pages.dev/`).
+- **Próximo passo de validação:** baixar APK release do último run em
+  `claude/review-and-continue-9ZK5v` (artifact do workflow `Build
+  Android APK`) e subir no Firebase Test Lab — Robo test em 1 tablet
+  10" + 1 phone, portrait.
+- **Última atualização:** 2026-05-15.
+
+## O que fazer quando o usuário abre uma nova conversa
+
+1. Faça `git status` + `git log --oneline -10` para confirmar a branch e
+   o último commit.
+2. Leia, **nesta ordem**, antes de qualquer outra ação:
+   1. `docs/IWBF_Team_Points_Control_Planejamento.md` (escopo do MVP);
+   2. `docs/PLANO_DESENVOLVIMENTO_IA.md` (fases e estratégia);
+   3. `docs/AI_WORK_LOG.md` (fonte da verdade — estado, decisões,
+      convenções, histórico). Em particular: tabela "Estado atual" no
+      topo + entradas 0023..0035 (Fase 5 inteira + infra CF Pages +
+      destrava CI).
+3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +
+   título) e qual das duas trilhas aplica.
+
+## Duas trilhas possíveis de próximo passo
+
+**TRILHA A — Testers reportaram bugs ou melhorias.**
+Peça a lista detalhada ao usuário. Continue na mesma branch. Cada
+ajuste vira uma nova entrada (`### 0031`, `### 0032`...) no log.
+Convenção de commit: `feat(fase-5):...`, `fix(fase-5):...`.
+
+**TRILHA B — Sem feedback (ou já absorvido). Usuário quer encerrar MVP.**
+Confirme com o usuário, garanta `git status` limpo, abra PR
+`claude/review-and-continue-9ZK5v -> main` via GitHub MCP
+(`mcp__github__create_pull_request`). **Não mergeie sozinho — peça
+aprovação.** Depois do merge, registre o fechamento no log e pergunte
+ao usuário a próxima direção (Phase 6: estatísticas, scoring, Play
+Store, refactor...).
+
+Pergunte ao usuário qual trilha aplica antes de codar.
+
+## Regras de trabalho (não revisitar sem motivo técnico)
+
+- **Branch:** sempre `claude/review-and-continue-9ZK5v`. Nunca trabalhe
+  a partir de `main` enquanto o ciclo MVP estiver aberto.
+- **Validação local:** se `/root/flutter/bin/flutter` existir, rode
+  `flutter pub get && flutter analyze --no-fatal-infos && flutter test`
+  antes de cada push. Se Flutter ausente no sandbox, CI valida no push.
+- **Não commit `pubspec.lock`** se mudou só por `pub get` local
+  (`git restore pubspec.lock` antes do commit).
+- **Plugins de plataforma sempre via callback/serviço injetável**
+  (`VibrationService`, `WakelockController`, `FilePicker` callback,
+  etc.). Sem isso, widget tests quebram com `MissingPluginException`.
+- **Em widget tests, NUNCA `await Navigator.push(...)`** — o Future só
+  completa quando a rota é popada; causa timeout.
+- **Capture `Navigator.of(context)` antes do primeiro `await`** em
+  handlers assíncronos para evitar `use_build_context_synchronously`.
+- **APIs depreciadas (Flutter 3.41+):** use `Color.withValues(alpha: x)`
+  (não `.withOpacity`), `DropdownButtonFormField.initialValue` (não
+  `.value`), `PopScope.onPopInvokedWithResult` (não `.onPopInvoked`),
+  `CardThemeData`/`DialogThemeData` (não `CardTheme`/`DialogTheme`).
+- **Cores de alerta:** sempre via `IwbfColors` (`alertRed`,
+  `alertRedSurface`, `goldDeep`) — não `Colors.red.shade*`.
+
+## Rotina por incremento
+
+1. Implementa o menor pedaço útil.
+2. `analyze` + `test` verdes localmente (ou push se Flutter ausente).
+3. Atualiza `docs/AI_WORK_LOG.md`: nova entrada `### 00NN`, tabela de
+   estado, arquivos alterados, testes rodados, próximo passo.
+4. Commit + push em `claude/review-and-continue-9ZK5v`.
+5. Reporte ao usuário em 4-8 linhas: o que entregou, testes que
+   passaram (números reais), pendências, próximo passo.
+
+## Repositório
+
+- GitHub: `gnpazinato/iwbf-team-points-control`
+- Preview Web (GH Pages — legado, expõe handle pessoal):
+  `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
+- Preview Web (CF Pages — URL neutra para testers, adicionado na entrada
+  0034 do log): `https://iwbf-team-points-control.pages.dev/`
+- Ambos são servidos a partir da branch ativa e atualizados a cada push
+  em `claude/**` ou `main` via `.github/workflows/deploy-web.yml`.
+- CI de build/test: `.github/workflows/build-apk.yml` valida `analyze` +
+  `test` e gera APK em cada push.
