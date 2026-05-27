@@ -185,6 +185,15 @@ void main() {
 
     testWidgets('mudança de Point Limit é refletida no Start payload',
         (WidgetTester tester) async {
+      // Viewport alta para o overlay do dropdown buildar todos os 19 items
+      // (incl. 15.5) sem lazy-build — vide teste acima.
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       await tester.pumpWidget(MaterialApp(
         home: MatchSetupScreen(teams: <Team>[
           _team('team-brazil', 'Brazil'),
