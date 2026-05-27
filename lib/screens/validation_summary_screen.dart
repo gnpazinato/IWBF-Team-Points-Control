@@ -378,37 +378,55 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
             ),
           ),
           const Divider(height: 1),
-          ..._playerRows(team),
+          _rosterTable(team),
         ],
       ),
     );
   }
 
-  List<Widget> _playerRows(Team team) {
+  /// Tabela de atletas: cabeçalho de colunas + uma linha por atleta.
+  ///
+  /// Em telas largas (>= `_kRosterMinWidth`) o nome ocupa o espaço restante
+  /// (visual de tabela cheia, como no app irmão). Em telas estreitas a
+  /// tabela mantém a largura mínima e rola na horizontal — cabeçalho e
+  /// linhas juntos —, preservando "um atleta por linha".
+  Widget _rosterTable(Team team) {
     if (team.players.isEmpty) {
-      return const <Widget>[
-        Padding(
-          padding: EdgeInsets.all(12),
-          child: Text('No players imported for this team.'),
-        ),
-      ];
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: Text('No players imported for this team.'),
+      );
     }
     final List<Player> sorted = <Player>[...team.players]
       ..sort((Player a, Player b) => a.shirtNumber.compareTo(b.shirtNumber));
-    return <Widget>[
-      for (final Player p in sorted)
-        _EditablePlayerRow(
-          key: ValueKey<String>('player-row-${p.id}'),
-          player: p,
-          siblings: team.players,
-          onShirtChanged: (int newShirt) => _updateShirt(team, p, newShirt),
-          onNameChanged: (String newName) => _updateName(team, p, newName),
-          onClassChanged: (double newClass) => _updateClass(team, p, newClass),
-          onDobChanged: (DateTime dob) => _updateDob(team, p, dob),
-          onGenderChanged: (PlayerGender g) => _updateGender(team, p, g),
-          onDelete: () => _confirmDeletePlayer(team, p),
-        ),
-    ];
+    final Widget table = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        const _RosterHeaderRow(),
+        for (final Player p in sorted)
+          _EditablePlayerRow(
+            key: ValueKey<String>('player-row-${p.id}'),
+            player: p,
+            siblings: team.players,
+            onShirtChanged: (int newShirt) => _updateShirt(team, p, newShirt),
+            onNameChanged: (String newName) => _updateName(team, p, newName),
+            onClassChanged: (double newClass) =>
+                _updateClass(team, p, newClass),
+            onDobChanged: (DateTime dob) => _updateDob(team, p, dob),
+            onGenderChanged: (PlayerGender g) => _updateGender(team, p, g),
+            onDelete: () => _confirmDeletePlayer(team, p),
+          ),
+      ],
+    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        if (c.maxWidth >= _kRosterMinWidth) return table;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(width: _kRosterMinWidth, child: table),
+        );
+      },
+    );
   }
 
   Future<void> _openMissingData(BuildContext context) async {
@@ -537,47 +555,25 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
   @override
   Widget build(BuildContext context) {
     final bool classValid = isAcceptedPlayerClass(widget.player.playerClass);
+    const EdgeInsets fieldPad =
+        EdgeInsets.symmetric(horizontal: 8, vertical: 8);
+    final OutlineInputBorder? redBorder = _error != null
+        ? const OutlineInputBorder(
+            borderSide: BorderSide(color: IwbfColors.alertRed))
+        : null;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 6, 10),
+      padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Linha 1: nome (ocupa a largura) + excluir.
+          // Uma linha por atleta: camisa, nome, nascimento, gênero, classe,
+          // excluir. As larguras casam com o _RosterHeaderRow.
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Expanded(
-                child: TextField(
-                  key: Key('name-input-${widget.player.id}'),
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    labelText: 'Name',
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  ),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                  onChanged: widget.onNameChanged,
-                ),
-              ),
-              IconButton(
-                key: Key('delete-player-${widget.player.id}'),
-                visualDensity: VisualDensity.compact,
-                tooltip: 'Remove player',
-                color: IwbfColors.alertRed,
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: widget.onDelete,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Linha 2: número, nascimento, gênero, classe.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
               SizedBox(
-                width: 56,
+                width: _kRosterShirtW,
                 child: TextField(
                   key: Key('shirt-input-${widget.player.id}'),
                   controller: _shirtController,
@@ -589,39 +585,50 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
                   textAlign: TextAlign.center,
                   decoration: InputDecoration(
                     isDense: true,
-                    labelText: '#',
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-                    errorText: _error,
-                    errorStyle: const TextStyle(
-                      fontSize: 10,
-                      height: 0.6,
-                      color: IwbfColors.alertRed,
-                    ),
+                        const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                    border: const OutlineInputBorder(),
+                    enabledBorder: redBorder,
+                    focusedBorder: redBorder,
                   ),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                   onChanged: _onShirtInput,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: _kRosterGap),
               Expanded(
-                flex: 5,
+                child: TextField(
+                  key: Key('name-input-${widget.player.id}'),
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: fieldPad,
+                    border: OutlineInputBorder(),
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  onChanged: widget.onNameChanged,
+                ),
+              ),
+              const SizedBox(width: _kRosterGap),
+              SizedBox(
+                width: _kRosterDobW,
                 child: _DobField(
                   dob: widget.player.dateOfBirth,
                   onChanged: widget.onDobChanged,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 5,
+              const SizedBox(width: _kRosterGap),
+              SizedBox(
+                width: _kRosterGenderW,
                 child: _GenderDropdown(
                   gender: widget.player.gender,
                   onChanged: widget.onGenderChanged,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: _kRosterGap),
               SizedBox(
-                width: 72,
+                width: _kRosterClassW,
                 child: DropdownButtonFormField<double>(
                   key: Key('class-dropdown-${widget.player.id}'),
                   initialValue: classValid ? widget.player.playerClass : null,
@@ -629,9 +636,9 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
                   isExpanded: true,
                   decoration: InputDecoration(
                     isDense: true,
-                    labelText: 'Cls',
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 10),
+                        horizontal: 6, vertical: 8),
+                    border: const OutlineInputBorder(),
                     filled: !classValid,
                     fillColor: classValid ? null : IwbfColors.alertRedSurface,
                   ),
@@ -646,8 +653,80 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
                   },
                 ),
               ),
+              SizedBox(
+                width: _kRosterDeleteW,
+                child: IconButton(
+                  key: Key('delete-player-${widget.player.id}'),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  tooltip: 'Remove player',
+                  color: IwbfColors.alertRed,
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: widget.onDelete,
+                ),
+              ),
             ],
           ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(
+                  top: 3, left: _kRosterShirtW + _kRosterGap),
+              child: Text(
+                _error!,
+                style: const TextStyle(
+                  color: IwbfColors.alertRed,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Larguras das colunas do roster, compartilhadas entre o cabeçalho
+/// (`_RosterHeaderRow`) e as linhas (`_EditablePlayerRow`) para alinhar a
+/// "tabela". O nome ocupa o espaço restante (Expanded). Abaixo de
+/// `_kRosterMinWidth` a tabela rola na horizontal mantendo essas larguras.
+const double _kRosterShirtW = 40;
+const double _kRosterDobW = 100;
+const double _kRosterGenderW = 100;
+const double _kRosterClassW = 64;
+const double _kRosterDeleteW = 36;
+const double _kRosterGap = 8;
+const double _kRosterMinWidth = 520;
+
+/// Cabeçalho de colunas da tabela de atletas (mostrado uma vez por equipe).
+class _RosterHeaderRow extends StatelessWidget {
+  const _RosterHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle style = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.4,
+      color: IwbfColors.textPrimary.withValues(alpha: 0.55),
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 6, 2),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: _kRosterShirtW,
+            child: Text('SHIRT', style: style, textAlign: TextAlign.center),
+          ),
+          const SizedBox(width: _kRosterGap),
+          Expanded(child: Text('NAME', style: style)),
+          const SizedBox(width: _kRosterGap),
+          SizedBox(width: _kRosterDobW, child: Text('BIRTH DATE', style: style)),
+          const SizedBox(width: _kRosterGap),
+          SizedBox(width: _kRosterGenderW, child: Text('GENDER', style: style)),
+          const SizedBox(width: _kRosterGap),
+          SizedBox(width: _kRosterClassW, child: Text('CLASS', style: style)),
+          const SizedBox(width: _kRosterDeleteW),
         ],
       ),
     );
@@ -683,15 +762,23 @@ class _DobField extends StatelessWidget {
       child: InputDecorator(
         decoration: const InputDecoration(
           isDense: true,
-          labelText: 'Birth date',
-          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          suffixIcon: Icon(Icons.calendar_today_outlined, size: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          border: OutlineInputBorder(),
         ),
-        child: Text(
-          _formatDob(dob),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 13),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.event_outlined,
+                size: 13, color: IwbfColors.goldDeep),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                _formatDob(dob),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -713,8 +800,8 @@ class _GenderDropdown extends StatelessWidget {
       isExpanded: true,
       decoration: const InputDecoration(
         isDense: true,
-        labelText: 'Gender',
-        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        border: OutlineInputBorder(),
       ),
       items: const <DropdownMenuItem<PlayerGender>>[
         DropdownMenuItem<PlayerGender>(

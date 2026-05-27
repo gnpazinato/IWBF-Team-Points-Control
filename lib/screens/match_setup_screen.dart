@@ -414,7 +414,10 @@ const List<Color> kJerseyPalette = <Color>[
   IwbfColors.gold,
   Color(0xFFFFFFFF), // White
   IwbfColors.textPrimary, // Black
+  Color(0xFF424242), // Dark Gray
   Color(0xFF1E3A6E), // Dark Blue
+  Color(0xFF1B5E20), // Dark Green
+  Color(0xFF4A148C), // Dark Purple
   IwbfColors.alertRed, // Red
 ];
 

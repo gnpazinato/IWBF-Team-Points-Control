@@ -132,13 +132,12 @@ void main() {
       );
 
       expect(find.text('Americas Championship'), findsOneWidget);
-      // Header agora monta Team A / vs / Team B em widgets separados para
-      // intercalar a bandeira de cada pais.
+      // Header monta nome da Team A / vs / Team B em widgets separados para
+      // intercalar a bandeira de cada pais. Os rótulos "Team A"/"Team B"
+      // acima do placar foram removidos (info redundante com os nomes).
       expect(find.text('Brazil'), findsWidgets);
       expect(find.text('Argentina'), findsWidgets);
       expect(find.text('  vs  '), findsOneWidget);
-      expect(find.text('Team A'), findsWidgets);
-      expect(find.text('Team B'), findsWidgets);
       expect(find.text('0.0 / 14.0'), findsNWidgets(2));
       // Point Limit agora vive num menu (PopupMenuButton) na AppBar.
       expect(find.byKey(const Key('lineup-point-limit-dropdown')),

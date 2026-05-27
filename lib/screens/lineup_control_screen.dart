@@ -296,7 +296,6 @@ class _Header extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: _ScoreCell(
-                    label: 'Team A',
                     total: state.totalPointsTeamA,
                     limit: state.pointLimit,
                     isOver: state.isTeamAOverLimit,
@@ -305,7 +304,6 @@ class _Header extends StatelessWidget {
                 ),
                 Expanded(
                   child: _ScoreCell(
-                    label: 'Team B',
                     total: state.totalPointsTeamB,
                     limit: state.pointLimit,
                     isOver: state.isTeamBOverLimit,
@@ -357,14 +355,12 @@ class _PointLimitMenu extends StatelessWidget {
 
 class _ScoreCell extends StatelessWidget {
   const _ScoreCell({
-    required this.label,
     required this.total,
     required this.limit,
     required this.isOver,
     required this.keyName,
   });
 
-  final String label;
   final double total;
   final double limit;
   final bool isOver;
@@ -406,13 +402,6 @@ class _ScoreCell extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-          ),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
@@ -938,6 +927,17 @@ class _CourtPlayerSlot extends StatelessWidget {
   }
 }
 
+/// Nome curto exibido no chip da quadra: apenas a parte antes da vírgula.
+/// As planilhas vêm no formato "SOBRENOME, Nome" (ex.: "LOPEZ, Alvarez"),
+/// então o chip mostra só "LOPEZ" — sem a vírgula, para ocupar pouco espaço.
+/// Sem vírgula, usa o nome inteiro. As relações laterais mantêm o nome
+/// completo (com a vírgula).
+String _courtChipName(String name) {
+  final int comma = name.indexOf(',');
+  final String base = comma >= 0 ? name.substring(0, comma) : name;
+  return base.trim();
+}
+
 class _CourtPlayerChip extends StatelessWidget {
   const _CourtPlayerChip({
     required this.player,
@@ -1011,7 +1011,7 @@ class _CourtPlayerChip extends StatelessWidget {
             // proporcional ao seu comprimento.
             Flexible(
               child: _AutoShrinkText(
-                text: player.name.toUpperCase(),
+                text: _courtChipName(player.name).toUpperCase(),
                 maxFontSize: fontSize,
                 minFontSize: 8.0,
                 color: fg,
