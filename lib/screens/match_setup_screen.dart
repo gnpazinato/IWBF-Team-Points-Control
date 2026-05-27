@@ -167,26 +167,33 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-              _TeamDropdown(
-                key: const Key('team-a-dropdown'),
-                label: 'Select Team A',
-                value: _teamA,
-                teams: teams,
-                onChanged: (Team? value) => setState(() => _teamA = value),
+              _AccentCard(
+                child: _TeamDropdown(
+                  key: const Key('team-a-dropdown'),
+                  label: 'Select Team A',
+                  value: _teamA,
+                  teams: teams,
+                  onChanged: (Team? value) => setState(() => _teamA = value),
+                ),
               ),
-              const SizedBox(height: 16),
-              _TeamDropdown(
-                key: const Key('team-b-dropdown'),
-                label: 'Select Team B',
-                value: _teamB,
-                teams: teams,
-                onChanged: (Team? value) => setState(() => _teamB = value),
+              const SizedBox(height: 14),
+              _AccentCard(
+                child: _TeamDropdown(
+                  key: const Key('team-b-dropdown'),
+                  label: 'Select Team B',
+                  value: _teamB,
+                  teams: teams,
+                  onChanged: (Team? value) => setState(() => _teamB = value),
+                ),
               ),
-              const SizedBox(height: 16),
-              _PointLimitDropdown(
-                value: _pointLimit,
-                onChanged: (double next) =>
-                    setState(() => _pointLimit = next),
+              const SizedBox(height: 14),
+              _AccentCard(
+                accentColor: IwbfColors.goldDeep,
+                child: _PointLimitDropdown(
+                  value: _pointLimit,
+                  onChanged: (double next) =>
+                      setState(() => _pointLimit = next),
+                ),
               ),
               if (_teamsAreSame)
                 const Padding(
@@ -208,7 +215,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                       border: Border.all(
                         color: IwbfColors.alertRed.withValues(alpha: 0.6),
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,6 +259,36 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
             icon: const Icon(Icons.play_arrow),
             label: const Text('Start Match'),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card com friso/barra vertical dourada na lateral esquerda como
+/// identificador visual da seção (Team A, Team B, Point Limit).
+class _AccentCard extends StatelessWidget {
+  const _AccentCard({required this.child, this.accentColor = IwbfColors.gold});
+
+  final Widget child;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(width: 5, color: accentColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: child,
+              ),
+            ),
+          ],
         ),
       ),
     );
