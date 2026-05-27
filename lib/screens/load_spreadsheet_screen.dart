@@ -329,7 +329,6 @@ class _TemplatesCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Expanded(
                   child: OutlinedButton.icon(
