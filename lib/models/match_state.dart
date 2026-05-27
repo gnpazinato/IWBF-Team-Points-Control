@@ -1,6 +1,13 @@
+import 'dart:ui' show Color;
+
 import '../constants/point_limits.dart';
 import 'player.dart';
 import 'team.dart';
+
+/// Cores padrão de camisa, preservando o visual original (Team A clara,
+/// Team B escura) quando o usuário não escolhe outra.
+const Color kDefaultJerseyColorA = Color(0xFFFFFFFF);
+const Color kDefaultJerseyColorB = Color(0xFF1F1B16);
 
 /// Estado mutável de uma partida em andamento.
 ///
@@ -26,7 +33,11 @@ class MatchState {
     Set<String>? selectedTeamAIds,
     Set<String>? selectedTeamBIds,
     this.competitionName,
+    Color? jerseyColorA,
+    Color? jerseyColorB,
   })  : _pointLimit = pointLimit,
+        jerseyColorA = jerseyColorA ?? kDefaultJerseyColorA,
+        jerseyColorB = jerseyColorB ?? kDefaultJerseyColorB,
         _teamASlots =
             _initSlots(teamASlots, fallbackSet: selectedTeamAIds),
         _teamBSlots =
@@ -58,6 +69,11 @@ class MatchState {
   final Team teamA;
   final Team teamB;
   final String? competitionName;
+
+  /// Cor da camisa de cada equipe (selecionada no setup; pinta os ícones
+  /// de camisa na quadra e nas listas laterais).
+  final Color jerseyColorA;
+  final Color jerseyColorB;
 
   double _pointLimit;
   final List<String?> _teamASlots;
@@ -200,6 +216,8 @@ class MatchState {
         'pointLimit': _pointLimit,
         'teamASlots': _teamASlots,
         'teamBSlots': _teamBSlots,
+        'jerseyColorA': jerseyColorA.toARGB32(),
+        'jerseyColorB': jerseyColorB.toARGB32(),
       };
 
   factory MatchState.fromJson(Map<String, dynamic> json) {
@@ -220,6 +238,12 @@ class MatchState {
               .cast<String>()
               .toSet(),
       competitionName: json['competitionName'] as String?,
+      jerseyColorA: json['jerseyColorA'] != null
+          ? Color(json['jerseyColorA'] as int)
+          : null,
+      jerseyColorB: json['jerseyColorB'] != null
+          ? Color(json['jerseyColorB'] as int)
+          : null,
     );
   }
 

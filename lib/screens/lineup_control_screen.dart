@@ -468,6 +468,7 @@ class _TabletBody extends StatelessWidget {
             isTeamA: true,
             selectedIds: state.selectedTeamAIds,
             onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
+            jerseyColor: state.jerseyColorA,
           ),
         ),
         Expanded(
@@ -482,6 +483,7 @@ class _TabletBody extends StatelessWidget {
             isTeamA: false,
             selectedIds: state.selectedTeamBIds,
             onPlayerTap: (Player p) => onPlayerTap(p, _Side.b),
+            jerseyColor: state.jerseyColorB,
           ),
         ),
       ],
@@ -517,6 +519,7 @@ class _PhoneBody extends StatelessWidget {
                   isTeamA: true,
                   selectedIds: state.selectedTeamAIds,
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
+                  jerseyColor: state.jerseyColorA,
                 ),
                 _CourtView(state: state),
                 _TeamPlayerList(
@@ -525,6 +528,7 @@ class _PhoneBody extends StatelessWidget {
                   isTeamA: false,
                   selectedIds: state.selectedTeamBIds,
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.b),
+                  jerseyColor: state.jerseyColorB,
                 ),
               ],
             ),
@@ -542,12 +546,14 @@ class _TeamPlayerList extends StatelessWidget {
     required this.isTeamA,
     required this.selectedIds,
     required this.onPlayerTap,
+    required this.jerseyColor,
   });
 
   final Team team;
   final bool isTeamA;
   final Set<String> selectedIds;
   final ValueChanged<Player> onPlayerTap;
+  final Color jerseyColor;
 
   @override
   Widget build(BuildContext context) {
@@ -614,6 +620,7 @@ class _TeamPlayerList extends StatelessWidget {
                     selected: selectedIds.contains(p.id),
                     height: slotHeight,
                     onTap: () => onPlayerTap(p),
+                    jerseyColor: jerseyColor,
                   );
                 },
               ),
@@ -632,6 +639,7 @@ class _PlayerCard extends StatelessWidget {
     required this.selected,
     required this.height,
     required this.onTap,
+    required this.jerseyColor,
   });
 
   final Player player;
@@ -639,6 +647,7 @@ class _PlayerCard extends StatelessWidget {
   final bool selected;
   final double height;
   final VoidCallback onTap;
+  final Color jerseyColor;
 
   @override
   Widget build(BuildContext context) {
@@ -678,6 +687,7 @@ class _PlayerCard extends StatelessWidget {
                   player: player,
                   isTeamA: isTeamA,
                   size: iconSize,
+                  jerseyColor: jerseyColor,
                 ),
                 const SizedBox(width: 6),
                 // _AutoShrinkText mede o texto com TextPainter e reduz
@@ -837,6 +847,7 @@ class _CourtView extends StatelessWidget {
                           height: h,
                           slotMaxWidth: slotMaxWidth,
                           slotMaxHeight: slotMaxHeight,
+                          jerseyColor: state.jerseyColorA,
                         ),
                     for (int i = 0; i < 5; i++)
                       if (teamB[i] != null)
@@ -848,6 +859,7 @@ class _CourtView extends StatelessWidget {
                           height: h,
                           slotMaxWidth: slotMaxWidth,
                           slotMaxHeight: slotMaxHeight,
+                          jerseyColor: state.jerseyColorB,
                         ),
                   ],
                 );
@@ -895,6 +907,7 @@ class _CourtPlayerSlot extends StatelessWidget {
     required this.height,
     required this.slotMaxWidth,
     required this.slotMaxHeight,
+    required this.jerseyColor,
   });
 
   final Player player;
@@ -904,6 +917,7 @@ class _CourtPlayerSlot extends StatelessWidget {
   final double height;
   final double slotMaxWidth;
   final double slotMaxHeight;
+  final Color jerseyColor;
 
   @override
   Widget build(BuildContext context) {
@@ -917,6 +931,7 @@ class _CourtPlayerSlot extends StatelessWidget {
           isTeamA: isTeamA,
           maxWidth: slotMaxWidth,
           maxHeight: slotMaxHeight,
+          jerseyColor: jerseyColor,
         ),
       ),
     );
@@ -929,12 +944,14 @@ class _CourtPlayerChip extends StatelessWidget {
     required this.isTeamA,
     required this.maxWidth,
     required this.maxHeight,
+    required this.jerseyColor,
   });
 
   final Player player;
   final bool isTeamA;
   final double maxWidth;
   final double maxHeight;
+  final Color jerseyColor;
 
   @override
   Widget build(BuildContext context) {
@@ -984,6 +1001,7 @@ class _CourtPlayerChip extends StatelessWidget {
               player: player,
               isTeamA: isTeamA,
               size: iconSize,
+              jerseyColor: jerseyColor,
             ),
             SizedBox(height: gap),
             // _AutoShrinkText mede o sobrenome e reduz proporcionalmente

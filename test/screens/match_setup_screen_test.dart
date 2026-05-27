@@ -30,6 +30,8 @@ Future<void> _selectFromDropdown(
   required Key dropdownKey,
   required String optionText,
 }) async {
+  await tester.ensureVisible(find.byKey(dropdownKey));
+  await tester.pumpAndSettle();
   await tester.tap(find.byKey(dropdownKey));
   await tester.pumpAndSettle();
   await tester.tap(find.text(optionText).last);
@@ -191,6 +193,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.byKey(const Key('point-limit-dropdown')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('point-limit-dropdown')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('15.5').last);
