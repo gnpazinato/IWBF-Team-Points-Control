@@ -549,6 +549,27 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0039 - 2026-05-27 - Parser tolerante a nomes de coluna (aliases amplos + planilha real)
+
+Contexto:
+
+- O usuario anexou uma planilha real estilo IWBF (`COMPETITION, COUNTRY, CLASS, FULL NAME, NUMBER, FIRST NAME, LAST NAME, DOB, ROLE, CS`) e pediu que o app interprete colunas com titulos **levemente diferentes** pela informacao que carregam, nao pelo titulo exato. Obrigatorias minimas: `team_name`, `class`, `full_name`, `number`. `dob`/`gender` ausentes **nao** bloqueiam (ficam em branco). Colunas irrelevantes (`role`, `cs`/`class_status`, `first_name`/`last_name` quando ha `full_name`) devem ser **ignoradas**.
+
+Entregue (em `lib/services/spreadsheet_parser_service.dart`):
+
+- **Aliases ampliados** no mapa `_columnAliases` (tokens ja normalizados): `team_name` agora aceita `country`/`nation`/`nationality`/`pais`/`equipe`...; `class` aceita `sport_class`/`classification`/`functional_class`/`classe`...; `competition` aceita `tournament`/`event`/`championship`/`torneio`...; `name` aceita `full_name`/`player`/`athlete`/`nome`...; `number` aceita `jersey`/`bib`/`numero`...; `dob` aceita `birthday`/`born`/`nascimento`... O importante e a informacao da coluna, nao o titulo.
+- **Par legado de nome** (`surname`/`first_name`) virou coluna logica com aliases proprios (`last_name`/`family_name`/`sobrenome`, `given_name`/`forename`/`nome_proprio`). `_hasLogicalColumn` e `_buildPlayer` agora resolvem via `_columnIndex` (antes liam o token cru `surname`/`first_name`).
+- **Fallback de nome unificado:** quando NAO ha coluna de nome completo, junta sobrenome + nome no formato dos templates **"SOBRENOME, Nome"** (`_composeName`, ex.: `SILVA, João`) — antes era `firstName surname`.
+- **Roteamento dirigido por CONTEUDO (titulo da aba e irrelevante):** o antigo `_parseSingleSheet(SheetData)` virou `_parseTeamColumnSheets(List<SheetData>)`. Regra nova em `parseSheets`: abas que tem coluna de equipe (`team_name`/`country`/...) listam equipes por linha — sao a fonte de verdade; havendo ao menos uma, **todas** elas sao combinadas (mesma equipe espalhada em abas distintas mescla por id) e as **demais abas sao ignoradas** (resumos, instrucoes). So quando NENHUMA aba tem coluna de equipe e que caimos no modelo "uma aba por equipe" (`_parseMultiSheet`, nome = titulo da aba). Removido o special-case do nome "Players" (agora subsumido pela deteccao por conteudo). Cobre: planilha anexada (aba generica com varios paises), aba com titulo aleatorio + coluna `country`, master + aba de instrucoes ignorada, e multiplas abas com coluna de equipe combinadas.
+
+Arquivos alterados: `lib/services/spreadsheet_parser_service.dart`, `test/services/spreadsheet_parser_service_test.dart` (novo grupo "aliases de coluna (entrada 0039)" + 2 assertions de nome atualizadas para o formato "SOBRENOME, Nome").
+
+Testes: validados no CI a cada push (Flutter ausente no Codespace). Novos casos: planilha real IWBF (COUNTRY/FULL NAME + colunas ignoradas, 3 paises -> 3 equipes), aliases `country/classification/tournament/player_name/jersey_number`, reconstrucao `SOBRENOME, Nome` de `last_name`+`first_name`, obrigatorias minimas sem dob/gender, titulo de aba irrelevante, aba "todas as equipes" vence (demais ignoradas), multiplas abas combinadas.
+
+Proximo passo recomendado:
+
+- Usuario testa importando a planilha real no preview Web. Se aprovado, segue no fluxo do PR `claude/visual-modernization -> main` (**nao mergear sozinho**).
+
 ### 0038 - 2026-05-27 - Modernizacao visual (Fases 1-6) na branch claude/visual-modernization
 
 Contexto:
