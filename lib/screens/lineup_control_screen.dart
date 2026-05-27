@@ -71,12 +71,9 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
     unawaited(_wakelock.enable());
     unawaited(_persist());
   }
-
-  @override
-  void dispose() {
-    unawaited(_wakelock.disable());
-    super.dispose();
-  }
+  // O wakelock NÃO é desligado no dispose: a tela fica acordada em todo o
+  // app (o `main` liga no início e reafirma no resume). Desligar aqui faria
+  // a tela poder inativar ao sair da partida.
 
   Future<void> _persist() => _cache.saveMatchState(_state);
 

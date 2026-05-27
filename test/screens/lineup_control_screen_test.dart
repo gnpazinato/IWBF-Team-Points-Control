@@ -660,7 +660,7 @@ void main() {
   });
 
   group('LineupControlScreen — wakelock + cache lifecycle', () {
-    testWidgets('habilita wakelock no init e desabilita no dispose',
+    testWidgets('habilita wakelock no init e NÃO desabilita no dispose',
         (WidgetTester tester) async {
       final _FakeWakelock wakelock = _FakeWakelock();
       tester.view.physicalSize = const Size(1200, 900);
@@ -683,11 +683,12 @@ void main() {
       expect(wakelock.enableCount, 1);
       expect(wakelock.disableCount, 0);
 
-      // Substitui a árvore: dispose é chamado.
+      // Substitui a árvore: dispose é chamado, mas o wakelock NÃO é
+      // desligado — a tela fica acordada em todo o app (ligado no main).
       await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
       await tester.pumpAndSettle();
 
-      expect(wakelock.disableCount, 1);
+      expect(wakelock.disableCount, 0);
     });
 
     testWidgets('persiste o estado no cache no init',
