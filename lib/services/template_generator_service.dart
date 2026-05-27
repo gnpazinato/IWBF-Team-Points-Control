@@ -261,8 +261,11 @@ class _SampleRow {
   final double playerClass;
   final String dob;
 
-  /// Nome completo unificado para a coluna `name` (ex.: "Carlos Lopez").
-  String get fullName => '$firstName ${_titleCaseWord(surname)}';
+  /// Nome para a coluna `name` no formato "SOBRENOME, Nome"
+  /// (ex.: "LOPEZ, Carlos"). É o formato esperado pelo app: o chip da
+  /// quadra mostra só a parte antes da vírgula (o sobrenome).
+  String get fullName =>
+      '${surname.toUpperCase()}, ${_titleCaseWord(firstName)}';
 }
 
 /// "LOPEZ" -> "Lopez". Usado só para montar os nomes de exemplo.

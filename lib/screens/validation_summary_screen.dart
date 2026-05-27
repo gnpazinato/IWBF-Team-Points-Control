@@ -420,10 +420,19 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
     );
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints c) {
-        if (c.maxWidth >= _kRosterMinWidth) return table;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(width: _kRosterMinWidth, child: table),
+        if (c.maxWidth < _kRosterMinWidth) {
+          // Tela estreita: rola na horizontal mantendo a largura mínima.
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(width: _kRosterMinWidth, child: table),
+          );
+        }
+        // Tela larga: limita a largura para o nome não esticar demais.
+        final double width =
+            c.maxWidth > _kRosterMaxWidth ? _kRosterMaxWidth : c.maxWidth;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(width: width, child: table),
         );
       },
     );
@@ -690,13 +699,18 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
 /// (`_RosterHeaderRow`) e as linhas (`_EditablePlayerRow`) para alinhar a
 /// "tabela". O nome ocupa o espaço restante (Expanded). Abaixo de
 /// `_kRosterMinWidth` a tabela rola na horizontal mantendo essas larguras.
-const double _kRosterShirtW = 40;
-const double _kRosterDobW = 100;
-const double _kRosterGenderW = 100;
-const double _kRosterClassW = 64;
+const double _kRosterShirtW = 44;
+const double _kRosterDobW = 124;
+const double _kRosterGenderW = 104;
+const double _kRosterClassW = 80;
 const double _kRosterDeleteW = 36;
 const double _kRosterGap = 8;
-const double _kRosterMinWidth = 520;
+// Soma das colunas fixas + gaps + padding = 446. Abaixo de `_kRosterMinWidth`
+// a tabela rola na horizontal (mantém todas as colunas legíveis). Acima de
+// `_kRosterMaxWidth` a tabela para de esticar — o nome não fica gigante em
+// telas largas.
+const double _kRosterMinWidth = 580;
+const double _kRosterMaxWidth = 760;
 
 /// Cabeçalho de colunas da tabela de atletas (mostrado uma vez por equipe).
 class _RosterHeaderRow extends StatelessWidget {
@@ -775,7 +789,7 @@ class _DobField extends StatelessWidget {
                 _formatDob(dob),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 14),
               ),
             ),
           ],
