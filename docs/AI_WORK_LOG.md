@@ -565,9 +565,9 @@ Entregue (cada fase deixou o CI verde):
 - **Fase 5 — features novas:** **Jersey Color Picker** (cor da camisa por time guardada no `MatchState`, defaults preservam o visual atual; propagada a `PlayerJerseyIcon`/chips/lista) + **edicao completa do roster** na tela de validacao (editar nome, numero, data de nascimento via `showDatePicker`, genero, classe; excluir atleta com confirmacao; renomear/excluir equipe com confirmacao). Restyle do summary: badges (X Teams / Y Players), status pill, issue blocks com barra-acento. Classe invalida destaca o dropdown em `alertRedSurface`.
 - **Fase 6 — polish + docs:** iconografia padronizada para `_outlined` (`warning_amber_outlined`, `file_upload_outlined`; demais ja eram outlined ou intencionalmente solidos como `play_arrow` no CTA). CLAUDE.md/log corrigidos (estado da branch).
 
-NAO entregue:
+Fora de escopo (DESCARTADO):
 
-- **Fase 7 — importacao de PDF (`syncfusion_flutter_pdf`):** ficou **fora** desta entrega por alto risco (extracao fragil a layout) + exigencia de Community License Syncfusion. Mantida como trilha futura isolada.
+- **Importacao de PDF (`syncfusion_flutter_pdf`):** avaliada e **descartada pelo usuario em 2026-05-27** — complexa/fragil demais (extracao depende do layout do PDF) + exigiria Community License Syncfusion. O app foca **somente** nas planilhas template ja criadas. Nao ha menção a PDF no codigo nem na UI; nao reabrir sem novo pedido explicito.
 
 Arquivos principais alterados: `lib/theme/iwbf_theme.dart`, `lib/constants/{app_version,player_classes}.dart`, `lib/models/{player,match_state}.dart`, `lib/services/{spreadsheet_parser_service,template_generator_service}.dart`, `lib/main.dart`, `lib/screens/{load_spreadsheet,match_setup,validation_summary,lineup_control,missing_data}_screen.dart`, `lib/widgets/player_jersey_icon.dart`, assets de icone web/android, + testes em lockstep (nome unificado, dob opcional, jersey colors, limite na AppBar, exclusao no roster).
 
@@ -575,7 +575,7 @@ Testes: validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests
 
 Proximo passo recomendado:
 
-- Usuario revisa o preview no navegador (portrait + landscape, desktop + mobile) e o APK no Android (icone IWBF na home). Se aprovado, mergear o PR `claude/visual-modernization -> main` (**nao mergear sozinho**). Depois, decidir sobre a Fase 7 (PDF) ou outro escopo.
+- Usuario revisa o preview no navegador (portrait + landscape, desktop + mobile) e o APK no Android (icone IWBF na home). Se aprovado, mergear o PR `claude/visual-modernization -> main` (**nao mergear sozinho**). PDF foi descartado; proximo escopo a definir pelo usuario.
 
 ### 0037 - 2026-05-15 - Encerramento da Fase 5 e preparacao do merge MVP -> main
 

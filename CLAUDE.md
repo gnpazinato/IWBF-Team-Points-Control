@@ -50,9 +50,9 @@ Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
     (editar nome/dob/gênero/número/classe, excluir atleta, renomear/
     excluir equipe) + restyle (badges, status pill, issue blocks).
   - **Fase 6:** iconografia `_outlined` padronizada; docs atualizadas.
-  - **Fase 7 (PDF) — NÃO feita:** importação de PDF via
-    `syncfusion_flutter_pdf` ficou **fora** desta entrega (alto risco +
-    licença Syncfusion). Reavaliar como trilha futura isolada.
+  - **Importação de PDF — DESCARTADA (decisão do usuário, 2026-05-27):**
+    complexa/frágil demais; o app foca **somente** nas planilhas template
+    já criadas. Não há (nem deve haver) menção a PDF no código ou na UI.
 - **Testers externos:** 2 pessoas com o link do GH Pages
   (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`). O preview
   atualiza a cada push em `claude/**` ou `main`. CF Pages:
@@ -84,7 +84,8 @@ aberto `claude/visual-modernization -> main`. Os caminhos típicos:
 - **Ajustes de feedback** dos testers: nova entrada no log, commit
   `fix(visual):...` na branch `claude/visual-modernization` (ou direto em
   `main` se o PR já mergeou e uma nova branch for criada).
-- **Fase 7 (PDF)** como trilha futura isolada, se o usuário quiser.
+
+A importação de PDF foi **descartada** — não sugira como próximo passo.
 
 Pergunte ao usuário qual caminho aplica antes de codar.
 
