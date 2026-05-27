@@ -15,8 +15,7 @@ Player _p(String id, int n, double cls) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: n,
-      surname: 'P$id',
-      firstName: 'First',
+      name: 'First P$id',
       playerClass: cls,
     );
 

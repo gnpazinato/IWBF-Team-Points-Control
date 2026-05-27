@@ -44,4 +44,31 @@ void main() {
       expect(parsePlayerClass('abc'), isNull);
     });
   });
+
+  group('classFromDateLikeString (anti-autoformatação do Excel)', () {
+    test('recupera classe quando o mês carrega o decimal (.5)', () {
+      // 1.5 -> 2026-05-01, 2.5 -> 2026-05-02, etc. (mês 5 = ".5").
+      expect(classFromDateLikeString('2026-05-01'), equals(1.5));
+      expect(classFromDateLikeString('2026-05-02'), equals(2.5));
+      expect(classFromDateLikeString('2026-05-03'), equals(3.5));
+      expect(classFromDateLikeString('2026-05-04'), equals(4.5));
+    });
+
+    test('recupera classe quando o dia carrega o decimal (locale invertido)',
+        () {
+      // 2.5 -> 2026-02-05 (mês 2, dia 5): testa a ordem alternativa.
+      expect(classFromDateLikeString('2026-02-05'), equals(2.5));
+    });
+
+    test('retorna null para datas que não reconstroem classe válida', () {
+      expect(classFromDateLikeString('2026-07-09'), isNull);
+      expect(classFromDateLikeString('2026-12-12'), isNull);
+    });
+
+    test('retorna null para texto que não é data', () {
+      expect(classFromDateLikeString('2.5'), isNull);
+      expect(classFromDateLikeString('abc'), isNull);
+      expect(classFromDateLikeString(null), isNull);
+    });
+  });
 }

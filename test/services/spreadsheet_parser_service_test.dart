@@ -66,7 +66,7 @@ void main() {
       final teamBrazil =
           result.teams.firstWhere((t) => t.teamName == 'Brazil');
       expect(teamBrazil.players, hasLength(2));
-      expect(teamBrazil.players.first.surname, equals('Silva'));
+      expect(teamBrazil.players.first.name, equals('João Silva'));
       expect(teamBrazil.players.first.shirtNumber, equals(7));
       expect(teamBrazil.players.first.playerClass, equals(2.5));
       expect(
@@ -109,9 +109,9 @@ void main() {
       final ParseIssue issue = result.issues.first;
       expect(issue.category,
           equals(ParseIssueCategory.missingRequiredColumn));
-      expect(issue.message, contains('first_name'));
-      expect(issue.message, contains('player_class'));
-      expect(issue.message, contains('dob'));
+      // Faltam name (só há surname, sem first_name) e class. dob é opcional.
+      expect(issue.message, contains('name'));
+      expect(issue.message, contains('class'));
     });
 
     test('reporta atleta sem numero como erro bloqueante', () {
@@ -128,7 +128,7 @@ void main() {
         result.issues.first.category,
         equals(ParseIssueCategory.missingShirtNumber),
       );
-      expect(result.issues.first.playerLabel, equals('SILVA, João'));
+      expect(result.issues.first.playerLabel, equals('João Silva'));
     });
 
     test('reporta classe funcional invalida', () {
@@ -147,7 +147,7 @@ void main() {
       );
     });
 
-    test('reporta DOB ausente', () {
+    test('DOB ausente NAO bloqueia (campo opcional)', () {
       final SheetData sheet = _sheet('Players', <List<String?>>[
         _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
         _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '']),
@@ -156,11 +156,24 @@ void main() {
       final SpreadsheetParseResult result =
           parser.parseSheets(<SheetData>[sheet]);
 
-      expect(result.hasBlockingIssues, isTrue);
-      expect(
-        result.issues.first.category,
-        equals(ParseIssueCategory.missingDateOfBirth),
-      );
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players, hasLength(1));
+      expect(result.teams.first.players.first.dateOfBirth, isNull);
+    });
+
+    test('classe autoformatada como data e recuperada (2026-05-02 -> 2.5)', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2026-05-02', '1998-01-02']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players.first.playerClass, equals(2.5));
     });
 
     test('marca equipe nao reconhecida como warning, nao erro', () {

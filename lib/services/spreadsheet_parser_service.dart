@@ -100,21 +100,20 @@ class SpreadsheetParseResult {
 
 /// Colunas obrigatórias por linha; usadas tanto no modelo de aba única
 /// quanto no modelo de uma aba por equipe (com `team_name` opcional aí).
+/// Colunas *lógicas* obrigatórias. São resolvidas via aliases
+/// (`number`↔`shirt_number`, `name`↔`surname`+`first_name`, `class`↔
+/// `player_class`...). `dob` e `gender` são **opcionais** (não impeditivos).
 class _RequiredColumns {
   static const List<String> singleSheet = <String>[
     'team_name',
-    'shirt_number',
-    'surname',
-    'first_name',
-    'player_class',
-    'dob',
+    'number',
+    'name',
+    'class',
   ];
   static const List<String> perTeamSheet = <String>[
-    'shirt_number',
-    'surname',
-    'first_name',
-    'player_class',
-    'dob',
+    'number',
+    'name',
+    'class',
   ];
 }
 
@@ -179,7 +178,7 @@ class SpreadsheetParserService {
     final List<ParseIssue> issues = <ParseIssue>[];
     final List<String> missing = <String>[];
     for (final String required in _RequiredColumns.singleSheet) {
-      if (!header.columnIndex.containsKey(required)) {
+      if (!_hasLogicalColumn(header, required)) {
         missing.add(required);
       }
     }
@@ -204,7 +203,7 @@ class SpreadsheetParserService {
       if (!_rowHasContent(row)) continue;
 
       final String rawTeam =
-          (_readCell(row, header.columnIndex['team_name']) ?? '').trim();
+          (_readLogical(row, header, 'team_name') ?? '').trim();
       if (rawTeam.isEmpty) {
         issues.add(ParseIssue(
           category: ParseIssueCategory.missingRequiredColumn,
@@ -216,16 +215,15 @@ class SpreadsheetParserService {
         continue;
       }
 
-      competitionName ??=
-          _readOptionalString(row, header.columnIndex['competition_name']);
+      competitionName ??= _readLogical(row, header, 'competition');
 
       // Quem decide o gênero do time é o gênero do atleta, não o nome
       // bruto. O "Brasil Men" do `team_name` é só uma dica — strippamos
       // pra usar o "Brasil" canônico.
       final String strippedTeam = _stripGenderKeyword(rawTeam);
       final String baseDisplay = resolver.displayNameFor(strippedTeam);
-      final PlayerGender playerGender = _genderFromString(
-          _readOptionalString(row, header.columnIndex['gender']));
+      final PlayerGender playerGender =
+          _genderFromString(_readLogical(row, header, 'gender'));
       final TeamGender teamGender =
           _teamGenderFromPlayerGender(playerGender);
       final String teamId = _teamIdWithGender(baseDisplay, teamGender);
@@ -307,7 +305,7 @@ class SpreadsheetParserService {
 
       final List<String> missing = <String>[];
       for (final String required in _RequiredColumns.perTeamSheet) {
-        if (!header.columnIndex.containsKey(required)) {
+        if (!_hasLogicalColumn(header, required)) {
           missing.add(required);
         }
       }
@@ -323,11 +321,12 @@ class SpreadsheetParserService {
 
       String teamName = sheet.name.trim();
       String? rawTeamFromColumn;
-      if (header.columnIndex.containsKey('team_name') &&
+      if (_columnIndex(header, 'team_name') != null &&
           header.firstDataRow < sheet.rows.length) {
-        rawTeamFromColumn = _readOptionalString(
+        rawTeamFromColumn = _readLogical(
           sheet.rows[header.firstDataRow],
-          header.columnIndex['team_name'],
+          header,
+          'team_name',
         );
       }
       if (rawTeamFromColumn != null && rawTeamFromColumn.isNotEmpty) {
@@ -356,11 +355,10 @@ class SpreadsheetParserService {
         final List<String?> row = sheet.rows[i];
         if (!_rowHasContent(row)) continue;
 
-        competitionName ??=
-            _readOptionalString(row, header.columnIndex['competition_name']);
+        competitionName ??= _readLogical(row, header, 'competition');
 
-        final PlayerGender playerGender = _genderFromString(
-            _readOptionalString(row, header.columnIndex['gender']));
+        final PlayerGender playerGender =
+            _genderFromString(_readLogical(row, header, 'gender'));
         final TeamGender teamGender =
             _teamGenderFromPlayerGender(playerGender);
         final String teamId = _teamIdWithGender(baseDisplay, teamGender);
@@ -419,28 +417,30 @@ class SpreadsheetParserService {
     required String teamName,
     required List<ParseIssue> issues,
   }) {
-    final String? shirtRaw =
-        _readOptionalString(row, header.columnIndex['shirt_number']);
-    final String surname =
-        (_readOptionalString(row, header.columnIndex['surname']) ?? '').trim();
-    final String firstName =
-        (_readOptionalString(row, header.columnIndex['first_name']) ?? '').trim();
-    final String classRaw =
-        (_readOptionalString(row, header.columnIndex['player_class']) ?? '').trim();
-    final String dobRaw =
-        (_readOptionalString(row, header.columnIndex['dob']) ?? '').trim();
-    final String? genderRaw =
-        _readOptionalString(row, header.columnIndex['gender']);
+    final String? shirtRaw = _readLogical(row, header, 'number');
+    String name = (_readLogical(row, header, 'name') ?? '').trim();
+    if (name.isEmpty) {
+      // Compat: planilhas antigas com surname + first_name separados.
+      final String surname =
+          (_readOptionalString(row, header.columnIndex['surname']) ?? '').trim();
+      final String firstName =
+          (_readOptionalString(row, header.columnIndex['first_name']) ?? '')
+              .trim();
+      name = '$firstName $surname'.trim();
+    }
+    final String classRaw = (_readLogical(row, header, 'class') ?? '').trim();
+    final String dobRaw = (_readLogical(row, header, 'dob') ?? '').trim();
+    final String? genderRaw = _readLogical(row, header, 'gender');
 
-    final String playerLabel = '${surname.toUpperCase()}, $firstName';
+    final String playerLabel = name.isEmpty ? '(unnamed)' : name;
 
     bool valid = true;
 
-    if (surname.isEmpty || firstName.isEmpty) {
+    if (name.isEmpty) {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingPlayerName,
         severity: ParseIssueSeverity.error,
-        message: 'Player is missing full name (surname and first name)',
+        message: 'Player is missing name',
         sheetName: sheetName,
         rowNumber: rowNumber,
         teamName: teamName,
@@ -476,7 +476,8 @@ class SpreadsheetParserService {
       ));
       valid = false;
     } else {
-      playerClass = parsePlayerClass(classRaw);
+      playerClass =
+          parsePlayerClass(classRaw) ?? classFromDateLikeString(classRaw);
       if (playerClass == null) {
         issues.add(ParseIssue(
           category: ParseIssueCategory.invalidPlayerClass,
@@ -492,18 +493,22 @@ class SpreadsheetParserService {
       }
     }
 
-    final DateTime? dob = _parseDateOfBirth(dobRaw);
-    if (dob == null) {
-      issues.add(ParseIssue(
-        category: ParseIssueCategory.missingDateOfBirth,
-        severity: ParseIssueSeverity.error,
-        message: 'Date of birth is missing or invalid',
-        sheetName: sheetName,
-        rowNumber: rowNumber,
-        teamName: teamName,
-        playerLabel: playerLabel,
-      ));
-      valid = false;
+    // Data de nascimento é OPCIONAL: em branco não gera issue; um valor
+    // presente mas inválido vira apenas warning (não bloqueia a importação).
+    DateTime? dob;
+    if (dobRaw.isNotEmpty) {
+      dob = _parseDateOfBirth(dobRaw);
+      if (dob == null) {
+        issues.add(ParseIssue(
+          category: ParseIssueCategory.missingDateOfBirth,
+          severity: ParseIssueSeverity.warning,
+          message: 'Date of birth "$dobRaw" is invalid and was ignored',
+          sheetName: sheetName,
+          rowNumber: rowNumber,
+          teamName: teamName,
+          playerLabel: playerLabel,
+        ));
+      }
     }
 
     if (!valid) return null;
@@ -512,8 +517,7 @@ class SpreadsheetParserService {
       id: '$teamId::${shirtNumber!}',
       teamName: teamName,
       shirtNumber: shirtNumber,
-      surname: surname,
-      firstName: firstName,
+      name: name,
       playerClass: playerClass!,
       dateOfBirth: dob,
       gender: _genderFromString(genderRaw),
@@ -701,6 +705,47 @@ class SpreadsheetParserService {
     if (raw == null) return null;
     final String trimmed = raw.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+
+  /// Aliases aceitos para cada coluna *lógica*. O cabeçalho novo é o
+  /// primeiro de cada lista; os demais mantêm compatibilidade com
+  /// planilhas antigas (`shirt_number`, `player_class`, `competition_name`).
+  static const Map<String, List<String>> _columnAliases =
+      <String, List<String>>{
+    'competition': <String>['competition', 'competition_name'],
+    'team_name': <String>['team_name', 'team'],
+    'class': <String>['class', 'player_class'],
+    'name': <String>['name', 'full_name', 'player_name'],
+    'number': <String>['number', 'shirt_number', 'shirt', 'no'],
+    'dob': <String>['dob', 'date_of_birth', 'birth_date', 'birthdate'],
+    'gender': <String>['gender', 'sex'],
+  };
+
+  /// Índice da coluna lógica [logical], tentando cada alias na ordem.
+  int? _columnIndex(_HeaderInfo header, String logical) {
+    final List<String> aliases =
+        _columnAliases[logical] ?? <String>[logical];
+    for (final String alias in aliases) {
+      final int? idx = header.columnIndex[alias];
+      if (idx != null) return idx;
+    }
+    return null;
+  }
+
+  /// Se a planilha tem a coluna lógica [logical]. Para `name`, aceita o
+  /// par legado `surname` + `first_name`.
+  bool _hasLogicalColumn(_HeaderInfo header, String logical) {
+    if (logical == 'name') {
+      if (_columnIndex(header, 'name') != null) return true;
+      return header.columnIndex.containsKey('surname') &&
+          header.columnIndex.containsKey('first_name');
+    }
+    return _columnIndex(header, logical) != null;
+  }
+
+  /// Lê o valor (trim/non-empty) da coluna lógica [logical].
+  String? _readLogical(List<String?> row, _HeaderInfo header, String logical) {
+    return _readOptionalString(row, _columnIndex(header, logical));
   }
 
   bool _rowHasContent(List<String?> row) {

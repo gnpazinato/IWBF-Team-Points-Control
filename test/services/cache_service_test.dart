@@ -9,8 +9,7 @@ Player _player(String id, double cls, {int number = 1}) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: number,
-      surname: 'P$id',
-      firstName: 'First',
+      name: 'First P$id',
       playerClass: cls,
     );
 

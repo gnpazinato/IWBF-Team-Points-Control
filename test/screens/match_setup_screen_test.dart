@@ -10,8 +10,7 @@ Player _player(String teamId, int shirt, double cls) => Player(
       id: '$teamId::$shirt',
       teamName: teamId,
       shirtNumber: shirt,
-      surname: 'Surname$shirt',
-      firstName: 'First',
+      name: 'Surname$shirt',
       playerClass: cls,
     );
 

@@ -944,7 +944,7 @@ class _CourtPlayerChip extends StatelessWidget {
             // o sobrenome é o único elemento que muda de tamanho
             // proporcional ao seu comprimento.
             _AutoShrinkText(
-              text: player.surname.toUpperCase(),
+              text: player.name.toUpperCase(),
               maxFontSize: fontSize,
               minFontSize: 6.0,
               color: fg,
