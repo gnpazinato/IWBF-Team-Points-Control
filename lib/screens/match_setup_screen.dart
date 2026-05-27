@@ -255,7 +255,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Icon(
-                          Icons.warning_amber_rounded,
+                          Icons.warning_amber_outlined,
                           color: IwbfColors.alertRed,
                           size: 20,
                         ),

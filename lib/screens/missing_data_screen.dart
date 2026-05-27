@@ -37,7 +37,7 @@ class MissingDataScreen extends StatelessWidget {
             key: const Key('back-to-load-button'),
             onPressed: () =>
                 Navigator.of(context).popUntil((Route<void> r) => r.isFirst),
-            icon: const Icon(Icons.upload_file),
+            icon: const Icon(Icons.file_upload_outlined),
             label: const Text('Load Different Spreadsheet'),
           ),
         ),

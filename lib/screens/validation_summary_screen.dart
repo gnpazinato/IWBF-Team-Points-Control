@@ -621,11 +621,12 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
               ),
               const SizedBox(width: 8),
               SizedBox(
-                width: 66,
+                width: 72,
                 child: DropdownButtonFormField<double>(
                   key: Key('class-dropdown-${widget.player.id}'),
                   initialValue: classValid ? widget.player.playerClass : null,
                   isDense: true,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     isDense: true,
                     labelText: 'Cls',
