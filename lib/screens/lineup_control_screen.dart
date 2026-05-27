@@ -192,14 +192,17 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const IwbfAppBarTitle(text: 'Lineup Control'),
+          actions: <Widget>[
+            _PointLimitMenu(
+              value: _state.pointLimit,
+              onChanged: _onPointLimitChanged,
+            ),
+          ],
         ),
         body: SafeArea(
           child: Column(
             children: <Widget>[
-              _Header(
-                state: _state,
-                onPointLimitChanged: _onPointLimitChanged,
-              ),
+              _Header(state: _state),
               Expanded(
                 child: LayoutBuilder(
                   builder: (BuildContext _, BoxConstraints c) {
@@ -236,10 +239,9 @@ enum _Side { a, b }
 typedef _PlayerTapCallback = void Function(Player player, _Side side);
 
 class _Header extends StatelessWidget {
-  const _Header({required this.state, required this.onPointLimitChanged});
+  const _Header({required this.state});
 
   final MatchState state;
-  final ValueChanged<double> onPointLimitChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -312,38 +314,43 @@ class _Header extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text('Point Limit:', style: TextStyle(fontSize: 13)),
-                const SizedBox(width: 6),
-                DropdownButton<double>(
-                  key: const Key('lineup-point-limit-dropdown'),
-                  value: state.pointLimit,
-                  isDense: true,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: IwbfColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  items: kAcceptedPointLimits
-                      .map(
-                        (double v) => DropdownMenuItem<double>(
-                          value: v,
-                          child: Text(v.toStringAsFixed(1)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (double? next) {
-                    if (next != null) onPointLimitChanged(next);
-                  },
-                ),
-              ],
-            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Menu discreto na AppBar para ajustar o limite de pontos, liberando o
+/// cabeçalho. O limite atual continua visível no denominador do placar.
+class _PointLimitMenu extends StatelessWidget {
+  const _PointLimitMenu({required this.value, required this.onChanged});
+
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<double>(
+      key: const Key('lineup-point-limit-dropdown'),
+      tooltip: 'Point Limit',
+      icon: const Icon(Icons.tune),
+      initialValue: value,
+      onSelected: onChanged,
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<double>>[
+        const PopupMenuItem<double>(
+          enabled: false,
+          child: Text('Point Limit',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+        ),
+        const PopupMenuDivider(),
+        ...kAcceptedPointLimits.map(
+          (double v) => PopupMenuItem<double>(
+            value: v,
+            child: Text(v.toStringAsFixed(1)),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -367,16 +374,34 @@ class _ScoreCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color textColor =
         isOver ? IwbfColors.alertRed : IwbfColors.textPrimary;
-    return Container(
+    return AnimatedContainer(
       key: Key(keyName),
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: isOver ? IwbfColors.alertRedSurface : Colors.transparent,
+        color: isOver ? IwbfColors.alertRedSurface : IwbfColors.cardWhite,
         border: Border.all(
-          color: isOver ? IwbfColors.alertRed : Colors.black12,
+          color: isOver ? IwbfColors.alertRed : IwbfColors.slate200,
+          width: isOver ? 1.6 : 1,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isOver
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: IwbfColors.alertRed.withValues(alpha: 0.35),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ]
+            : const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -388,13 +413,19 @@ class _ScoreCell extends StatelessWidget {
               fontSize: 12,
             ),
           ),
-          Text(
-            '${total.toStringAsFixed(1)} / ${limit.toStringAsFixed(1)}',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '${total.toStringAsFixed(1)} / ${limit.toStringAsFixed(1)}',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                height: 1.05,
+                fontFeatures: const <FontFeature>[
+                  FontFeature.tabularFigures(),
+                ],
+              ),
             ),
           ),
           // Espaço fixo reservado pro alerta — mantém os dois boxes com a
@@ -619,18 +650,23 @@ class _PlayerCard extends StatelessWidget {
     final double verticalPadding = (height * 0.08).clamp(2.0, 6.0);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: verticalPadding * 0.4),
-      child: Material(
-        color: selected ? cs.primaryContainer : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: BorderSide(
-            color: selected ? cs.primary : Colors.black12,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: selected ? cs.primaryContainer : IwbfColors.cardWhite,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? IwbfColors.gold : IwbfColors.slate200,
+            width: selected ? 1.5 : 1,
           ),
         ),
-        child: InkWell(
-          key: Key('player-card-${player.id}'),
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            key: Key('player-card-${player.id}'),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 6,
@@ -674,6 +710,7 @@ class _PlayerCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -739,8 +776,19 @@ class _CourtView extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: AspectRatio(
           aspectRatio: _aspectRatio,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: IwbfColors.slate200),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
             child: LayoutBuilder(
               builder: (BuildContext _, BoxConstraints c) {
                 final double w = c.maxWidth;
@@ -919,7 +967,7 @@ class _CourtPlayerChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           border: Border.all(color: border, width: 1.2),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.25),
@@ -982,7 +1030,7 @@ class _OperationalButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      elevation: 4,
+      elevation: 6,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -992,30 +1040,35 @@ class _OperationalButtons extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: <Widget>[
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('clear-team-a-button'),
                 onPressed: onClearTeamA,
-                child: const Text('Clear Team A'),
+                icon: const Icon(Icons.backspace_outlined, size: 18),
+                label: const Text('Clear Team A'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('clear-team-b-button'),
                 onPressed: onClearTeamB,
-                child: const Text('Clear Team B'),
+                icon: const Icon(Icons.backspace_outlined, size: 18),
+                label: const Text('Clear Team B'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('clear-all-button'),
                 onPressed: onClearAll,
-                child: const Text('Clear All'),
+                icon: const Icon(Icons.clear_all, size: 18),
+                label: const Text('Clear All'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('change-teams-button'),
                 onPressed: onChangeTeams,
-                child: const Text('Change Teams'),
+                icon: const Icon(Icons.swap_horiz, size: 18),
+                label: const Text('Change Teams'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('load-new-spreadsheet-button'),
                 onPressed: onLoadNewSpreadsheet,
-                child: const Text('Load New Spreadsheet'),
+                icon: const Icon(Icons.folder_open_outlined, size: 18),
+                label: const Text('Load New Spreadsheet'),
               ),
             ],
           ),

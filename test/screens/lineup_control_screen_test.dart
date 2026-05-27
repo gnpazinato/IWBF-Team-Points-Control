@@ -140,7 +140,9 @@ void main() {
       expect(find.text('Team A'), findsWidgets);
       expect(find.text('Team B'), findsWidgets);
       expect(find.text('0.0 / 14.0'), findsNWidgets(2));
-      expect(find.text('Point Limit:'), findsOneWidget);
+      // Point Limit agora vive num menu (PopupMenuButton) na AppBar.
+      expect(find.byKey(const Key('lineup-point-limit-dropdown')),
+          findsOneWidget);
     });
 
     testWidgets('mudar Point Limit no dropdown re-avalia alerta',

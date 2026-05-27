@@ -256,7 +256,9 @@ void main() {
       expect(find.text('Brazil'), findsWidgets);
       expect(find.text('Argentina'), findsWidgets);
       expect(find.text('  vs  '), findsOneWidget);
-      expect(find.text('Point Limit:'), findsOneWidget);
+      // Point Limit migrou para um menu na AppBar do Lineup.
+      expect(find.byKey(const Key('lineup-point-limit-dropdown')),
+          findsOneWidget);
     });
   });
 
