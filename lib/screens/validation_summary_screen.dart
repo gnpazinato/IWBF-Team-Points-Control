@@ -130,7 +130,7 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
             if (warnings.isNotEmpty)
               _IssueBlock(
                 title: 'Warnings',
-                color: const Color(0xFFFFF7E0),
+                color: IwbfColors.warningSurface,
                 borderColor: IwbfColors.goldDeep,
                 icon: Icons.warning_amber_outlined,
                 issues: warnings,
@@ -520,7 +520,7 @@ class _Header extends StatelessWidget {
                       : Icons.check_circle_outline,
                   color: hasBlockingIssues
                       ? IwbfColors.alertRed
-                      : const Color(0xFF1B8A3A),
+                      : IwbfColors.successGreen,
                 ),
                 const SizedBox(width: 8),
                 Expanded(

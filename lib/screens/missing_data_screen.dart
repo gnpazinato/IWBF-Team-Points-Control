@@ -221,8 +221,8 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(Icons.check_circle_outline,
-                size: 48, color: Colors.green.shade400),
+            const Icon(Icons.check_circle_outline,
+                size: 48, color: IwbfColors.successGreen),
             const SizedBox(height: 16),
             const Text(
               'No blocking issues to fix.',
