@@ -943,13 +943,15 @@ class _CourtPlayerChip extends StatelessWidget {
             // visualmente uniforme: todos com o mesmo tamanho externo,
             // o sobrenome é o único elemento que muda de tamanho
             // proporcional ao seu comprimento.
-            _AutoShrinkText(
-              text: player.name.toUpperCase(),
-              maxFontSize: fontSize,
-              minFontSize: 6.0,
-              color: fg,
-              fontWeight: FontWeight.w600,
-              textAlign: TextAlign.center,
+            Flexible(
+              child: _AutoShrinkText(
+                text: player.name.toUpperCase(),
+                maxFontSize: fontSize,
+                minFontSize: 8.0,
+                color: fg,
+                fontWeight: FontWeight.w600,
+                textAlign: TextAlign.center,
+              ),
             ),
             Text(
               player.playerClass.toStringAsFixed(1),
@@ -1057,55 +1059,82 @@ class _AutoShrinkText extends StatelessWidget {
   final Color? color;
   final TextAlign textAlign;
 
+  /// Piso absoluto de fonte ao quebrar em 2 linhas (last resort).
+  static const double _hardMinFontSize = 6.0;
+
+  TextStyle _styleFor(double size) => TextStyle(
+        fontSize: size,
+        fontWeight: fontWeight,
+        color: color,
+        height: 1.05,
+      );
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final TextStyle baseStyle = TextStyle(
-          fontSize: maxFontSize,
-          fontWeight: fontWeight,
-          color: color,
-        );
-        final TextPainter painter = TextPainter(
-          text: TextSpan(text: text, style: baseStyle),
+        final double maxW = constraints.maxWidth;
+        final double maxH = constraints.maxHeight;
+
+        // Sem largura definida: renderiza direto (até 2 linhas, sem corte).
+        if (!maxW.isFinite) {
+          return Text(text,
+              maxLines: 2,
+              softWrap: true,
+              textAlign: textAlign,
+              style: _styleFor(maxFontSize));
+        }
+
+        // 1) Cabe em UMA linha no tamanho máximo?
+        final TextPainter p1 = TextPainter(
+          text: TextSpan(text: text, style: _styleFor(maxFontSize)),
           textDirection: TextDirection.ltr,
           maxLines: 1,
         )..layout();
 
-        double finalFontSize = maxFontSize;
-        bool useEllipsis = false;
-
-        if (constraints.maxWidth.isFinite && painter.size.width > 0) {
-          if (painter.size.width > constraints.maxWidth) {
-            final double idealFontSize =
-                maxFontSize * constraints.maxWidth / painter.size.width;
-            if (idealFontSize < minFontSize) {
-              // Mesmo no piso o texto não cabe → trava no piso e
-              // aplica ellipsis. Melhor "THOMPSON, Eth..." do que
-              // texto cortado/sumindo silenciosamente.
-              finalFontSize = minFontSize;
-              useEllipsis = true;
-            } else {
-              // Pequena margem de seguranca (98%) pra evitar 1-2px
-              // de overflow por arredondamento.
-              finalFontSize = idealFontSize * 0.98;
-            }
-          }
+        if (p1.size.width <= maxW) {
+          return Text(text,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: textAlign,
+              overflow: TextOverflow.clip,
+              style: _styleFor(maxFontSize));
         }
 
-        return Text(
-          text,
-          maxLines: 1,
-          softWrap: false,
-          textAlign: textAlign,
-          overflow: useEllipsis ? TextOverflow.ellipsis : TextOverflow.clip,
-          style: TextStyle(
-            fontSize: finalFontSize,
-            fontWeight: fontWeight,
-            color: color,
-            height: 1.0,
-          ),
-        );
+        // 2) ENCOLHE a fonte para caber em uma linha, até o piso legível
+        //    (minFontSize). Mantém o nome inteiro numa linha só.
+        final double oneLineFont = maxFontSize * maxW / p1.size.width;
+        if (oneLineFont >= minFontSize) {
+          return Text(text,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: textAlign,
+              overflow: TextOverflow.clip,
+              style: _styleFor(oneLineFont * 0.98));
+        }
+
+        // 3) Se mesmo no piso não cabe em uma linha → QUEBRA em até 2
+        //    linhas, escolhendo a maior fonte que couber (largura + altura).
+        //    Nunca usa ellipsis: o nome completo permanece visível.
+        double fit = _hardMinFontSize;
+        for (double f = maxFontSize; f >= _hardMinFontSize; f -= 0.5) {
+          final TextPainter p2 = TextPainter(
+            text: TextSpan(text: text, style: _styleFor(f)),
+            textDirection: TextDirection.ltr,
+            maxLines: 2,
+          )..layout(maxWidth: maxW);
+          final bool heightOk = !maxH.isFinite || p2.height <= maxH + 0.5;
+          if (!p2.didExceedMaxLines && heightOk) {
+            fit = f;
+            break;
+          }
+        }
+        return Text(text,
+            maxLines: 2,
+            softWrap: true,
+            textAlign: textAlign,
+            overflow: TextOverflow.clip,
+            style: _styleFor(fit));
       },
     );
   }
