@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Ícone adaptativo (Android 8+): fundo transparente + símbolo IWBF como
-     foreground. Evita o quadrado branco que o sistema adiciona aos ícones
-     legados, deixando só o logo. -->
+<!-- Ícone adaptativo (Android 8+): fundo BRANCO sólido + símbolo IWBF como
+     foreground. Fundo branco garante o logo legível em qualquer launcher
+     (em fundo transparente o jogador preto sumia em telas escuras). O
+     sistema mascara para o formato do launcher (círculo/squircle). -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@android:color/transparent" />
+    <background android:drawable="@android:color/white" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />
 </adaptive-icon>
