@@ -421,19 +421,16 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints c) {
         if (c.maxWidth < _kRosterMinWidth) {
-          // Tela estreita: rola na horizontal mantendo a largura mínima.
+          // Tela estreita: rola na horizontal mantendo a largura mínima
+          // (todas as colunas continuam legíveis ao rolar).
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(width: _kRosterMinWidth, child: table),
           );
         }
-        // Tela larga: limita a largura para o nome não esticar demais.
-        final double width =
-            c.maxWidth > _kRosterMaxWidth ? _kRosterMaxWidth : c.maxWidth;
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(width: width, child: table),
-        );
+        // Tela larga: a tabela ocupa TODA a largura disponível; o nome
+        // (Expanded) absorve o espaço restante — sem sobra à direita.
+        return table;
       },
     );
   }
@@ -706,11 +703,10 @@ const double _kRosterClassW = 80;
 const double _kRosterDeleteW = 36;
 const double _kRosterGap = 8;
 // Soma das colunas fixas + gaps + padding = 446. Abaixo de `_kRosterMinWidth`
-// a tabela rola na horizontal (mantém todas as colunas legíveis). Acima de
-// `_kRosterMaxWidth` a tabela para de esticar — o nome não fica gigante em
-// telas largas.
+// a tabela rola na horizontal (mantém todas as colunas legíveis); acima
+// disso ocupa toda a largura disponível, com o nome (Expanded) absorvendo
+// o espaço restante.
 const double _kRosterMinWidth = 580;
-const double _kRosterMaxWidth = 760;
 
 /// Cabeçalho de colunas da tabela de atletas (mostrado uma vez por equipe).
 class _RosterHeaderRow extends StatelessWidget {
