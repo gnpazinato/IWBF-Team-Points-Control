@@ -194,18 +194,17 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const SizedBox(height: 16),
               const IwbfBrandHeader(
                 subtitle: 'Wheelchair basketball — team points control',
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 22),
               _UploadCard(onTap: _busy ? null : _onLoadPressed),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               _TemplatesCard(
                 busy: _busy,
                 onSingleSheet: () =>
@@ -213,8 +212,11 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
                 onPerTeam: () =>
                     _onDownloadTemplatePressed(TemplateKind.perTeam),
               ),
-              const Spacer(),
-              if (_busy) const LinearProgressIndicator(),
+              if (_busy)
+                const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: LinearProgressIndicator(),
+                ),
             ],
           ),
         ),
@@ -239,7 +241,7 @@ class _UploadCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         decoration: BoxDecoration(
           color: IwbfColors.gold.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
@@ -251,8 +253,8 @@ class _UploadCard extends StatelessWidget {
         child: Column(
           children: <Widget>[
             Container(
-              width: 64,
-              height: 64,
+              width: 54,
+              height: 54,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: IwbfColors.cardWhite,
@@ -265,9 +267,9 @@ class _UploadCard extends StatelessWidget {
                 ],
               ),
               child: const Icon(Icons.cloud_upload_outlined,
-                  size: 32, color: IwbfColors.goldDeep),
+                  size: 28, color: IwbfColors.goldDeep),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'Load Reference Spreadsheet',
               textAlign: TextAlign.center,
@@ -314,20 +316,16 @@ class _TemplatesCard extends StatelessWidget {
                 const Icon(Icons.description_outlined,
                     size: 20, color: IwbfColors.goldDeep),
                 const SizedBox(width: 8),
-                Text(
-                  'Reference Templates',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                Expanded(
+                  child: Text(
+                    'Reference Templates',
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Download a sample .xlsx to fill in and import.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: IwbfColors.textSecondary),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Row(
               children: <Widget>[
                 Expanded(
