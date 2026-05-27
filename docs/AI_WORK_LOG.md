@@ -549,6 +549,34 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0038 - 2026-05-27 - Modernizacao visual (Fases 1-6) na branch claude/visual-modernization
+
+Contexto:
+
+- O app irmao CBBC (fork deste) recebeu um refinamento visual/UX e ficou mais moderno. O usuario pediu para trazer esse refinamento para o IWBF **sem perder a identidade** (paleta dourada `IwbfColors`, fonte atual, 3 logos IWBF, bandeiras, UI em ingles, regras sem bonificacao, parser/fluxo). Apos analise dos prompts (Antigravity/Claude/Codex) e respostas do usuario, o escopo cresceu alem do visual e incluiu mudancas estruturais aprovadas.
+- **Correcao de estado:** ao contrario do que dizia o CLAUDE.md/log antigos, a `main` JA TEM o app completo (PR #5 mergeado). O trabalho partiu de `main` numa branch nova `claude/visual-modernization`. Flutter NAO esta instalado no Codespace -> toda validacao roda no CI a cada push.
+
+Entregue (cada fase deixou o CI verde):
+
+- **Fase 1 — tema + icone + PWA:** tokens novos em `IwbfColors` (`successGreen`, `warningSurface`, `cardWhite`, `slate50/100/200`); `cardTheme` branco (elevation 1, sombra `0x14000000`, radius 14, borda slate200); `inputDecorationTheme` (fill slate50, foco dourado), `checkboxTheme`/`switchTheme` dourados; raios FilledButton 14 / OutlinedButton 12. Icone do app = logo preto IWBF (gerado com Pillow) em `web/favicon.png`, `web/icons/Icon-{192,512}` + maskable e `android/.../mipmap-*/ic_launcher.png`. `web/manifest.json`/`index.html` com nome humano + cores douradas. `lib/constants/app_version.dart` (`kAppVersion`).
+- **Fase 2 — modelo + parser + templates:** `Player` passa a ter **`name` unico** (substitui surname+firstName; `fromJson` faz back-compat lendo o formato antigo do cache). `dob`/`gender` **opcionais** (dob em branco nao gera issue; invalido vira warning, nao erro). Parser com **aliases de colunas** (formatos antigos continuam abrindo) + **recuperacao de classe "data-like"** (`classFromDateLikeString` em `player_classes.dart` reconstroi a classe que o Excel autoformatou como data, ex. `2026-05-02` -> `2.5`). Templates novos (`competition, team_name, class, name, number, dob, gender`) com **colunas pre-expandidas** (`setColumnWidth`).
+- **Fase 3 — nomes adaptaveis + orientacao:** `_AutoShrinkText` reescrito — encolhe a fonte e, se ainda nao couber, **quebra em ate 2 linhas (nunca reticencias)**; nome completo sempre visivel. Chip da quadra usa `player.name`. **Rotacao so em tablets** (`shortestSide>=600`); celular travado em portrait (`_applyOrientationPreference` em `main.dart`).
+- **Fase 4 — restyle das telas:** home com upload card (circulo + nuvem), card "Reference Templates" com 2 botoes lado a lado e footer com versao; match setup com cards de friso dourado; lineup com placar em `AnimatedContainer` (glow vermelho ao estourar limite, tabular figures), limite de pontos movido para `PopupMenuButton` na AppBar, quadra com borda/sombra, chips e botoes com icones. Telas viraram `SingleChildScrollView` para nao estourar viewport.
+- **Fase 5 — features novas:** **Jersey Color Picker** (cor da camisa por time guardada no `MatchState`, defaults preservam o visual atual; propagada a `PlayerJerseyIcon`/chips/lista) + **edicao completa do roster** na tela de validacao (editar nome, numero, data de nascimento via `showDatePicker`, genero, classe; excluir atleta com confirmacao; renomear/excluir equipe com confirmacao). Restyle do summary: badges (X Teams / Y Players), status pill, issue blocks com barra-acento. Classe invalida destaca o dropdown em `alertRedSurface`.
+- **Fase 6 — polish + docs:** iconografia padronizada para `_outlined` (`warning_amber_outlined`, `file_upload_outlined`; demais ja eram outlined ou intencionalmente solidos como `play_arrow` no CTA). CLAUDE.md/log corrigidos (estado da branch).
+
+NAO entregue:
+
+- **Fase 7 — importacao de PDF (`syncfusion_flutter_pdf`):** ficou **fora** desta entrega por alto risco (extracao fragil a layout) + exigencia de Community License Syncfusion. Mantida como trilha futura isolada.
+
+Arquivos principais alterados: `lib/theme/iwbf_theme.dart`, `lib/constants/{app_version,player_classes}.dart`, `lib/models/{player,match_state}.dart`, `lib/services/{spreadsheet_parser_service,template_generator_service}.dart`, `lib/main.dart`, `lib/screens/{load_spreadsheet,match_setup,validation_summary,lineup_control,missing_data}_screen.dart`, `lib/widgets/player_jersey_icon.dart`, assets de icone web/android, + testes em lockstep (nome unificado, dob opcional, jersey colors, limite na AppBar, exclusao no roster).
+
+Testes: validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. Preview Web atualizado a cada push em `claude/**` (GH Pages + CF Pages).
+
+Proximo passo recomendado:
+
+- Usuario revisa o preview no navegador (portrait + landscape, desktop + mobile) e o APK no Android (icone IWBF na home). Se aprovado, mergear o PR `claude/visual-modernization -> main` (**nao mergear sozinho**). Depois, decidir sobre a Fase 7 (PDF) ou outro escopo.
+
 ### 0037 - 2026-05-15 - Encerramento da Fase 5 e preparacao do merge MVP -> main
 
 Resumo:

@@ -6,52 +6,60 @@
 
 ## Branch ativa
 
-**TODO o código de produto está em `claude/review-and-continue-9ZK5v`.**
-A `main` ainda é apenas o scaffold inicial (commit `a2cc748`). Se você
-abrir `lib/main.dart` e ver só um placeholder, está na branch errada —
-**não reimplemente nada do zero, apenas troque:**
+**O MVP completo já está na `main`** (PR #5 mergeado). A branch antiga
+`claude/review-and-continue-9ZK5v` é histórica — **não trabalhe mais a
+partir dela** e ignore avisos antigos de que "main é só scaffold": isso
+está desatualizado. `lib/main.dart` na `main` é o app real.
+
+A modernização visual (inspirada no app irmão CBBC, sem perder a
+identidade IWBF) está na branch **`claude/visual-modernization`** (criada
+a partir de `main`), com PR aberto para `main`. Fluxo:
 
 ```bash
 git fetch origin
-git checkout claude/review-and-continue-9ZK5v
-git pull --ff-only origin claude/review-and-continue-9ZK5v
-git log --oneline -10
+git checkout claude/visual-modernization   # ou main, se o PR já mergeou
+git pull --ff-only origin claude/visual-modernization
+git log --oneline -12
 ```
 
-Você deve ver commits `feat(fase-5)...`, `fix(fase-5)...`, `feat(ci)...`,
-`docs(...)...`. O mais recente em 2026-05-15 é `5c38d8b fix(fase-5):
-destrava flutter test no CI` (entrada 0035), precedido por `8d6ab54
-feat(ci): deploy paralelo no Cloudflare Pages` (entrada 0034, merge
-do PR #4).
+Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
 
 ## Estado atual (resumo)
 
-- **Fase atual:** Fase 5 com 13 rodadas de ajustes pós-teste / infra
-  (entradas 0023..0035 do `docs/AI_WORK_LOG.md`). MVP completo na branch.
-  Últimas 2 rodadas:
-  - **0034 (2026-05-15):** deploy paralelo no Cloudflare Pages — URL
-    `https://iwbf-team-points-control.pages.dev/` (sem o handle pessoal
-    `gnpazinato`) servida a partir de production deploy. GH Pages
-    continua em paralelo. Job `cloudflare-pages` no
-    `.github/workflows/deploy-web.yml`. Production-branch do CF Pages
-    está em `claude/review-and-continue-9ZK5v` — trocar para `main`
-    apos merge do MVP.
-  - **0035 (2026-05-15):** destrava `flutter test` no CI. 15 widget
-    tests vinham falhando desde a entrada 0031 (sub-pixel RenderFlex
-    overflow no `_CourtPlayerChip` + assertion desatualizada sobre
-    ellipsis + dropdown com lazy-build em viewport baixa). Sem `flutter
-    test` verde o `Build release APK` não rodava — nenhum APK como
-    artifact. Corrigido com `height: 1.0` em 2 TextStyles + ajuste de
-    2 testes. **176 passed, 0 failed.** APK volta a sair no CI.
-- **Testers externos:** 2 pessoas têm o link do preview Web do GH Pages
-  (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`),
-  compartilhado em 2026-05-14. Migrar gradualmente para o link do CF
-  Pages (`https://iwbf-team-points-control.pages.dev/`).
-- **Próximo passo de validação:** baixar APK release do último run em
-  `claude/review-and-continue-9ZK5v` (artifact do workflow `Build
-  Android APK`) e subir no Firebase Test Lab — Robo test em 1 tablet
-  10" + 1 phone, portrait.
-- **Última atualização:** 2026-05-15.
+- **Modernização visual (branch `claude/visual-modernization`):** Fases
+  1–6 implementadas e verdes no CI; PR aberto para `main` (aguardando
+  aprovação do usuário — **não mergear sozinho**). Entregue:
+  - **Fase 1:** tema modernizado (cards brancos, sombra `0x14000000`,
+    radius 14, inputs/checkbox/switch dourados) + ícone IWBF preto como
+    favicon/launcher Android + branding PWA.
+  - **Fase 2:** `Player` com **nome unificado** (`name` substitui
+    surname+firstName, com back-compat no `fromJson`); `dob`/`gender`
+    **opcionais** (não bloqueantes); parser com aliases de colunas +
+    recuperação de classe "data-like" (anti-autoformatação Excel);
+    templates novos (`competition, team_name, class, name, number, dob,
+    gender`) com colunas pré-expandidas.
+  - **Fase 3:** nomes na quadra **encolhem e quebram em até 2 linhas**
+    (nunca reticências) + **rotação só em tablets** (`shortestSide>=600`),
+    celular travado em portrait.
+  - **Fase 4:** restyle de home (upload card + templates card + footer
+    com versão), match setup (cards com friso dourado) e lineup (placar
+    com glow ao estourar limite, limite movido para menu na AppBar,
+    chips/botões com ícones).
+  - **Fase 5:** **Jersey Color Picker** (cor da camisa por time, guardada
+    no `MatchState`) + **edição completa do roster** na tela de validação
+    (editar nome/dob/gênero/número/classe, excluir atleta, renomear/
+    excluir equipe) + restyle (badges, status pill, issue blocks).
+  - **Fase 6:** iconografia `_outlined` padronizada; docs atualizadas.
+  - **Fase 7 (PDF) — NÃO feita:** importação de PDF via
+    `syncfusion_flutter_pdf` ficou **fora** desta entrega (alto risco +
+    licença Syncfusion). Reavaliar como trilha futura isolada.
+- **Testers externos:** 2 pessoas com o link do GH Pages
+  (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`). O preview
+  atualiza a cada push em `claude/**` ou `main`. CF Pages:
+  `https://iwbf-team-points-control.pages.dev/`.
+- **Validação local:** Flutter **não** está instalado no Codespace; toda
+  validação (`analyze`/`test`/`build`) roda no **CI a cada push**.
+- **Última atualização:** 2026-05-27.
 
 ## O que fazer quando o usuário abre uma nova conversa
 
@@ -62,32 +70,28 @@ do PR #4).
    2. `docs/PLANO_DESENVOLVIMENTO_IA.md` (fases e estratégia);
    3. `docs/AI_WORK_LOG.md` (fonte da verdade — estado, decisões,
       convenções, histórico). Em particular: tabela "Estado atual" no
-      topo + entradas 0023..0035 (Fase 5 inteira + infra CF Pages +
-      destrava CI).
+      topo + entrada da modernização visual (Fases 1–6).
 3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +
-   título) e qual das duas trilhas aplica.
+   título) e o estado do PR de modernização visual.
 
-## Duas trilhas possíveis de próximo passo
+## Próximo passo provável
 
-**TRILHA A — Testers reportaram bugs ou melhorias.**
-Peça a lista detalhada ao usuário. Continue na mesma branch. Cada
-ajuste vira uma nova entrada (`### 0031`, `### 0032`...) no log.
-Convenção de commit: `feat(fase-5):...`, `fix(fase-5):...`.
+A modernização visual está implementada (Fases 1–6, CI verde) com PR
+aberto `claude/visual-modernization -> main`. Os caminhos típicos:
 
-**TRILHA B — Sem feedback (ou já absorvido). Usuário quer encerrar MVP.**
-Confirme com o usuário, garanta `git status` limpo, abra PR
-`claude/review-and-continue-9ZK5v -> main` via GitHub MCP
-(`mcp__github__create_pull_request`). **Não mergeie sozinho — peça
-aprovação.** Depois do merge, registre o fechamento no log e pergunte
-ao usuário a próxima direção (Phase 6: estatísticas, scoring, Play
-Store, refactor...).
+- **Aprovar/mergear o PR** (decisão do usuário — **não mergeie sozinho**).
+  Após o merge, registre o fechamento no log.
+- **Ajustes de feedback** dos testers: nova entrada no log, commit
+  `fix(visual):...` na branch `claude/visual-modernization` (ou direto em
+  `main` se o PR já mergeou e uma nova branch for criada).
+- **Fase 7 (PDF)** como trilha futura isolada, se o usuário quiser.
 
-Pergunte ao usuário qual trilha aplica antes de codar.
+Pergunte ao usuário qual caminho aplica antes de codar.
 
 ## Regras de trabalho (não revisitar sem motivo técnico)
 
-- **Branch:** sempre `claude/review-and-continue-9ZK5v`. Nunca trabalhe
-  a partir de `main` enquanto o ciclo MVP estiver aberto.
+- **Branch:** trabalhe em `claude/visual-modernization` (ou numa branch
+  `claude/**` nova a partir de `main`). Nunca commite direto na `main`.
 - **Validação local:** se `/root/flutter/bin/flutter` existir, rode
   `flutter pub get && flutter analyze --no-fatal-infos && flutter test`
   antes de cada push. Se Flutter ausente no sandbox, CI valida no push.
@@ -113,7 +117,7 @@ Pergunte ao usuário qual trilha aplica antes de codar.
 2. `analyze` + `test` verdes localmente (ou push se Flutter ausente).
 3. Atualiza `docs/AI_WORK_LOG.md`: nova entrada `### 00NN`, tabela de
    estado, arquivos alterados, testes rodados, próximo passo.
-4. Commit + push em `claude/review-and-continue-9ZK5v`.
+4. Commit + push em `claude/visual-modernization` (ou branch `claude/**`).
 5. Reporte ao usuário em 4-8 linhas: o que entregou, testes que
    passaram (números reais), pendências, próximo passo.
 
