@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iwbf_team_points_control/models/match_state.dart';
 import 'package:iwbf_team_points_control/models/player.dart';
+import 'package:iwbf_team_points_control/models/saved_roster.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/screens/load_spreadsheet_screen.dart';
 import 'package:iwbf_team_points_control/services/cache_service.dart';
@@ -37,24 +37,31 @@ Future<void> _pumpScreen(
   ));
 }
 
-MatchState _seedMatchState() {
-  return MatchState(
-    teamA: Team(
-      id: 'team-brazil',
-      teamName: 'Brazil',
-      players: <Player>[
-        Player(
-          id: 'team-brazil::7',
-          teamName: 'Brazil',
-          shirtNumber: 7,
-          name: 'João Silva',
-          playerClass: 2.5,
-        ),
-      ],
-    ),
-    teamB: Team(id: 'team-argentina', teamName: 'Argentina'),
+/// Salva uma planilha completa (3 equipes) no cache. A terceira equipe
+/// (Canada) NUNCA estaria numa partida de 2 times — usamos ela para
+/// provar que a restauracao traz a planilha INTEIRA, nao so as 2 equipes
+/// que estavam jogando.
+Future<void> _seedRoster(CacheService cache) async {
+  await cache.saveRoster(SavedRoster(
     competitionName: 'Americas Championship',
-  );
+    teams: <Team>[
+      Team(
+        id: 'team-brazil',
+        teamName: 'Brazil',
+        players: <Player>[
+          Player(
+            id: 'team-brazil::7',
+            teamName: 'Brazil',
+            shirtNumber: 7,
+            name: 'João Silva',
+            playerClass: 2.5,
+          ),
+        ],
+      ),
+      Team(id: 'team-argentina', teamName: 'Argentina'),
+      Team(id: 'team-canada', teamName: 'Canada'),
+    ],
+  ));
 }
 
 void main() {
@@ -140,24 +147,24 @@ void main() {
     expect(find.text('Load Reference Spreadsheet'), findsOneWidget);
   });
 
-  testWidgets('mostra diálogo de restauração quando há cache',
+  testWidgets('mostra diálogo de restauração quando há roster salvo',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final CacheService cache = CacheService();
-    await cache.saveMatchState(_seedMatchState());
+    await _seedRoster(cache);
 
     await _pumpScreen(tester, cache: cache);
     await tester.pumpAndSettle();
 
     expect(find.text('Previous data found.'), findsOneWidget);
-    expect(find.text('Restore Previous Session'), findsOneWidget);
+    expect(find.text('Load Previous Spreadsheet'), findsOneWidget);
     expect(find.text('Start from Scratch'), findsOneWidget);
   });
 
   testWidgets('"Start from Scratch" limpa o cache', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final CacheService cache = CacheService();
-    await cache.saveMatchState(_seedMatchState());
+    await _seedRoster(cache);
 
     await _pumpScreen(tester, cache: cache);
     await tester.pumpAndSettle();
@@ -165,23 +172,79 @@ void main() {
     await tester.tap(find.text('Start from Scratch'));
     await tester.pumpAndSettle();
 
-    expect(await cache.hasMatchState(), isFalse);
+    expect(await cache.hasRoster(), isFalse);
   });
 
-  testWidgets('"Restore Previous Session" navega para Match Setup',
+  testWidgets(
+      '"Load Previous Spreadsheet" abre o Resumo com a planilha INTEIRA',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final CacheService cache = CacheService();
-    await cache.saveMatchState(_seedMatchState());
+    await _seedRoster(cache);
 
     await _pumpScreen(tester, cache: cache);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Restore Previous Session'));
+    await tester.tap(find.text('Load Previous Spreadsheet'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Match Setup'), findsOneWidget);
+    expect(find.text('Spreadsheet Summary'), findsOneWidget);
     expect(find.textContaining('Americas Championship'), findsOneWidget);
+    // Todas as 3 equipes vêm de volta — inclusive Canada, que jamais
+    // estaria numa partida de 2 times. Prova que a planilha inteira foi
+    // restaurada (e não só as equipes da última partida).
+    expect(find.text('Brazil'), findsOneWidget);
+    expect(find.text('Argentina'), findsOneWidget);
+    expect(find.text('Canada'), findsOneWidget);
+  });
+
+  testWidgets('voltar do segundo plano na Home refaz a pergunta',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final CacheService cache = CacheService();
+    await _seedRoster(cache);
+
+    await _pumpScreen(tester, cache: cache);
+    await tester.pumpAndSettle();
+
+    // Diálogo inicial: descarta com "Start from Scratch" (limpa o roster).
+    expect(find.text('Previous data found.'), findsOneWidget);
+    await tester.tap(find.text('Start from Scratch'));
+    await tester.pumpAndSettle();
+    expect(find.text('Previous data found.'), findsNothing);
+
+    // Uma nova planilha foi usada e o app foi minimizado: ao voltar à Home,
+    // a pergunta deve reaparecer. Simula um ciclo background -> foreground
+    // com uma transição válida (inactive -> resumed).
+    await _seedRoster(cache);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Previous data found.'), findsOneWidget);
+  });
+
+  testWidgets('voltar do segundo plano FORA da Home não interrompe',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final CacheService cache = CacheService();
+    await _seedRoster(cache);
+
+    await _pumpScreen(tester, cache: cache);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Load Previous Spreadsheet'));
+    await tester.pumpAndSettle();
+    expect(find.text('Spreadsheet Summary'), findsOneWidget);
+
+    // Minimiza e volta enquanto está no Resumo: continua no Resumo, sem
+    // novo diálogo (decisão do usuário: só perguntar se já na Home).
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Previous data found.'), findsNothing);
+    expect(find.text('Spreadsheet Summary'), findsOneWidget);
   });
 
   testWidgets('upload válido leva para ValidationSummary',

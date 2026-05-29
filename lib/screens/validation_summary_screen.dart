@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../constants/player_classes.dart';
 import '../models/player.dart';
+import '../models/saved_roster.dart';
 import '../models/team.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
@@ -444,7 +445,17 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
   }
 
   Future<void> _continue(BuildContext context) async {
-    await Navigator.of(context).push<void>(
+    final NavigatorState navigator = Navigator.of(context);
+    // Persiste a planilha INTEIRA (validada/editada) como "ultima planilha
+    // usada" — base da restauracao na tela inicial. Captura o navigator
+    // antes do await para evitar `use_build_context_synchronously`.
+    await widget.cache?.saveRoster(
+      SavedRoster(
+        teams: _teams,
+        competitionName: widget.result.competitionName,
+      ),
+    );
+    await navigator.push<void>(
       MaterialPageRoute<void>(
         builder: (_) => MatchSetupScreen(
           teams: _teams,

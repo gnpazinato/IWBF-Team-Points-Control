@@ -549,6 +549,35 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0040 - 2026-05-29 - Restaurar a PLANILHA INTEIRA na tela inicial (v1.3.0)
+
+Contexto:
+
+- Ao fim de uma partida o usuario costuma fechar o app ou voltar varias telas ate a inicial. Pedido: quando o app e **encerrado**, sofre **crash** ou volta do **segundo plano** (ex.: no dia seguinte), a tela inicial deve perguntar "começar do zero" ou "carregar a planilha anterior". Ja existia essa pergunta, mas ela restaurava apenas o `MatchState` (as **2 equipes** da ultima partida). O usuario quer carregar a planilha **INTEIRA** (todas as equipes/atletas da ultima planilha usada — a mais recente, caso varias tenham sido usadas).
+- **Excecao:** se o usuario esta **numa partida**, minimiza e volta, deve cair **exatamente na tela da partida** (sem pergunta). A pergunta so reaparece quando o usuario **sai da partida** (voltar de pagina / crash / encerrar) e volta a Home.
+
+Decisoes do usuario (perguntadas antes de codar):
+
+- **Destino do restore:** abre o **Resumo da planilha** (Validation Summary) com TODAS as equipes — usuario revisa/edita e segue para o Match Setup. (Nao vai direto ao Match Setup.)
+- **Resume fora da partida:** so refaz a pergunta **se ja estiver na Home**. Em Match Setup / Resumo, voltar do segundo plano **nao interrompe** (fica onde estava). Isso dispensou rastrear rotas / mexer no `main.dart`.
+
+Entregue:
+
+- **`lib/models/saved_roster.dart` (novo):** `SavedRoster { teams, competitionName }` com `toJson`/`fromJson` (reusa `Team.toJson`). Persiste a planilha inteira, separada do `MatchState`.
+- **`CacheService`:** nova chave `iwbf.roster.v1` + `saveRoster`/`loadRoster`/`hasRoster`/`clearRoster`. `clear()` agora limpa **roster E match state** (ambos os callers — "Start from Scratch" e "Load New Spreadsheet" — querem tela limpa).
+- **`ValidationSummaryScreen._continue`:** salva `SavedRoster(_teams, competitionName)` no cache (planilha validada/editada = "ultima planilha usada") antes de ir ao Match Setup. Navigator capturado antes do await (evita `use_build_context_synchronously`).
+- **`LoadSpreadsheetScreen`:** pergunta passa a checar `hasRoster()` (nao `hasMatchState()`); "Load Previous Spreadsheet" reconstroi um `SpreadsheetParseResult` limpo (sem issues) da planilha salva e abre o **Resumo** com todas as equipes. Vira `WidgetsBindingObserver`: em `resumed`, se a Home esta no topo (`ModalRoute.isCurrent`), reseta o guard e refaz a pergunta; senao nao faz nada (partida/setup/resumo intactos). Textos do dialog atualizados ("Load Previous Spreadsheet" / "...all teams and players...").
+- **Versao:** `pubspec.yaml` 1.2.0+3 -> **1.3.0+4**; `kAppVersion` 1.2.0 -> **1.3.0**.
+- **Nota:** o `MatchSetupScreen(restored:)` continua existindo (usado em testes), mas a Home nao usa mais esse caminho. Apos crash/kill o app NAO volta a partida exata (por design, conforme pedido): volta a Home e oferece a planilha inteira.
+
+Arquivos alterados: `lib/models/saved_roster.dart` (novo), `lib/services/cache_service.dart`, `lib/screens/{validation_summary,load_spreadsheet}_screen.dart`, `lib/constants/app_version.dart`, `pubspec.yaml`, `test/services/cache_service_test.dart` (grupo roster), `test/screens/load_spreadsheet_screen_test.dart` (seed por roster; restore -> Resumo com 3 equipes incl. Canada; 2 testes de ciclo de vida resume on/off-Home).
+
+Testes: validados no CI (Flutter ausente no Codespace). Novos: roster save/load/has/clear + clear() limpa ambos; dialog gateado por roster; "Load Previous Spreadsheet" abre Resumo com Brazil+Argentina+Canada (prova planilha inteira); resume na Home refaz a pergunta; resume fora da Home (no Resumo) nao interrompe.
+
+Proximo passo recomendado:
+
+- Usuario testa no preview/APK: encerrar/crashar/minimizar e confirmar (a) pergunta na Home, (b) restore traz a planilha inteira, (c) minimizar durante a partida volta a partida. Se aprovado, segue no fluxo do PR `claude/visual-modernization -> main` (**nao mergear sozinho**).
+
 ### 0039 - 2026-05-27 - Parser tolerante a nomes de coluna (aliases amplos + planilha real)
 
 Contexto:

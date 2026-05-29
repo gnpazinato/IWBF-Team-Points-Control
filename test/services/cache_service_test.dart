@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iwbf_team_points_control/models/match_state.dart';
 import 'package:iwbf_team_points_control/models/player.dart';
+import 'package:iwbf_team_points_control/models/saved_roster.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/services/cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -109,6 +110,86 @@ void main() {
       final CacheService cache = CacheService(prefs: instance);
       await cache.saveMatchState(_seed());
       expect(instance.getString('iwbf.match_state.v1'), isNotNull);
+    });
+  });
+
+  group('CacheService - roster (planilha inteira)', () {
+    SavedRoster _seedRoster() => SavedRoster(
+          competitionName: 'World Championship',
+          teams: <Team>[
+            Team(
+              id: 'team-brazil',
+              teamName: 'Brazil',
+              players: <Player>[
+                _player('a1', 2.5, number: 7),
+                _player('a2', 4.0, number: 9),
+              ],
+            ),
+            Team(id: 'team-argentina', teamName: 'Argentina'),
+            Team(id: 'team-canada', teamName: 'Canada'),
+          ],
+        );
+
+    test('hasRoster e falso quando nada foi salvo', () async {
+      final CacheService cache = CacheService();
+      expect(await cache.hasRoster(), isFalse);
+      expect(await cache.loadRoster(), isNull);
+    });
+
+    test('saveRoster -> loadRoster preserva TODAS as equipes', () async {
+      final CacheService cache = CacheService();
+      await cache.saveRoster(_seedRoster());
+      expect(await cache.hasRoster(), isTrue);
+
+      final SavedRoster? restored = await cache.loadRoster();
+      expect(restored, isNotNull);
+      expect(restored!.competitionName, equals('World Championship'));
+      expect(restored.teams, hasLength(3));
+      expect(
+        restored.teams.map((Team t) => t.teamName),
+        containsAll(<String>['Brazil', 'Argentina', 'Canada']),
+      );
+      expect(restored.teams.first.players, hasLength(2));
+    });
+
+    test('saveRoster sobrescreve o roster anterior', () async {
+      final CacheService cache = CacheService();
+      await cache.saveRoster(_seedRoster());
+      await cache.saveRoster(SavedRoster(
+        teams: <Team>[Team(id: 'team-japan', teamName: 'Japan')],
+      ));
+
+      final SavedRoster? restored = await cache.loadRoster();
+      expect(restored!.teams, hasLength(1));
+      expect(restored.teams.single.teamName, equals('Japan'));
+      expect(restored.competitionName, isNull);
+    });
+
+    test('clearRoster remove so o roster (preserva match state)', () async {
+      final CacheService cache = CacheService();
+      await cache.saveMatchState(_seed());
+      await cache.saveRoster(_seedRoster());
+      await cache.clearRoster();
+      expect(await cache.hasRoster(), isFalse);
+      expect(await cache.hasMatchState(), isTrue);
+    });
+
+    test('clear remove roster E match state', () async {
+      final CacheService cache = CacheService();
+      await cache.saveMatchState(_seed());
+      await cache.saveRoster(_seedRoster());
+      await cache.clear();
+      expect(await cache.hasRoster(), isFalse);
+      expect(await cache.hasMatchState(), isFalse);
+      expect(await cache.loadRoster(), isNull);
+    });
+
+    test('loadRoster tolera JSON corrompido sem lancar', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'iwbf.roster.v1': 'nao-e-json-{}{',
+      });
+      final CacheService cache = CacheService();
+      expect(await cache.loadRoster(), isNull);
     });
   });
 }

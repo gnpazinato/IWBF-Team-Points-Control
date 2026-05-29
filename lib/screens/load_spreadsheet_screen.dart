@@ -1,17 +1,17 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_version.dart';
-import '../models/match_state.dart';
+import '../models/saved_roster.dart';
 import '../services/cache_service.dart';
 import '../services/spreadsheet_parser_service.dart';
 import '../services/template_generator_service.dart';
 import '../theme/iwbf_theme.dart';
 import '../utils/template_saver.dart' as platform_saver;
 import '../widgets/iwbf_logo_header.dart';
-import 'match_setup_screen.dart';
 import 'missing_data_screen.dart';
 import 'validation_summary_screen.dart';
 
@@ -58,7 +58,8 @@ class LoadSpreadsheetScreen extends StatefulWidget {
   State<LoadSpreadsheetScreen> createState() => _LoadSpreadsheetScreenState();
 }
 
-class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
+class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
+    with WidgetsBindingObserver {
   late final SpreadsheetParserService _parser;
   late final CacheService _cache;
   late final FilePickerFn _pickFile;
@@ -76,7 +77,29 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     _pickFile = widget._filePicker ?? _defaultFilePicker;
     _templates = widget._templates ?? const TemplateGeneratorService();
     _saveTemplate = widget._saveTemplate ?? platform_saver.defaultSaveTemplate;
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferRestore());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Ao voltar do segundo plano, refaz a pergunta de restauracao — mas
+    // SOMENTE quando a propria Home esta no topo da navegacao. Se o usuario
+    // estiver numa partida, em Match Setup ou no Resumo, nada acontece
+    // (decisao do usuario: nao interromper essas telas). A Home continua
+    // montada por baixo das outras rotas, entao este observer dispara
+    // mesmo enquanto elas estao visiveis — por isso o teste `isCurrent`.
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+    _hasPromptedRestore = false;
+    unawaited(_maybeOfferRestore());
   }
 
   Future<Uint8List?> _defaultFilePicker() async {
@@ -94,8 +117,8 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
   Future<void> _maybeOfferRestore() async {
     if (_hasPromptedRestore) return;
     _hasPromptedRestore = true;
-    final bool hasSession = await _cache.hasMatchState();
-    if (!mounted || !hasSession) return;
+    final bool hasRoster = await _cache.hasRoster();
+    if (!mounted || !hasRoster) return;
     final bool? restore = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -103,7 +126,8 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
         return AlertDialog(
           title: const Text('Previous data found.'),
           content: const Text(
-            'Would you like to restore your previous session or start from scratch?',
+            'Would you like to load the last spreadsheet you used '
+            '(all teams and players) or start from scratch?',
           ),
           actions: <Widget>[
             TextButton(
@@ -112,7 +136,7 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Restore Previous Session'),
+              child: const Text('Load Previous Spreadsheet'),
             ),
           ],
         );
@@ -120,15 +144,26 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen> {
     );
     if (!mounted) return;
     if (restore == true) {
-      final MatchState? state = await _cache.loadMatchState();
+      final SavedRoster? roster = await _cache.loadRoster();
       if (!mounted) return;
-      if (state == null) {
-        _showSnack('Saved session could not be restored.');
+      if (roster == null || roster.teams.isEmpty) {
+        _showSnack('Saved spreadsheet could not be restored.');
         return;
       }
+      // Reconstroi um resultado de parser limpo (sem issues) a partir da
+      // planilha salva — leva o usuario ao Resumo da planilha com TODAS as
+      // equipes/atletas, de onde pode revisar/editar e seguir para o setup.
+      final SpreadsheetParseResult result = SpreadsheetParseResult(
+        teams: roster.teams,
+        issues: const <ParseIssue>[],
+        competitionName: roster.competitionName,
+      );
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
-          builder: (_) => MatchSetupScreen(restored: state),
+          builder: (_) => ValidationSummaryScreen(
+            result: result,
+            cache: _cache,
+          ),
         ),
       );
     } else {
