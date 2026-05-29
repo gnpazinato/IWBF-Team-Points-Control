@@ -54,10 +54,20 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
+      - name: Rename APK with version
+        id: apk
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//' | cut -d'+' -f1)
+          BASENAME="iwbf-team-points-control-version-${VERSION}"
+          cp "build/app/outputs/flutter-apk/app-release.apk" \
+             "build/app/outputs/flutter-apk/${BASENAME}.apk"
+          echo "basename=${BASENAME}" >> "$GITHUB_OUTPUT"
+          echo "path=build/app/outputs/flutter-apk/${BASENAME}.apk" >> "$GITHUB_OUTPUT"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: iwbf-team-points-control-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: ${{ steps.apk.outputs.basename }}
+          path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
           retention-days: 30

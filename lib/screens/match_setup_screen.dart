@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../constants/point_limits.dart';
 import '../models/match_state.dart';
+import '../models/player.dart';
 import '../models/team.dart';
 import '../theme/iwbf_theme.dart';
 import '../widgets/country_flag.dart';
 import '../widgets/iwbf_logo_header.dart';
+import '../widgets/player_jersey_icon.dart';
 import 'lineup_control_screen.dart';
 
 /// Configuração da partida: escolhe Team A, Team B e Point Limit.
@@ -37,6 +39,8 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   Team? _teamA;
   Team? _teamB;
   double _pointLimit = kDefaultPointLimit;
+  Color _jerseyColorA = kDefaultJerseyColorA;
+  Color _jerseyColorB = kDefaultJerseyColorB;
 
   @override
   void initState() {
@@ -46,6 +50,8 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       _teamA = restored.teamA;
       _teamB = restored.teamB;
       _pointLimit = restored.pointLimit;
+      _jerseyColorA = restored.jerseyColorA;
+      _jerseyColorB = restored.jerseyColorB;
     }
   }
 
@@ -136,6 +142,8 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       teamB: b,
       pointLimit: _pointLimit,
       competitionName: _competitionName,
+      jerseyColorA: _jerseyColorA,
+      jerseyColorB: _jerseyColorB,
     );
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -154,7 +162,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
         title: const IwbfAppBarTitle(text: 'Match Setup'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -167,26 +175,59 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-              _TeamDropdown(
-                key: const Key('team-a-dropdown'),
-                label: 'Select Team A',
-                value: _teamA,
-                teams: teams,
-                onChanged: (Team? value) => setState(() => _teamA = value),
+              _AccentCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _TeamDropdown(
+                      key: const Key('team-a-dropdown'),
+                      label: 'Select Team A',
+                      value: _teamA,
+                      teams: teams,
+                      onChanged: (Team? value) =>
+                          setState(() => _teamA = value),
+                    ),
+                    const SizedBox(height: 12),
+                    _JerseyPicker(
+                      isTeamA: true,
+                      selected: _jerseyColorA,
+                      onChanged: (Color c) =>
+                          setState(() => _jerseyColorA = c),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              _TeamDropdown(
-                key: const Key('team-b-dropdown'),
-                label: 'Select Team B',
-                value: _teamB,
-                teams: teams,
-                onChanged: (Team? value) => setState(() => _teamB = value),
+              const SizedBox(height: 14),
+              _AccentCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _TeamDropdown(
+                      key: const Key('team-b-dropdown'),
+                      label: 'Select Team B',
+                      value: _teamB,
+                      teams: teams,
+                      onChanged: (Team? value) =>
+                          setState(() => _teamB = value),
+                    ),
+                    const SizedBox(height: 12),
+                    _JerseyPicker(
+                      isTeamA: false,
+                      selected: _jerseyColorB,
+                      onChanged: (Color c) =>
+                          setState(() => _jerseyColorB = c),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              _PointLimitDropdown(
-                value: _pointLimit,
-                onChanged: (double next) =>
-                    setState(() => _pointLimit = next),
+              const SizedBox(height: 14),
+              _AccentCard(
+                accentColor: IwbfColors.goldDeep,
+                child: _PointLimitDropdown(
+                  value: _pointLimit,
+                  onChanged: (double next) =>
+                      setState(() => _pointLimit = next),
+                ),
               ),
               if (_teamsAreSame)
                 const Padding(
@@ -208,13 +249,13 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                       border: Border.all(
                         color: IwbfColors.alertRed.withValues(alpha: 0.6),
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Icon(
-                          Icons.warning_amber_rounded,
+                          Icons.warning_amber_outlined,
                           color: IwbfColors.alertRed,
                           size: 20,
                         ),
@@ -231,7 +272,6 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                     ),
                   ),
                 ),
-              const Spacer(),
               if (teams.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
@@ -252,6 +292,36 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
             icon: const Icon(Icons.play_arrow),
             label: const Text('Start Match'),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card com friso/barra vertical dourada na lateral esquerda como
+/// identificador visual da seção (Team A, Team B, Point Limit).
+class _AccentCard extends StatelessWidget {
+  const _AccentCard({required this.child, this.accentColor = IwbfColors.gold});
+
+  final Widget child;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(width: 5, color: accentColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: child,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -335,6 +405,116 @@ class _PointLimitDropdown extends StatelessWidget {
       onChanged: (double? next) {
         if (next != null) onChanged(next);
       },
+    );
+  }
+}
+
+/// Paleta de cores de camisa (institucionais IWBF) para o seletor.
+const List<Color> kJerseyPalette = <Color>[
+  IwbfColors.gold,
+  Color(0xFFFFFFFF), // White
+  IwbfColors.textPrimary, // Black
+  Color(0xFF424242), // Dark Gray
+  Color(0xFF1E3A6E), // Dark Blue
+  Color(0xFF1B5E20), // Dark Green
+  Color(0xFF4A148C), // Dark Purple
+  IwbfColors.alertRed, // Red
+];
+
+/// Atleta fictício usado só para o preview da camisa no seletor.
+final Player _jerseyPreviewPlayer = Player(
+  id: 'jersey-preview',
+  teamName: '',
+  shirtNumber: 7,
+  name: '',
+  playerClass: 1.0,
+);
+
+/// Seletor de cor de camisa: preview do ícone + bolinhas de cor tocáveis.
+class _JerseyPicker extends StatelessWidget {
+  const _JerseyPicker({
+    required this.isTeamA,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final bool isTeamA;
+  final Color selected;
+  final ValueChanged<Color> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        PlayerJerseyIcon(
+          player: _jerseyPreviewPlayer,
+          isTeamA: isTeamA,
+          size: 36,
+          jerseyColor: selected,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              for (final Color c in kJerseyPalette)
+                _ColorDot(
+                  color: c,
+                  selected: c.toARGB32() == selected.toARGB32(),
+                  onTap: () => onChanged(c),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ColorDot extends StatelessWidget {
+  const _ColorDot({
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? IwbfColors.goldDeep : IwbfColors.slate200,
+            width: selected ? 3 : 1,
+          ),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: selected
+            ? Icon(
+                Icons.check,
+                size: 16,
+                color: color.computeLuminance() > 0.5
+                    ? IwbfColors.textPrimary
+                    : Colors.white,
+              )
+            : null,
+      ),
     );
   }
 }

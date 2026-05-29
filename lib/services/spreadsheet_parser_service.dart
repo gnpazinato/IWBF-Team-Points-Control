@@ -100,21 +100,20 @@ class SpreadsheetParseResult {
 
 /// Colunas obrigatórias por linha; usadas tanto no modelo de aba única
 /// quanto no modelo de uma aba por equipe (com `team_name` opcional aí).
+/// Colunas *lógicas* obrigatórias. São resolvidas via aliases
+/// (`number`↔`shirt_number`, `name`↔`surname`+`first_name`, `class`↔
+/// `player_class`...). `dob` e `gender` são **opcionais** (não impeditivos).
 class _RequiredColumns {
   static const List<String> singleSheet = <String>[
     'team_name',
-    'shirt_number',
-    'surname',
-    'first_name',
-    'player_class',
-    'dob',
+    'number',
+    'name',
+    'class',
   ];
   static const List<String> perTeamSheet = <String>[
-    'shirt_number',
-    'surname',
-    'first_name',
-    'player_class',
-    'dob',
+    'number',
+    'name',
+    'class',
   ];
 }
 
@@ -149,120 +148,136 @@ class SpreadsheetParserService {
       );
     }
 
-    SheetData? playersSheet;
-    for (final SheetData s in nonEmpty) {
-      if (s.name.trim().toLowerCase() == 'players') {
-        playersSheet = s;
-        break;
-      }
+    // O CONTEÚDO decide o modelo — o título da aba é irrelevante.
+    //
+    // Uma aba que tem coluna de equipe (`team_name`/`country`/...) lista
+    // as equipes por linha: é uma planilha "todas as equipes". Se houver
+    // ao menos uma assim, ela(s) é(são) a fonte de verdade — combinamos
+    // todas e **ignoramos** as demais abas (resumos, instruções, etc.).
+    // Como o nome da equipe vem da coluna, o título da aba não importa.
+    //
+    // Se NENHUMA aba tem coluna de equipe, caímos no modelo "uma aba por
+    // equipe": cada aba é uma equipe e o nome vem do título da aba.
+    final List<SheetData> allTeamsSheets =
+        nonEmpty.where(_hasTeamColumn).toList();
+    if (allTeamsSheets.isNotEmpty) {
+      return _parseTeamColumnSheets(allTeamsSheets);
     }
 
-    if (playersSheet != null) {
-      return _parseSingleSheet(playersSheet);
-    }
     return _parseMultiSheet(nonEmpty);
   }
 
   // ---------------------------------------------------------------------------
-  // Modelo aba única
+  // Modelo "todas as equipes" (uma ou mais abas com coluna de equipe)
   // ---------------------------------------------------------------------------
 
-  SpreadsheetParseResult _parseSingleSheet(SheetData sheet) {
+  /// Se a aba tem uma coluna de equipe (`team_name`/`country`/...).
+  bool _hasTeamColumn(SheetData sheet) {
     final _HeaderInfo? header = _readHeader(sheet);
-    if (header == null) {
-      return SpreadsheetParseResult.error(
-        'Sheet "${sheet.name}" has no valid header row',
-        ParseIssueCategory.missingRequiredColumn,
-      );
-    }
+    return header != null && _columnIndex(header, 'team_name') != null;
+  }
 
+  /// Combina uma ou mais abas que listam equipes por linha (cada uma com
+  /// coluna de equipe) num único conjunto de equipes. Abas múltiplas são
+  /// mescladas no mesmo mapa de buckets, então a mesma equipe espalhada
+  /// por abas distintas (ex.: aba "Men" + aba "Women") é unificada por id.
+  SpreadsheetParseResult _parseTeamColumnSheets(List<SheetData> sheets) {
     final List<ParseIssue> issues = <ParseIssue>[];
-    final List<String> missing = <String>[];
-    for (final String required in _RequiredColumns.singleSheet) {
-      if (!header.columnIndex.containsKey(required)) {
-        missing.add(required);
-      }
-    }
-    if (missing.isNotEmpty) {
-      issues.add(ParseIssue(
-        category: ParseIssueCategory.missingRequiredColumn,
-        severity: ParseIssueSeverity.error,
-        message: 'Required columns missing: ${missing.join(", ")}',
-        sheetName: sheet.name,
-      ));
-      return SpreadsheetParseResult(
-        teams: const <Team>[],
-        issues: issues,
-      );
-    }
-
     final Map<String, _TeamBucket> buckets = <String, _TeamBucket>{};
     String? competitionName;
 
-    for (int i = header.firstDataRow; i < sheet.rows.length; i++) {
-      final List<String?> row = sheet.rows[i];
-      if (!_rowHasContent(row)) continue;
-
-      final String rawTeam =
-          (_readCell(row, header.columnIndex['team_name']) ?? '').trim();
-      if (rawTeam.isEmpty) {
+    for (final SheetData sheet in sheets) {
+      final _HeaderInfo? header = _readHeader(sheet);
+      if (header == null) {
         issues.add(ParseIssue(
           category: ParseIssueCategory.missingRequiredColumn,
           severity: ParseIssueSeverity.error,
-          message: 'Row is missing team_name',
+          message: 'Sheet "${sheet.name}" has no valid header row',
           sheetName: sheet.name,
-          rowNumber: i + 1,
         ));
         continue;
       }
 
-      competitionName ??=
-          _readOptionalString(row, header.columnIndex['competition_name']);
-
-      // Quem decide o gênero do time é o gênero do atleta, não o nome
-      // bruto. O "Brasil Men" do `team_name` é só uma dica — strippamos
-      // pra usar o "Brasil" canônico.
-      final String strippedTeam = _stripGenderKeyword(rawTeam);
-      final String baseDisplay = resolver.displayNameFor(strippedTeam);
-      final PlayerGender playerGender = _genderFromString(
-          _readOptionalString(row, header.columnIndex['gender']));
-      final TeamGender teamGender =
-          _teamGenderFromPlayerGender(playerGender);
-      final String teamId = _teamIdWithGender(baseDisplay, teamGender);
-
-      if (!resolver.isKnown(strippedTeam)) {
-        if (!issues.any((ParseIssue x) =>
-            x.category == ParseIssueCategory.unknownTeam &&
-            x.teamName == baseDisplay)) {
-          issues.add(ParseIssue(
-            category: ParseIssueCategory.unknownTeam,
-            severity: ParseIssueSeverity.warning,
-            message: 'Unknown team: "$rawTeam"',
-            sheetName: sheet.name,
-            teamName: baseDisplay,
-          ));
+      final List<String> missing = <String>[];
+      for (final String required in _RequiredColumns.singleSheet) {
+        if (!_hasLogicalColumn(header, required)) {
+          missing.add(required);
         }
       }
+      if (missing.isNotEmpty) {
+        issues.add(ParseIssue(
+          category: ParseIssueCategory.missingRequiredColumn,
+          severity: ParseIssueSeverity.error,
+          message: 'Required columns missing: ${missing.join(", ")}',
+          sheetName: sheet.name,
+        ));
+        continue;
+      }
 
-      final Player? player = _buildPlayer(
-        row: row,
-        header: header,
-        sheetName: sheet.name,
-        rowNumber: i + 1,
-        teamId: teamId,
-        teamName: baseDisplay,
-        issues: issues,
-      );
-      if (player != null) {
-        final _TeamBucket bucket = buckets.putIfAbsent(
-          teamId,
-          () => _TeamBucket(
-            id: teamId,
-            displayName: baseDisplay,
-            gender: teamGender,
-          ),
+      for (int i = header.firstDataRow; i < sheet.rows.length; i++) {
+        final List<String?> row = sheet.rows[i];
+        if (!_rowHasContent(row)) continue;
+
+        final String rawTeam =
+            (_readLogical(row, header, 'team_name') ?? '').trim();
+        if (rawTeam.isEmpty) {
+          issues.add(ParseIssue(
+            category: ParseIssueCategory.missingRequiredColumn,
+            severity: ParseIssueSeverity.error,
+            message: 'Row is missing team_name',
+            sheetName: sheet.name,
+            rowNumber: i + 1,
+          ));
+          continue;
+        }
+
+        competitionName ??= _readLogical(row, header, 'competition');
+
+        // Quem decide o gênero do time é o gênero do atleta, não o nome
+        // bruto. O "Brasil Men" do `team_name` é só uma dica — strippamos
+        // pra usar o "Brasil" canônico.
+        final String strippedTeam = _stripGenderKeyword(rawTeam);
+        final String baseDisplay = resolver.displayNameFor(strippedTeam);
+        final PlayerGender playerGender =
+            _genderFromString(_readLogical(row, header, 'gender'));
+        final TeamGender teamGender =
+            _teamGenderFromPlayerGender(playerGender);
+        final String teamId = _teamIdWithGender(baseDisplay, teamGender);
+
+        if (!resolver.isKnown(strippedTeam)) {
+          if (!issues.any((ParseIssue x) =>
+              x.category == ParseIssueCategory.unknownTeam &&
+              x.teamName == baseDisplay)) {
+            issues.add(ParseIssue(
+              category: ParseIssueCategory.unknownTeam,
+              severity: ParseIssueSeverity.warning,
+              message: 'Unknown team: "$rawTeam"',
+              sheetName: sheet.name,
+              teamName: baseDisplay,
+            ));
+          }
+        }
+
+        final Player? player = _buildPlayer(
+          row: row,
+          header: header,
+          sheetName: sheet.name,
+          rowNumber: i + 1,
+          teamId: teamId,
+          teamName: baseDisplay,
+          issues: issues,
         );
-        bucket.players.add(player);
+        if (player != null) {
+          final _TeamBucket bucket = buckets.putIfAbsent(
+            teamId,
+            () => _TeamBucket(
+              id: teamId,
+              displayName: baseDisplay,
+              gender: teamGender,
+            ),
+          );
+          bucket.players.add(player);
+        }
       }
     }
 
@@ -275,7 +290,7 @@ class SpreadsheetParserService {
             ))
         .toList();
 
-    _detectDuplicateShirtNumbers(teams, issues, sheet.name);
+    _detectDuplicateShirtNumbers(teams, issues, null);
 
     return SpreadsheetParseResult(
       teams: teams,
@@ -307,7 +322,7 @@ class SpreadsheetParserService {
 
       final List<String> missing = <String>[];
       for (final String required in _RequiredColumns.perTeamSheet) {
-        if (!header.columnIndex.containsKey(required)) {
+        if (!_hasLogicalColumn(header, required)) {
           missing.add(required);
         }
       }
@@ -323,11 +338,12 @@ class SpreadsheetParserService {
 
       String teamName = sheet.name.trim();
       String? rawTeamFromColumn;
-      if (header.columnIndex.containsKey('team_name') &&
+      if (_columnIndex(header, 'team_name') != null &&
           header.firstDataRow < sheet.rows.length) {
-        rawTeamFromColumn = _readOptionalString(
+        rawTeamFromColumn = _readLogical(
           sheet.rows[header.firstDataRow],
-          header.columnIndex['team_name'],
+          header,
+          'team_name',
         );
       }
       if (rawTeamFromColumn != null && rawTeamFromColumn.isNotEmpty) {
@@ -356,11 +372,10 @@ class SpreadsheetParserService {
         final List<String?> row = sheet.rows[i];
         if (!_rowHasContent(row)) continue;
 
-        competitionName ??=
-            _readOptionalString(row, header.columnIndex['competition_name']);
+        competitionName ??= _readLogical(row, header, 'competition');
 
-        final PlayerGender playerGender = _genderFromString(
-            _readOptionalString(row, header.columnIndex['gender']));
+        final PlayerGender playerGender =
+            _genderFromString(_readLogical(row, header, 'gender'));
         final TeamGender teamGender =
             _teamGenderFromPlayerGender(playerGender);
         final String teamId = _teamIdWithGender(baseDisplay, teamGender);
@@ -419,28 +434,30 @@ class SpreadsheetParserService {
     required String teamName,
     required List<ParseIssue> issues,
   }) {
-    final String? shirtRaw =
-        _readOptionalString(row, header.columnIndex['shirt_number']);
-    final String surname =
-        (_readOptionalString(row, header.columnIndex['surname']) ?? '').trim();
-    final String firstName =
-        (_readOptionalString(row, header.columnIndex['first_name']) ?? '').trim();
-    final String classRaw =
-        (_readOptionalString(row, header.columnIndex['player_class']) ?? '').trim();
-    final String dobRaw =
-        (_readOptionalString(row, header.columnIndex['dob']) ?? '').trim();
-    final String? genderRaw =
-        _readOptionalString(row, header.columnIndex['gender']);
+    final String? shirtRaw = _readLogical(row, header, 'number');
+    String name = (_readLogical(row, header, 'name') ?? '').trim();
+    if (name.isEmpty) {
+      // Sem coluna de nome completo: juntamos sobrenome + nome no mesmo
+      // formato dos templates ("SOBRENOME, Nome", ex.: "SILVA, João").
+      // Cada parte é resolvida por aliases (`last_name`, `given_name`...).
+      final String surname = (_readLogical(row, header, 'surname') ?? '').trim();
+      final String firstName =
+          (_readLogical(row, header, 'first_name') ?? '').trim();
+      name = _composeName(surname, firstName);
+    }
+    final String classRaw = (_readLogical(row, header, 'class') ?? '').trim();
+    final String dobRaw = (_readLogical(row, header, 'dob') ?? '').trim();
+    final String? genderRaw = _readLogical(row, header, 'gender');
 
-    final String playerLabel = '${surname.toUpperCase()}, $firstName';
+    final String playerLabel = name.isEmpty ? '(unnamed)' : name;
 
     bool valid = true;
 
-    if (surname.isEmpty || firstName.isEmpty) {
+    if (name.isEmpty) {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingPlayerName,
         severity: ParseIssueSeverity.error,
-        message: 'Player is missing full name (surname and first name)',
+        message: 'Player is missing name',
         sheetName: sheetName,
         rowNumber: rowNumber,
         teamName: teamName,
@@ -476,7 +493,8 @@ class SpreadsheetParserService {
       ));
       valid = false;
     } else {
-      playerClass = parsePlayerClass(classRaw);
+      playerClass =
+          parsePlayerClass(classRaw) ?? classFromDateLikeString(classRaw);
       if (playerClass == null) {
         issues.add(ParseIssue(
           category: ParseIssueCategory.invalidPlayerClass,
@@ -492,18 +510,22 @@ class SpreadsheetParserService {
       }
     }
 
-    final DateTime? dob = _parseDateOfBirth(dobRaw);
-    if (dob == null) {
-      issues.add(ParseIssue(
-        category: ParseIssueCategory.missingDateOfBirth,
-        severity: ParseIssueSeverity.error,
-        message: 'Date of birth is missing or invalid',
-        sheetName: sheetName,
-        rowNumber: rowNumber,
-        teamName: teamName,
-        playerLabel: playerLabel,
-      ));
-      valid = false;
+    // Data de nascimento é OPCIONAL: em branco não gera issue; um valor
+    // presente mas inválido vira apenas warning (não bloqueia a importação).
+    DateTime? dob;
+    if (dobRaw.isNotEmpty) {
+      dob = _parseDateOfBirth(dobRaw);
+      if (dob == null) {
+        issues.add(ParseIssue(
+          category: ParseIssueCategory.missingDateOfBirth,
+          severity: ParseIssueSeverity.warning,
+          message: 'Date of birth "$dobRaw" is invalid and was ignored',
+          sheetName: sheetName,
+          rowNumber: rowNumber,
+          teamName: teamName,
+          playerLabel: playerLabel,
+        ));
+      }
     }
 
     if (!valid) return null;
@@ -512,8 +534,7 @@ class SpreadsheetParserService {
       id: '$teamId::${shirtNumber!}',
       teamName: teamName,
       shirtNumber: shirtNumber,
-      surname: surname,
-      firstName: firstName,
+      name: name,
       playerClass: playerClass!,
       dateOfBirth: dob,
       gender: _genderFromString(genderRaw),
@@ -701,6 +722,100 @@ class SpreadsheetParserService {
     if (raw == null) return null;
     final String trimmed = raw.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+
+  /// Aliases aceitos para cada coluna *lógica*. O importante é a
+  /// informação que a coluna carrega, não o título exato — então cada
+  /// coluna lógica reconhece várias grafias equivalentes (PT/EN/ES +
+  /// variações comuns de exportação). O cabeçalho canônico é o primeiro
+  /// de cada lista; os demais mantêm compatibilidade e cobrem planilhas
+  /// de terceiros.
+  ///
+  /// Os tokens já vêm **normalizados** (minúsculas, espaços/hífens →
+  /// `_`), no mesmo formato que `_normalizeHeaderToken` produz. Assim
+  /// `"FULL NAME"`, `"Full-Name"` e `"full_name"` batem todos em `name`.
+  ///
+  /// Colunas não listadas aqui (ex.: `role`, `cs`/`class_status`,
+  /// `first_name`/`last_name` quando já há `name`) são simplesmente
+  /// ignoradas — nunca viram erro.
+  static const Map<String, List<String>> _columnAliases =
+      <String, List<String>>{
+    'competition': <String>[
+      'competition', 'competition_name', 'tournament', 'tournament_name',
+      'event', 'event_name', 'championship', 'cup', 'competicao', 'torneio',
+    ],
+    'team_name': <String>[
+      'team_name', 'team', 'country', 'country_name', 'nation', 'nationality',
+      'national_team', 'pais', 'selecao', 'equipe', 'equipo',
+    ],
+    'class': <String>[
+      'class', 'player_class', 'sport_class', 'sports_class',
+      'classification', 'sport_classification', 'functional_class',
+      'classe', 'classificacao',
+    ],
+    'name': <String>[
+      'name', 'full_name', 'fullname', 'player_name', 'player', 'athlete',
+      'athlete_name', 'nome', 'nome_completo', 'jogador', 'atleta',
+    ],
+    'number': <String>[
+      'number', 'shirt_number', 'shirt', 'shirt_no', 'jersey',
+      'jersey_number', 'jersey_no', 'bib', 'bib_number', 'no', 'num',
+      'numero', 'numero_camisa',
+    ],
+    'dob': <String>[
+      'dob', 'date_of_birth', 'birth_date', 'birthdate', 'birthday', 'born',
+      'data_nascimento', 'data_de_nascimento', 'nascimento',
+    ],
+    'gender': <String>[
+      'gender', 'sex', 'genero', 'sexo',
+    ],
+    // Pares legados de nome separado, usados só como fallback quando NÃO
+    // existe uma coluna de nome completo. Reconhecem variações comuns
+    // ("LAST NAME", "Given Name" etc.).
+    'surname': <String>[
+      'surname', 'last_name', 'lastname', 'family_name', 'familyname',
+      'sobrenome', 'apellido',
+    ],
+    'first_name': <String>[
+      'first_name', 'firstname', 'given_name', 'givenname', 'forename',
+      'first', 'nome_proprio', 'primeiro_nome', 'nombre',
+    ],
+  };
+
+  /// Índice da coluna lógica [logical], tentando cada alias na ordem.
+  int? _columnIndex(_HeaderInfo header, String logical) {
+    final List<String> aliases =
+        _columnAliases[logical] ?? <String>[logical];
+    for (final String alias in aliases) {
+      final int? idx = header.columnIndex[alias];
+      if (idx != null) return idx;
+    }
+    return null;
+  }
+
+  /// Se a planilha tem a coluna lógica [logical]. Para `name`, aceita o
+  /// par legado `surname` + `first_name` (cada um resolvido por aliases,
+  /// ex.: `last_name` + `first_name`).
+  bool _hasLogicalColumn(_HeaderInfo header, String logical) {
+    if (logical == 'name') {
+      if (_columnIndex(header, 'name') != null) return true;
+      return _columnIndex(header, 'surname') != null &&
+          _columnIndex(header, 'first_name') != null;
+    }
+    return _columnIndex(header, logical) != null;
+  }
+
+  /// Lê o valor (trim/non-empty) da coluna lógica [logical].
+  String? _readLogical(List<String?> row, _HeaderInfo header, String logical) {
+    return _readOptionalString(row, _columnIndex(header, logical));
+  }
+
+  /// Junta sobrenome + nome no formato "SOBRENOME, Nome" (igual aos
+  /// templates). Quando só um dos dois existe, devolve-o como está.
+  String _composeName(String surname, String firstName) {
+    if (surname.isEmpty) return firstName;
+    if (firstName.isEmpty) return surname;
+    return '${surname.toUpperCase()}, $firstName';
   }
 
   bool _rowHasContent(List<String?> row) {

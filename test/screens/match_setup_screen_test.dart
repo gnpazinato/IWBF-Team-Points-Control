@@ -10,8 +10,7 @@ Player _player(String teamId, int shirt, double cls) => Player(
       id: '$teamId::$shirt',
       teamName: teamId,
       shirtNumber: shirt,
-      surname: 'Surname$shirt',
-      firstName: 'First',
+      name: 'Surname$shirt',
       playerClass: cls,
     );
 
@@ -31,6 +30,8 @@ Future<void> _selectFromDropdown(
   required Key dropdownKey,
   required String optionText,
 }) async {
+  await tester.ensureVisible(find.byKey(dropdownKey));
+  await tester.pumpAndSettle();
   await tester.tap(find.byKey(dropdownKey));
   await tester.pumpAndSettle();
   await tester.tap(find.text(optionText).last);
@@ -184,6 +185,15 @@ void main() {
 
     testWidgets('mudança de Point Limit é refletida no Start payload',
         (WidgetTester tester) async {
+      // Viewport alta para o overlay do dropdown buildar todos os 19 items
+      // (incl. 15.5) sem lazy-build — vide teste acima.
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       await tester.pumpWidget(MaterialApp(
         home: MatchSetupScreen(teams: <Team>[
           _team('team-brazil', 'Brazil'),
@@ -192,6 +202,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.byKey(const Key('point-limit-dropdown')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('point-limit-dropdown')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('15.5').last);
@@ -257,7 +269,9 @@ void main() {
       expect(find.text('Brazil'), findsWidgets);
       expect(find.text('Argentina'), findsWidgets);
       expect(find.text('  vs  '), findsOneWidget);
-      expect(find.text('Point Limit:'), findsOneWidget);
+      // Point Limit migrou para um menu na AppBar do Lineup.
+      expect(find.byKey(const Key('lineup-point-limit-dropdown')),
+          findsOneWidget);
     });
   });
 

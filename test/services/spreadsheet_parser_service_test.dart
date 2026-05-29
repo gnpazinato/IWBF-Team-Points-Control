@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart' as xlsx;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iwbf_team_points_control/models/player.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/services/spreadsheet_parser_service.dart';
 
@@ -66,7 +67,7 @@ void main() {
       final teamBrazil =
           result.teams.firstWhere((t) => t.teamName == 'Brazil');
       expect(teamBrazil.players, hasLength(2));
-      expect(teamBrazil.players.first.surname, equals('Silva'));
+      expect(teamBrazil.players.first.name, equals('SILVA, João'));
       expect(teamBrazil.players.first.shirtNumber, equals(7));
       expect(teamBrazil.players.first.playerClass, equals(2.5));
       expect(
@@ -109,9 +110,9 @@ void main() {
       final ParseIssue issue = result.issues.first;
       expect(issue.category,
           equals(ParseIssueCategory.missingRequiredColumn));
-      expect(issue.message, contains('first_name'));
-      expect(issue.message, contains('player_class'));
-      expect(issue.message, contains('dob'));
+      // Faltam name (só há surname, sem first_name) e class. dob é opcional.
+      expect(issue.message, contains('name'));
+      expect(issue.message, contains('class'));
     });
 
     test('reporta atleta sem numero como erro bloqueante', () {
@@ -147,7 +148,7 @@ void main() {
       );
     });
 
-    test('reporta DOB ausente', () {
+    test('DOB ausente NAO bloqueia (campo opcional)', () {
       final SheetData sheet = _sheet('Players', <List<String?>>[
         _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
         _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '']),
@@ -156,11 +157,24 @@ void main() {
       final SpreadsheetParseResult result =
           parser.parseSheets(<SheetData>[sheet]);
 
-      expect(result.hasBlockingIssues, isTrue);
-      expect(
-        result.issues.first.category,
-        equals(ParseIssueCategory.missingDateOfBirth),
-      );
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players, hasLength(1));
+      expect(result.teams.first.players.first.dateOfBirth, isNull);
+    });
+
+    test('classe autoformatada como data e recuperada (2026-05-02 -> 2.5)', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2026-05-02', '1998-01-02']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players.first.playerClass, equals(2.5));
     });
 
     test('marca equipe nao reconhecida como warning, nao erro', () {
@@ -732,6 +746,171 @@ void main() {
       expect(result.teams.first.players, hasLength(1));
       expect(result.teams.first.players.first.shirtNumber, equals(7));
       expect(result.teams.first.players.first.playerClass, equals(2.5));
+    });
+  });
+
+  group('SpreadsheetParserService - aliases de coluna (entrada 0039)', () {
+    final SpreadsheetParserService parser = SpreadsheetParserService();
+
+    test('planilha real estilo IWBF: COUNTRY/FULL NAME + colunas ignoradas',
+        () {
+      // Reproduz a planilha anexada pelo usuário: uma única aba (não
+      // chamada "Players") com COMPETITION, COUNTRY, CLASS, FULL NAME,
+      // NUMBER e colunas que devem ser IGNORADAS (FIRST/LAST NAME pois já
+      // há FULL NAME, ROLE, CS). Vários países na mesma aba.
+      final SheetData sheet = _sheet('Sheet1', <List<String?>>[
+        _row(<String?>[
+          'COMPETITION', 'COUNTRY', 'CLASS', 'FULL NAME', 'NUMBER',
+          'FIRST NAME', 'LAST NAME', 'DOB', 'ROLE', 'CS',
+        ]),
+        _row(<String?>[
+          'WM Repechage', 'Argentina', '4.0', 'Paiva, Evangelina', '4',
+          'Evangelina', 'Paiva', '27/12/1987', 'PLAYER', 'C',
+        ]),
+        _row(<String?>[
+          'WM Repechage', 'Australia', '1.0', 'Vinci, Sarah', '4',
+          'Sarah', 'Vinci', '04/12/1991', 'PLAYER', 'C',
+        ]),
+        _row(<String?>[
+          'WM Repechage', 'France', '3.5', 'Veuille, Mathilde', '0',
+          'Mathilde', 'Veuille', '19/01/1993', 'PLAYER', 'N',
+        ]),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.competitionName, equals('WM Repechage'));
+      // Três países distintos viram três equipes (gênero unspecified, pois
+      // não há coluna gender).
+      expect(result.teams.map((Team t) => t.teamName).toSet(),
+          equals(<String>{'Argentina', 'Australia', 'France'}));
+      final Team arg =
+          result.teams.firstWhere((Team t) => t.teamName == 'Argentina');
+      // Usou FULL NAME (não reconstruiu de first/last name).
+      expect(arg.players.first.name, equals('Paiva, Evangelina'));
+      expect(arg.players.first.playerClass, equals(4.0));
+      expect(arg.players.first.shirtNumber, equals(4));
+      expect(arg.players.first.dateOfBirth, equals(DateTime.utc(1987, 12, 27)));
+    });
+
+    test('aliases: country=team, classification=class, tournament=competition',
+        () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'tournament', 'country', 'classification', 'player_name',
+          'jersey_number',
+        ]),
+        _row(<String?>['Worlds', 'Brazil', '2.5', 'SILVA, João', '7']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.competitionName, equals('Worlds'));
+      expect(result.teams.first.teamName, equals('Brazil'));
+      expect(result.teams.first.players.first.name, equals('SILVA, João'));
+      expect(result.teams.first.players.first.playerClass, equals(2.5));
+      expect(result.teams.first.players.first.shirtNumber, equals(7));
+    });
+
+    test('sem FULL NAME: reconstrói "SOBRENOME, Nome" de last/first name', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>[
+          'team_name', 'number', 'last_name', 'first_name', 'class',
+        ]),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players.first.name, equals('SILVA, João'));
+    });
+
+    test('colunas obrigatórias mínimas: team_name, class, name, number', () {
+      // Sem dob nem gender — não deve bloquear; ficam em branco.
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['country', 'sport_class', 'full_name', 'number']),
+        _row(<String?>['Brazil', '2.5', 'SILVA, João', '7']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players.first.dateOfBirth, isNull);
+      expect(result.teams.first.players.first.gender,
+          equals(PlayerGender.unspecified));
+    });
+
+    test('título da aba é irrelevante: aba "Foo" com coluna de equipe', () {
+      // O nome da aba ("Foo") não tem nada a ver com equipe — o que vale
+      // é a coluna `country`. Deve virar Brazil + Argentina.
+      final SheetData sheet = _sheet('Foo Bar 123', <List<String?>>[
+        _row(<String?>['country', 'class', 'full_name', 'number']),
+        _row(<String?>['Brazil', '2.5', 'SILVA, João', '7']),
+        _row(<String?>['Argentina', '1.5', 'LOPEZ, Carlos', '4']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.map((Team t) => t.teamName).toSet(),
+          equals(<String>{'Brazil', 'Argentina'}));
+    });
+
+    test('aba "todas as equipes" vence: demais abas são ignoradas', () {
+      // Workbook com a planilha real (coluna de equipe) + uma aba de
+      // instruções sem coluna de equipe. A de instruções é ignorada.
+      final SheetData roster = _sheet('Roster', <List<String?>>[
+        _row(<String?>['country', 'class', 'full_name', 'number']),
+        _row(<String?>['Brazil', '2.5', 'SILVA, João', '7']),
+        _row(<String?>['Argentina', '1.5', 'LOPEZ, Carlos', '4']),
+      ]);
+      final SheetData notes = _sheet('Instructions', <List<String?>>[
+        _row(<String?>['note']),
+        _row(<String?>['Fill one row per athlete.']),
+        _row(<String?>['Columns can be in any order.']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[roster, notes]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.map((Team t) => t.teamName).toSet(),
+          equals(<String>{'Brazil', 'Argentina'}));
+    });
+
+    test('múltiplas abas com coluna de equipe são combinadas', () {
+      final SheetData groupA = _sheet('Group A', <List<String?>>[
+        _row(<String?>['country', 'class', 'full_name', 'number']),
+        _row(<String?>['Brazil', '2.5', 'SILVA, João', '7']),
+        _row(<String?>['Argentina', '1.5', 'LOPEZ, Carlos', '4']),
+      ]);
+      final SheetData groupB = _sheet('Group B', <List<String?>>[
+        _row(<String?>['country', 'class', 'full_name', 'number']),
+        _row(<String?>['Chile', '3.0', 'SOTO, Diego', '9']),
+        _row(<String?>['Colombia', '4.0', 'GOMEZ, Gladys', '14']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[groupA, groupB]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.map((Team t) => t.teamName).toSet(),
+          equals(<String>{'Brazil', 'Argentina', 'Chile', 'Colombia'}));
     });
   });
 }

@@ -9,11 +9,13 @@ enum TemplateKind { singleSheet, perTeam }
 /// ponto de partida na importação.
 ///
 /// Os dois layouts seguem o que o `SpreadsheetParserService` aceita:
-/// - [TemplateKind.singleSheet]: uma única aba `Players` com todas as
-///   colunas (`competition_name`, `team_name`, `shirt_number`, `surname`,
-///   `first_name`, `player_class`, `dob`, `gender`).
-/// - [TemplateKind.perTeam]: uma aba por equipe com colunas mínimas
-///   (mesmas colunas, sem o `team_name` — derivado do nome da aba).
+/// - [TemplateKind.singleSheet]: uma única aba `Players` com as colunas
+///   `competition`, `team_name`, `class`, `name`, `number`, `dob`, `gender`.
+/// - [TemplateKind.perTeam]: uma aba por equipe sem `team_name` (derivado
+///   do nome da aba).
+///
+/// `name` é um campo único (nome completo). `dob` e `gender` são opcionais.
+/// As colunas já saem com largura ajustada ao conteúdo de exemplo.
 ///
 /// Ambas vêm **pré-preenchidas** com 16 equipes (8 países × 2 gêneros)
 /// e 12 atletas por equipe, distribuídos com classes funcionais oficiais
@@ -25,26 +27,45 @@ class TemplateGeneratorService {
 
   /// Colunas do modelo de aba única.
   static const List<String> singleSheetHeaders = <String>[
-    'competition_name',
+    'competition',
     'team_name',
-    'shirt_number',
-    'surname',
-    'first_name',
-    'player_class',
+    'class',
+    'name',
+    'number',
     'dob',
     'gender',
   ];
 
-  /// Colunas do modelo de uma aba por equipe.
+  /// Colunas do modelo de uma aba por equipe (sem `team_name`).
   static const List<String> perTeamHeaders = <String>[
-    'competition_name',
-    'shirt_number',
-    'surname',
-    'first_name',
-    'player_class',
+    'competition',
+    'class',
+    'name',
+    'number',
     'dob',
     'gender',
   ];
+
+  /// Largura (em "caracteres" do Excel) por coluna, ajustada ao conteúdo
+  /// de exemplo para a planilha já abrir com as colunas expandidas.
+  static double _columnWidthFor(String header) {
+    switch (header) {
+      case 'team_name':
+        return 26; // "United States of America"
+      case 'name':
+        return 24; // nome completo
+      case 'competition':
+        return 22; // "IWBF America's Cup"
+      case 'dob':
+        return 13; // "15/04/1995"
+      case 'gender':
+        return 11;
+      case 'class':
+      case 'number':
+      default:
+        return 11;
+    }
+  }
 
   /// Nome da aba no modelo de aba única.
   static const String singleSheetTabName = 'Players';
@@ -97,14 +118,14 @@ class TemplateGeneratorService {
       excel.appendRow(singleSheetTabName, <xlsx.CellValue?>[
         xlsx.TextCellValue(sampleCompetition),
         xlsx.TextCellValue(row.teamName),
-        xlsx.IntCellValue(row.shirt),
-        xlsx.TextCellValue(row.surname),
-        xlsx.TextCellValue(row.firstName),
         xlsx.TextCellValue(_formatPlayerClass(row.playerClass)),
+        xlsx.TextCellValue(row.fullName),
+        xlsx.IntCellValue(row.shirt),
         xlsx.TextCellValue(_formatDob(row.dob)),
         xlsx.TextCellValue(row.gender),
       ]);
     }
+    _applyColumnWidths(excel, singleSheetTabName, singleSheetHeaders);
 
     return _encode(excel);
   }
@@ -131,14 +152,14 @@ class TemplateGeneratorService {
       for (final _SampleRow row in rowsByTab[tabName]!) {
         excel.appendRow(tabName, <xlsx.CellValue?>[
           xlsx.TextCellValue(sampleCompetition),
-          xlsx.IntCellValue(row.shirt),
-          xlsx.TextCellValue(row.surname),
-          xlsx.TextCellValue(row.firstName),
           xlsx.TextCellValue(_formatPlayerClass(row.playerClass)),
+          xlsx.TextCellValue(row.fullName),
+          xlsx.IntCellValue(row.shirt),
           xlsx.TextCellValue(_formatDob(row.dob)),
           xlsx.TextCellValue(row.gender),
         ]);
       }
+      _applyColumnWidths(excel, tabName, perTeamHeaders);
     }
 
     if (defaultSheet != null && !rowsByTab.containsKey(defaultSheet)) {
@@ -154,6 +175,16 @@ class TemplateGeneratorService {
       throw StateError('Failed to encode generated .xlsx template.');
     }
     return Uint8List.fromList(bytes);
+  }
+
+  /// Define a largura de cada coluna conforme [_columnWidthFor], deixando
+  /// a planilha pronta para uso sem o usuário ter que expandir colunas.
+  void _applyColumnWidths(
+      xlsx.Excel excel, String sheetName, List<String> headers) {
+    final xlsx.Sheet sheet = excel[sheetName];
+    for (int c = 0; c < headers.length; c++) {
+      sheet.setColumnWidth(c, _columnWidthFor(headers[c]));
+    }
   }
 
   static String _formatPlayerClass(double value) {
@@ -229,6 +260,18 @@ class _SampleRow {
   final String firstName;
   final double playerClass;
   final String dob;
+
+  /// Nome para a coluna `name` no formato "SOBRENOME, Nome"
+  /// (ex.: "LOPEZ, Carlos"). É o formato esperado pelo app: o chip da
+  /// quadra mostra só a parte antes da vírgula (o sobrenome).
+  String get fullName =>
+      '${surname.toUpperCase()}, ${_titleCaseWord(firstName)}';
+}
+
+/// "LOPEZ" -> "Lopez". Usado só para montar os nomes de exemplo.
+String _titleCaseWord(String word) {
+  if (word.isEmpty) return word;
+  return word[0].toUpperCase() + word.substring(1).toLowerCase();
 }
 
 class _SampleTeam {

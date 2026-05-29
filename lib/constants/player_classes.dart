@@ -41,3 +41,26 @@ double? parsePlayerClass(String? raw) {
   if (!isAcceptedPlayerClass(parsed)) return null;
   return parsed;
 }
+
+/// Recupera uma classe funcional que o Excel autoformatou como data.
+///
+/// Ao digitar `2.5`, o Excel costuma converter para uma data (ex.:
+/// `2026-05-02` ou `2026-02-05`, conforme o locale). Como o leitor de
+/// células normaliza datas para `YYYY-MM-DD`, aqui extraímos mês/dia e
+/// testamos as duas ordens possíveis (`dia + mês/10` e `mês + dia/10`),
+/// aceitando a primeira que resultar numa classe válida.
+///
+/// Retorna `null` quando o texto não é uma data nem reconstrói uma classe
+/// aceita — deixando o fluxo normal reportar a classe inválida.
+double? classFromDateLikeString(String? raw) {
+  if (raw == null) return null;
+  final RegExp iso = RegExp(r'^\d{4}-(\d{1,2})-(\d{1,2})$');
+  final RegExpMatch? m = iso.firstMatch(raw.trim());
+  if (m == null) return null;
+  final int month = int.parse(m.group(1)!);
+  final int day = int.parse(m.group(2)!);
+  for (final double candidate in <double>[day + month / 10, month + day / 10]) {
+    if (isAcceptedPlayerClass(candidate)) return candidate;
+  }
+  return null;
+}

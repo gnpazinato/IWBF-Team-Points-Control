@@ -549,6 +549,84 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
+### 0040 - 2026-05-29 - Restaurar a PLANILHA INTEIRA na tela inicial (v1.3.0)
+
+Contexto:
+
+- Ao fim de uma partida o usuario costuma fechar o app ou voltar varias telas ate a inicial. Pedido: quando o app e **encerrado**, sofre **crash** ou volta do **segundo plano** (ex.: no dia seguinte), a tela inicial deve perguntar "começar do zero" ou "carregar a planilha anterior". Ja existia essa pergunta, mas ela restaurava apenas o `MatchState` (as **2 equipes** da ultima partida). O usuario quer carregar a planilha **INTEIRA** (todas as equipes/atletas da ultima planilha usada — a mais recente, caso varias tenham sido usadas).
+- **Excecao:** se o usuario esta **numa partida**, minimiza e volta, deve cair **exatamente na tela da partida** (sem pergunta). A pergunta so reaparece quando o usuario **sai da partida** (voltar de pagina / crash / encerrar) e volta a Home.
+
+Decisoes do usuario (perguntadas antes de codar):
+
+- **Destino do restore:** abre o **Resumo da planilha** (Validation Summary) com TODAS as equipes — usuario revisa/edita e segue para o Match Setup. (Nao vai direto ao Match Setup.)
+- **Resume fora da partida:** so refaz a pergunta **se ja estiver na Home**. Em Match Setup / Resumo, voltar do segundo plano **nao interrompe** (fica onde estava). Isso dispensou rastrear rotas / mexer no `main.dart`.
+
+Entregue:
+
+- **`lib/models/saved_roster.dart` (novo):** `SavedRoster { teams, competitionName }` com `toJson`/`fromJson` (reusa `Team.toJson`). Persiste a planilha inteira, separada do `MatchState`.
+- **`CacheService`:** nova chave `iwbf.roster.v1` + `saveRoster`/`loadRoster`/`hasRoster`/`clearRoster`. `clear()` agora limpa **roster E match state** (ambos os callers — "Start from Scratch" e "Load New Spreadsheet" — querem tela limpa).
+- **`ValidationSummaryScreen._continue`:** salva `SavedRoster(_teams, competitionName)` no cache (planilha validada/editada = "ultima planilha usada") antes de ir ao Match Setup. Navigator capturado antes do await (evita `use_build_context_synchronously`).
+- **`LoadSpreadsheetScreen`:** pergunta passa a checar `hasRoster()` (nao `hasMatchState()`); "Load Previous Spreadsheet" reconstroi um `SpreadsheetParseResult` limpo (sem issues) da planilha salva e abre o **Resumo** com todas as equipes. Vira `WidgetsBindingObserver`: em `resumed`, se a Home esta no topo (`ModalRoute.isCurrent`), reseta o guard e refaz a pergunta; senao nao faz nada (partida/setup/resumo intactos). Textos do dialog atualizados ("Load Previous Spreadsheet" / "...all teams and players...").
+- **Versao:** `pubspec.yaml` 1.2.0+3 -> **1.3.0+4**; `kAppVersion` 1.2.0 -> **1.3.0**.
+- **Nota:** o `MatchSetupScreen(restored:)` continua existindo (usado em testes), mas a Home nao usa mais esse caminho. Apos crash/kill o app NAO volta a partida exata (por design, conforme pedido): volta a Home e oferece a planilha inteira.
+
+Arquivos alterados: `lib/models/saved_roster.dart` (novo), `lib/services/cache_service.dart`, `lib/screens/{validation_summary,load_spreadsheet}_screen.dart`, `lib/constants/app_version.dart`, `pubspec.yaml`, `test/services/cache_service_test.dart` (grupo roster), `test/screens/load_spreadsheet_screen_test.dart` (seed por roster; restore -> Resumo com 3 equipes incl. Canada; 2 testes de ciclo de vida resume on/off-Home).
+
+Testes: validados no CI (Flutter ausente no Codespace). Novos: roster save/load/has/clear + clear() limpa ambos; dialog gateado por roster; "Load Previous Spreadsheet" abre Resumo com Brazil+Argentina+Canada (prova planilha inteira); resume na Home refaz a pergunta; resume fora da Home (no Resumo) nao interrompe.
+
+Proximo passo recomendado:
+
+- Usuario testa no preview/APK: encerrar/crashar/minimizar e confirmar (a) pergunta na Home, (b) restore traz a planilha inteira, (c) minimizar durante a partida volta a partida. Se aprovado, segue no fluxo do PR `claude/visual-modernization -> main` (**nao mergear sozinho**).
+
+### 0039 - 2026-05-27 - Parser tolerante a nomes de coluna (aliases amplos + planilha real)
+
+Contexto:
+
+- O usuario anexou uma planilha real estilo IWBF (`COMPETITION, COUNTRY, CLASS, FULL NAME, NUMBER, FIRST NAME, LAST NAME, DOB, ROLE, CS`) e pediu que o app interprete colunas com titulos **levemente diferentes** pela informacao que carregam, nao pelo titulo exato. Obrigatorias minimas: `team_name`, `class`, `full_name`, `number`. `dob`/`gender` ausentes **nao** bloqueiam (ficam em branco). Colunas irrelevantes (`role`, `cs`/`class_status`, `first_name`/`last_name` quando ha `full_name`) devem ser **ignoradas**.
+
+Entregue (em `lib/services/spreadsheet_parser_service.dart`):
+
+- **Aliases ampliados** no mapa `_columnAliases` (tokens ja normalizados): `team_name` agora aceita `country`/`nation`/`nationality`/`pais`/`equipe`...; `class` aceita `sport_class`/`classification`/`functional_class`/`classe`...; `competition` aceita `tournament`/`event`/`championship`/`torneio`...; `name` aceita `full_name`/`player`/`athlete`/`nome`...; `number` aceita `jersey`/`bib`/`numero`...; `dob` aceita `birthday`/`born`/`nascimento`... O importante e a informacao da coluna, nao o titulo.
+- **Par legado de nome** (`surname`/`first_name`) virou coluna logica com aliases proprios (`last_name`/`family_name`/`sobrenome`, `given_name`/`forename`/`nome_proprio`). `_hasLogicalColumn` e `_buildPlayer` agora resolvem via `_columnIndex` (antes liam o token cru `surname`/`first_name`).
+- **Fallback de nome unificado:** quando NAO ha coluna de nome completo, junta sobrenome + nome no formato dos templates **"SOBRENOME, Nome"** (`_composeName`, ex.: `SILVA, João`) — antes era `firstName surname`.
+- **Roteamento dirigido por CONTEUDO (titulo da aba e irrelevante):** o antigo `_parseSingleSheet(SheetData)` virou `_parseTeamColumnSheets(List<SheetData>)`. Regra nova em `parseSheets`: abas que tem coluna de equipe (`team_name`/`country`/...) listam equipes por linha — sao a fonte de verdade; havendo ao menos uma, **todas** elas sao combinadas (mesma equipe espalhada em abas distintas mescla por id) e as **demais abas sao ignoradas** (resumos, instrucoes). So quando NENHUMA aba tem coluna de equipe e que caimos no modelo "uma aba por equipe" (`_parseMultiSheet`, nome = titulo da aba). Removido o special-case do nome "Players" (agora subsumido pela deteccao por conteudo). Cobre: planilha anexada (aba generica com varios paises), aba com titulo aleatorio + coluna `country`, master + aba de instrucoes ignorada, e multiplas abas com coluna de equipe combinadas.
+
+Arquivos alterados: `lib/services/spreadsheet_parser_service.dart`, `test/services/spreadsheet_parser_service_test.dart` (novo grupo "aliases de coluna (entrada 0039)" + 2 assertions de nome atualizadas para o formato "SOBRENOME, Nome").
+
+Testes: validados no CI a cada push (Flutter ausente no Codespace). Novos casos: planilha real IWBF (COUNTRY/FULL NAME + colunas ignoradas, 3 paises -> 3 equipes), aliases `country/classification/tournament/player_name/jersey_number`, reconstrucao `SOBRENOME, Nome` de `last_name`+`first_name`, obrigatorias minimas sem dob/gender, titulo de aba irrelevante, aba "todas as equipes" vence (demais ignoradas), multiplas abas combinadas.
+
+Proximo passo recomendado:
+
+- Usuario testa importando a planilha real no preview Web. Se aprovado, segue no fluxo do PR `claude/visual-modernization -> main` (**nao mergear sozinho**).
+
+### 0038 - 2026-05-27 - Modernizacao visual (Fases 1-6) na branch claude/visual-modernization
+
+Contexto:
+
+- O app irmao CBBC (fork deste) recebeu um refinamento visual/UX e ficou mais moderno. O usuario pediu para trazer esse refinamento para o IWBF **sem perder a identidade** (paleta dourada `IwbfColors`, fonte atual, 3 logos IWBF, bandeiras, UI em ingles, regras sem bonificacao, parser/fluxo). Apos analise dos prompts (Antigravity/Claude/Codex) e respostas do usuario, o escopo cresceu alem do visual e incluiu mudancas estruturais aprovadas.
+- **Correcao de estado:** ao contrario do que dizia o CLAUDE.md/log antigos, a `main` JA TEM o app completo (PR #5 mergeado). O trabalho partiu de `main` numa branch nova `claude/visual-modernization`. Flutter NAO esta instalado no Codespace -> toda validacao roda no CI a cada push.
+
+Entregue (cada fase deixou o CI verde):
+
+- **Fase 1 — tema + icone + PWA:** tokens novos em `IwbfColors` (`successGreen`, `warningSurface`, `cardWhite`, `slate50/100/200`); `cardTheme` branco (elevation 1, sombra `0x14000000`, radius 14, borda slate200); `inputDecorationTheme` (fill slate50, foco dourado), `checkboxTheme`/`switchTheme` dourados; raios FilledButton 14 / OutlinedButton 12. Icone do app = logo preto IWBF (gerado com Pillow) em `web/favicon.png`, `web/icons/Icon-{192,512}` + maskable e `android/.../mipmap-*/ic_launcher.png`. `web/manifest.json`/`index.html` com nome humano + cores douradas. `lib/constants/app_version.dart` (`kAppVersion`).
+- **Fase 2 — modelo + parser + templates:** `Player` passa a ter **`name` unico** (substitui surname+firstName; `fromJson` faz back-compat lendo o formato antigo do cache). `dob`/`gender` **opcionais** (dob em branco nao gera issue; invalido vira warning, nao erro). Parser com **aliases de colunas** (formatos antigos continuam abrindo) + **recuperacao de classe "data-like"** (`classFromDateLikeString` em `player_classes.dart` reconstroi a classe que o Excel autoformatou como data, ex. `2026-05-02` -> `2.5`). Templates novos (`competition, team_name, class, name, number, dob, gender`) com **colunas pre-expandidas** (`setColumnWidth`).
+- **Fase 3 — nomes adaptaveis + orientacao:** `_AutoShrinkText` reescrito — encolhe a fonte e, se ainda nao couber, **quebra em ate 2 linhas (nunca reticencias)**; nome completo sempre visivel. Chip da quadra usa `player.name`. **Rotacao so em tablets** (`shortestSide>=600`); celular travado em portrait (`_applyOrientationPreference` em `main.dart`).
+- **Fase 4 — restyle das telas:** home com upload card (circulo + nuvem), card "Reference Templates" com 2 botoes lado a lado e footer com versao; match setup com cards de friso dourado; lineup com placar em `AnimatedContainer` (glow vermelho ao estourar limite, tabular figures), limite de pontos movido para `PopupMenuButton` na AppBar, quadra com borda/sombra, chips e botoes com icones. Telas viraram `SingleChildScrollView` para nao estourar viewport.
+- **Fase 5 — features novas:** **Jersey Color Picker** (cor da camisa por time guardada no `MatchState`, defaults preservam o visual atual; propagada a `PlayerJerseyIcon`/chips/lista) + **edicao completa do roster** na tela de validacao (editar nome, numero, data de nascimento via `showDatePicker`, genero, classe; excluir atleta com confirmacao; renomear/excluir equipe com confirmacao). Restyle do summary: badges (X Teams / Y Players), status pill, issue blocks com barra-acento. Classe invalida destaca o dropdown em `alertRedSurface`.
+- **Fase 6 — polish + docs:** iconografia padronizada para `_outlined` (`warning_amber_outlined`, `file_upload_outlined`; demais ja eram outlined ou intencionalmente solidos como `play_arrow` no CTA). CLAUDE.md/log corrigidos (estado da branch).
+
+Fora de escopo (DESCARTADO):
+
+- **Importacao de PDF (`syncfusion_flutter_pdf`):** avaliada e **descartada pelo usuario em 2026-05-27** — complexa/fragil demais (extracao depende do layout do PDF) + exigiria Community License Syncfusion. O app foca **somente** nas planilhas template ja criadas. Nao ha menção a PDF no codigo nem na UI; nao reabrir sem novo pedido explicito.
+
+Arquivos principais alterados: `lib/theme/iwbf_theme.dart`, `lib/constants/{app_version,player_classes}.dart`, `lib/models/{player,match_state}.dart`, `lib/services/{spreadsheet_parser_service,template_generator_service}.dart`, `lib/main.dart`, `lib/screens/{load_spreadsheet,match_setup,validation_summary,lineup_control,missing_data}_screen.dart`, `lib/widgets/player_jersey_icon.dart`, assets de icone web/android, + testes em lockstep (nome unificado, dob opcional, jersey colors, limite na AppBar, exclusao no roster).
+
+Testes: validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. Preview Web atualizado a cada push em `claude/**` (GH Pages + CF Pages).
+
+Proximo passo recomendado:
+
+- Usuario revisa o preview no navegador (portrait + landscape, desktop + mobile) e o APK no Android (icone IWBF na home). Se aprovado, mergear o PR `claude/visual-modernization -> main` (**nao mergear sozinho**). PDF foi descartado; proximo escopo a definir pelo usuario.
+
 ### 0037 - 2026-05-15 - Encerramento da Fase 5 e preparacao do merge MVP -> main
 
 Resumo:

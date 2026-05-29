@@ -1,12 +1,12 @@
 {
-    "name": "iwbf_team_points_control",
-    "short_name": "iwbf_team_points_control",
+    "name": "IWBF Team Points Control",
+    "short_name": "IWBF Points",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
+    "background_color": "#FAF8F2",
+    "theme_color": "#C9A24A",
     "description": "IWBF Team Points Control",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

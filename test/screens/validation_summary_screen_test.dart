@@ -15,8 +15,7 @@ Player _p(String id, int n, double cls) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: n,
-      surname: 'P$id',
-      firstName: 'First',
+      name: 'First P$id',
       playerClass: cls,
     );
 
@@ -40,8 +39,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Americas Championship'), findsOneWidget);
-    expect(find.text('Teams found: 1'), findsOneWidget);
-    expect(find.text('Players found: 2'), findsOneWidget);
+    expect(find.text('1 Teams'), findsOneWidget);
+    expect(find.text('2 Players'), findsOneWidget);
     expect(find.textContaining('loaded successfully'), findsOneWidget);
   });
 
@@ -124,5 +123,66 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Missing Data'), findsOneWidget);
+  });
+
+  testWidgets('excluir atleta remove a linha e atualiza a contagem',
+      (WidgetTester tester) async {
+    final SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[
+        Team(
+          id: 'team-brazil',
+          teamName: 'Brazil',
+          players: <Player>[_p('p1', 7, 2.5), _p('p2', 9, 4.0)],
+        ),
+      ],
+      issues: const <ParseIssue>[],
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 Players'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('team-tile-team-brazil')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('delete-player-p1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Remove player?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 Players'), findsOneWidget);
+  });
+
+  testWidgets('excluir equipe remove o card e desabilita Continue',
+      (WidgetTester tester) async {
+    final SpreadsheetParseResult result = SpreadsheetParseResult(
+      teams: <Team>[
+        Team(
+          id: 'team-brazil',
+          teamName: 'Brazil',
+          players: <Player>[_p('p1', 7, 2.5)],
+        ),
+      ],
+      issues: const <ParseIssue>[],
+    );
+    await _pump(tester, result);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('team-tile-team-brazil')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('delete-team-team-brazil')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete team?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 Teams'), findsOneWidget);
+    final FilledButton button = tester
+        .widget<FilledButton>(find.byKey(const Key('continue-button')));
+    expect(button.onPressed, isNull);
   });
 }

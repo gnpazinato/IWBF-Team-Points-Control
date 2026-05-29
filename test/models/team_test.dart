@@ -6,8 +6,7 @@ Player _player(String id, int number, double cls) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: number,
-      surname: 'Silva',
-      firstName: 'João',
+      name: 'João Silva',
       playerClass: cls,
     );
 

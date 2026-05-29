@@ -12,8 +12,7 @@ Player _player({
       id: 'team-x::$shirt',
       teamName: 'Team X',
       shirtNumber: shirt,
-      surname: 'Silva',
-      firstName: 'João',
+      name: 'João Silva',
       playerClass: 2.5,
       gender: gender,
     );

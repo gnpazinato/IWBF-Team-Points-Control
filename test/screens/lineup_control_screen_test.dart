@@ -49,13 +49,12 @@ class _FakeWakelock extends WakelockController {
   }
 }
 
-Player _player(String teamId, int shirt, double cls, {String? surname}) =>
+Player _player(String teamId, int shirt, double cls, {String? name}) =>
     Player(
       id: '$teamId::$shirt',
       teamName: teamId,
       shirtNumber: shirt,
-      surname: surname ?? 'Surname$shirt',
-      firstName: 'First',
+      name: name ?? 'Surname$shirt',
       playerClass: cls,
     );
 
@@ -133,15 +132,16 @@ void main() {
       );
 
       expect(find.text('Americas Championship'), findsOneWidget);
-      // Header agora monta Team A / vs / Team B em widgets separados para
-      // intercalar a bandeira de cada pais.
+      // Header monta nome da Team A / vs / Team B em widgets separados para
+      // intercalar a bandeira de cada pais. Os rótulos "Team A"/"Team B"
+      // acima do placar foram removidos (info redundante com os nomes).
       expect(find.text('Brazil'), findsWidgets);
       expect(find.text('Argentina'), findsWidgets);
       expect(find.text('  vs  '), findsOneWidget);
-      expect(find.text('Team A'), findsWidgets);
-      expect(find.text('Team B'), findsWidgets);
       expect(find.text('0.0 / 14.0'), findsNWidgets(2));
-      expect(find.text('Point Limit:'), findsOneWidget);
+      // Point Limit agora vive num menu (PopupMenuButton) na AppBar.
+      expect(find.byKey(const Key('lineup-point-limit-dropdown')),
+          findsOneWidget);
     });
 
     testWidgets('mudar Point Limit no dropdown re-avalia alerta',
@@ -244,9 +244,9 @@ void main() {
 
       await _tapPlayer(tester, 'team-brazil', 1);
 
-      // O chip da quadra agora usa `PlayerJerseyIcon` + SURNAME (em caixa
-      // alta) + classe. A lista lateral mostra "SURNAME1, First" — o
-      // sobrenome puro "SURNAME1" só aparece no chip da quadra.
+      // O chip da quadra usa `PlayerJerseyIcon` + nome em caixa alta +
+      // classe. A lista lateral mostra o nome ("Surname1"); a versão em
+      // caixa alta "SURNAME1" só aparece no chip da quadra.
       expect(find.text('SURNAME1'), findsOneWidget);
       // Hint da Team A some quando há ao menos 1 jogador.
       expect(find.text('Tap players in Team A list'), findsNothing);
@@ -660,7 +660,7 @@ void main() {
   });
 
   group('LineupControlScreen — wakelock + cache lifecycle', () {
-    testWidgets('habilita wakelock no init e desabilita no dispose',
+    testWidgets('habilita wakelock no init e NÃO desabilita no dispose',
         (WidgetTester tester) async {
       final _FakeWakelock wakelock = _FakeWakelock();
       tester.view.physicalSize = const Size(1200, 900);
@@ -683,11 +683,12 @@ void main() {
       expect(wakelock.enableCount, 1);
       expect(wakelock.disableCount, 0);
 
-      // Substitui a árvore: dispose é chamado.
+      // Substitui a árvore: dispose é chamado, mas o wakelock NÃO é
+      // desligado — a tela fica acordada em todo o app (ligado no main).
       await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
       await tester.pumpAndSettle();
 
-      expect(wakelock.disableCount, 1);
+      expect(wakelock.disableCount, 0);
     });
 
     testWidgets('persiste o estado no cache no init',
@@ -806,12 +807,12 @@ void main() {
           find.byKey(const Key('player-card-team-brazil::1'));
       expect(card, findsOneWidget);
 
-      // displayName completo do Player(surname: "Surname1", firstName: "First")
-      // = "SURNAME1, First" (surname vira uppercase em Player.displayName).
+      // displayName agora e o campo unico `name` ("Surname1"). Mesmo
+      // encolhido ou com ellipsis, o Text do card mantem o `data` inteiro.
       expect(
         find.descendant(
           of: card,
-          matching: find.text('SURNAME1, First'),
+          matching: find.text('Surname1'),
         ),
         findsOneWidget,
         reason: 'displayName nao pode sumir do card lateral. '

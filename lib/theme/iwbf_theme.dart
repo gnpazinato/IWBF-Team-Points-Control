@@ -35,6 +35,20 @@ abstract class IwbfColors {
 
   /// Fundo levemente avermelhado quando o limite é excedido.
   static const Color alertRedSurface = Color(0xFFFDECEC);
+
+  /// Verde institucional de sucesso (validação sem erros).
+  static const Color successGreen = Color(0xFF1B8A3A);
+
+  /// Fundo translúcido amarelado para blocos de aviso (warnings).
+  static const Color warningSurface = Color(0xFFFFF7E0);
+
+  /// Branco puro para superfícies de card no visual moderno.
+  static const Color cardWhite = Color(0xFFFFFFFF);
+
+  /// Escala neutra para bordas, divisores e superfícies sutis.
+  static const Color slate50 = Color(0xFFF8FAFC);
+  static const Color slate100 = Color(0xFFF1F5F9);
+  static const Color slate200 = Color(0xFFE6E6E0);
 }
 
 /// Tema Material 3 do app, com Material 3, paleta IWBF e densidades
@@ -85,7 +99,7 @@ ThemeData buildIwbfTheme() {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
     ),
@@ -96,7 +110,7 @@ ThemeData buildIwbfTheme() {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     ),
@@ -112,14 +126,65 @@ ThemeData buildIwbfTheme() {
       ),
     ),
     cardTheme: CardThemeData(
-      color: IwbfColors.offWhiteElevated,
-      elevation: 0,
+      color: IwbfColors.cardWhite,
+      elevation: 1,
+      shadowColor: const Color(0x14000000),
       surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Color(0x22000000)),
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: IwbfColors.slate200),
       ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: IwbfColors.slate50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: IwbfColors.slate200),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: IwbfColors.slate200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: IwbfColors.goldDeep, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: IwbfColors.alertRed, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: IwbfColors.alertRed, width: 1.5),
+      ),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.selected)) {
+          return IwbfColors.gold;
+        }
+        return Colors.transparent;
+      }),
+      checkColor: const WidgetStatePropertyAll<Color>(IwbfColors.textPrimary),
+      side: const BorderSide(color: IwbfColors.goldDeep, width: 1.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.selected)) {
+          return IwbfColors.gold;
+        }
+        return IwbfColors.offWhite;
+      }),
+      trackColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+        if (states.contains(WidgetState.selected)) {
+          return IwbfColors.goldSoft;
+        }
+        return IwbfColors.slate200;
+      }),
     ),
     dividerTheme: const DividerThemeData(
       color: Color(0x1A000000),

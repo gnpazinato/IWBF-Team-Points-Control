@@ -26,14 +26,23 @@ String _genderToString(PlayerGender gender) {
   }
 }
 
+/// Lê o nome do JSON aceitando o formato novo (`name`) e o legado
+/// (`surname` + `firstName`) gravado em caches antigos.
+String _nameFromJson(Map<String, dynamic> json) {
+  final String? name = (json['name'] as String?)?.trim();
+  if (name != null && name.isNotEmpty) return name;
+  final String surname = (json['surname'] as String?)?.trim() ?? '';
+  final String firstName = (json['firstName'] as String?)?.trim() ?? '';
+  return '$firstName $surname'.trim();
+}
+
 /// Atleta importado da planilha de referência.
 class Player {
   Player({
     required this.id,
     required this.teamName,
     required this.shirtNumber,
-    required this.surname,
-    required this.firstName,
+    required this.name,
     required this.playerClass,
     this.dateOfBirth,
     this.gender = PlayerGender.unspecified,
@@ -42,14 +51,15 @@ class Player {
   final String id;
   final String teamName;
   final int shirtNumber;
-  final String surname;
-  final String firstName;
+
+  /// Nome completo do atleta (campo único; substitui surname + firstName).
+  final String name;
   final double playerClass;
   final DateTime? dateOfBirth;
   final PlayerGender gender;
 
-  /// Sobrenome em caixa alta + primeiro nome, conforme padrão IWBF.
-  String get displayName => '${surname.toUpperCase()}, $firstName';
+  /// Nome exibido (igual ao campo único `name`).
+  String get displayName => name;
 
   bool get hasValidClass => isAcceptedPlayerClass(playerClass);
 
@@ -57,8 +67,7 @@ class Player {
     String? id,
     String? teamName,
     int? shirtNumber,
-    String? surname,
-    String? firstName,
+    String? name,
     double? playerClass,
     DateTime? dateOfBirth,
     PlayerGender? gender,
@@ -67,8 +76,7 @@ class Player {
       id: id ?? this.id,
       teamName: teamName ?? this.teamName,
       shirtNumber: shirtNumber ?? this.shirtNumber,
-      surname: surname ?? this.surname,
-      firstName: firstName ?? this.firstName,
+      name: name ?? this.name,
       playerClass: playerClass ?? this.playerClass,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
@@ -79,8 +87,7 @@ class Player {
         'id': id,
         'teamName': teamName,
         'shirtNumber': shirtNumber,
-        'surname': surname,
-        'firstName': firstName,
+        'name': name,
         'playerClass': playerClass,
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'gender': _genderToString(gender),
@@ -91,8 +98,7 @@ class Player {
       id: json['id'] as String,
       teamName: json['teamName'] as String,
       shirtNumber: json['shirtNumber'] as int,
-      surname: json['surname'] as String,
-      firstName: json['firstName'] as String,
+      name: _nameFromJson(json),
       playerClass: (json['playerClass'] as num).toDouble(),
       dateOfBirth: (json['dateOfBirth'] as String?) == null
           ? null
@@ -112,5 +118,5 @@ class Player {
 
   @override
   String toString() =>
-      'Player(id: $id, $displayName, #$shirtNumber, class $playerClass)';
+      'Player(id: $id, $name, #$shirtNumber, class $playerClass)';
 }
