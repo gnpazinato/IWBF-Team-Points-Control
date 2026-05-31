@@ -10,11 +10,16 @@ fs.mkdirSync(outDir, { recursive: true });
 
 const exe = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch({ executablePath: exe });
-const page = await browser.newPage({ deviceScaleFactor: 2, viewport: { width: 1120, height: 1360 } });
+const page = await browser.newPage({ deviceScaleFactor: 2, viewport: { width: 1120, height: 2600 } });
 await page.goto('file://' + path.join(__dirname, 'app.html'));
 // wait for fonts (Roboto, Material Icons) to load
 await page.evaluate(() => document.fonts.ready);
 await page.waitForTimeout(600);
+
+// export the full sample roster for the docx builder
+const roster = await page.evaluate(() => window.__ROSTER);
+fs.writeFileSync(path.join(outDir, '..', 'roster.json'), JSON.stringify(roster, null, 1));
+
 
 const ids = await page.evaluate(() => window.__SCREEN_IDS);
 for (const id of ids) {

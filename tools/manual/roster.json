@@ -1,0 +1,1458 @@
+[
+ {
+  "team": "Argentina - Men",
+  "flag": "🇦🇷",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "LOPEZ, Carlos",
+    "cls": "1.0",
+    "dob": "01/01/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "RODRIGUEZ, Juan",
+    "cls": "1.5",
+    "dob": "04/06/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "GARCIA, Pablo",
+    "cls": "2.0",
+    "dob": "07/11/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "MARTINEZ, Diego",
+    "cls": "2.5",
+    "dob": "10/04/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "GONZALEZ, Sebastian",
+    "cls": "3.0",
+    "dob": "13/09/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "HERNANDEZ, Lucas",
+    "cls": "3.5",
+    "dob": "16/02/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "DIAZ, Matias",
+    "cls": "4.0",
+    "dob": "19/07/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "RAMIREZ, Nicolas",
+    "cls": "4.0",
+    "dob": "22/12/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "SANCHEZ, Joaquin",
+    "cls": "4.0",
+    "dob": "25/05/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "TORRES, Tomas",
+    "cls": "4.5",
+    "dob": "01/10/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "ROMERO, Bautista",
+    "cls": "4.5",
+    "dob": "04/03/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "SUAREZ, Santiago",
+    "cls": "4.5",
+    "dob": "07/08/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Argentina - Women",
+  "flag": "🇦🇷",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "FERNANDEZ, Sofia",
+    "cls": "1.0",
+    "dob": "08/04/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "PEREZ, Maria",
+    "cls": "1.5",
+    "dob": "11/09/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "GOMEZ, Lucia",
+    "cls": "2.0",
+    "dob": "14/02/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "MORENO, Camila",
+    "cls": "2.5",
+    "dob": "17/07/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "CASTRO, Valentina",
+    "cls": "3.0",
+    "dob": "20/12/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "ALVAREZ, Catalina",
+    "cls": "3.5",
+    "dob": "23/05/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "JIMENEZ, Martina",
+    "cls": "4.0",
+    "dob": "26/10/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "RUIZ, Julieta",
+    "cls": "4.0",
+    "dob": "02/03/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "VARGAS, Florencia",
+    "cls": "4.0",
+    "dob": "05/08/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "AGUIRRE, Agustina",
+    "cls": "4.5",
+    "dob": "08/01/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "ROJAS, Renata",
+    "cls": "4.5",
+    "dob": "11/06/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "CABRERA, Mia",
+    "cls": "4.5",
+    "dob": "14/11/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "Brazil - Men",
+  "flag": "🇧🇷",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "SILVA, João",
+    "cls": "1.0",
+    "dob": "15/07/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "SANTOS, Pedro",
+    "cls": "1.5",
+    "dob": "18/12/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "SOUZA, Lucas",
+    "cls": "2.0",
+    "dob": "21/05/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "OLIVEIRA, Gabriel",
+    "cls": "2.5",
+    "dob": "24/10/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "PEREIRA, Matheus",
+    "cls": "3.0",
+    "dob": "27/03/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "LIMA, Rafael",
+    "cls": "3.5",
+    "dob": "03/08/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "COSTA, Bruno",
+    "cls": "4.0",
+    "dob": "06/01/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "FERREIRA, Felipe",
+    "cls": "4.0",
+    "dob": "09/06/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "RODRIGUES, Thiago",
+    "cls": "4.0",
+    "dob": "12/11/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "ALMEIDA, Gustavo",
+    "cls": "4.5",
+    "dob": "15/04/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "CARVALHO, Daniel",
+    "cls": "4.5",
+    "dob": "18/09/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "GOMES, Leonardo",
+    "cls": "4.5",
+    "dob": "21/02/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Brazil - Women",
+  "flag": "🇧🇷",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "SOUZA, Mariana",
+    "cls": "1.0",
+    "dob": "22/10/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "RIBEIRO, Ana",
+    "cls": "1.5",
+    "dob": "25/03/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "ALVES, Beatriz",
+    "cls": "2.0",
+    "dob": "01/08/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "MARTINS, Camila",
+    "cls": "2.5",
+    "dob": "04/01/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "BARBOSA, Larissa",
+    "cls": "3.0",
+    "dob": "07/06/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "ROCHA, Juliana",
+    "cls": "3.5",
+    "dob": "10/11/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "DIAS, Carolina",
+    "cls": "4.0",
+    "dob": "13/04/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "NUNES, Fernanda",
+    "cls": "4.0",
+    "dob": "16/09/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "CARDOSO, Isabela",
+    "cls": "4.0",
+    "dob": "19/02/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "TEIXEIRA, Letícia",
+    "cls": "4.5",
+    "dob": "22/07/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "PINTO, Bruna",
+    "cls": "4.5",
+    "dob": "25/12/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "MENDES, Amanda",
+    "cls": "4.5",
+    "dob": "01/05/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "Canada - Men",
+  "flag": "🇨🇦",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "SMITH, James",
+    "cls": "1.0",
+    "dob": "02/01/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "WILSON, Liam",
+    "cls": "1.5",
+    "dob": "05/06/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "TREMBLAY, Noah",
+    "cls": "2.0",
+    "dob": "08/11/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "ROY, William",
+    "cls": "2.5",
+    "dob": "11/04/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "MACDONALD, Olivier",
+    "cls": "3.0",
+    "dob": "14/09/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "BOUCHARD, Hugo",
+    "cls": "3.5",
+    "dob": "17/02/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "THOMPSON, Ethan",
+    "cls": "4.0",
+    "dob": "20/07/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "ANDERSON, Lucas",
+    "cls": "4.0",
+    "dob": "23/12/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "WILLIAMS, Benjamin",
+    "cls": "4.0",
+    "dob": "26/05/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "BROWN, Alexander",
+    "cls": "4.5",
+    "dob": "02/10/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "DAVIS, Mason",
+    "cls": "4.5",
+    "dob": "05/03/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "TAYLOR, Felix",
+    "cls": "4.5",
+    "dob": "08/08/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Canada - Women",
+  "flag": "🇨🇦",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "MARTIN, Emma",
+    "cls": "1.0",
+    "dob": "09/04/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "GAGNON, Olivia",
+    "cls": "1.5",
+    "dob": "12/09/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "CLARK, Charlotte",
+    "cls": "2.0",
+    "dob": "15/02/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "LEWIS, Amelia",
+    "cls": "2.5",
+    "dob": "18/07/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "WALKER, Sophia",
+    "cls": "3.0",
+    "dob": "21/12/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "YOUNG, Léa",
+    "cls": "3.5",
+    "dob": "24/05/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "BELANGER, Chloé",
+    "cls": "4.0",
+    "dob": "27/10/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "WHITE, Hannah",
+    "cls": "4.0",
+    "dob": "03/03/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "HARRIS, Madison",
+    "cls": "4.0",
+    "dob": "06/08/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "LEE, Avery",
+    "cls": "4.5",
+    "dob": "09/01/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "NELSON, Isla",
+    "cls": "4.5",
+    "dob": "12/06/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "MORIN, Zoé",
+    "cls": "4.5",
+    "dob": "15/11/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "Chile - Men",
+  "flag": "🇨🇱",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "MUNOZ, Benjamin",
+    "cls": "1.0",
+    "dob": "16/07/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "GONZALEZ, Vicente",
+    "cls": "1.5",
+    "dob": "19/12/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "ROJAS, Maximiliano",
+    "cls": "2.0",
+    "dob": "22/05/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "DIAZ, Cristobal",
+    "cls": "2.5",
+    "dob": "25/10/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "SOTO, Felipe",
+    "cls": "3.0",
+    "dob": "01/03/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "CONTRERAS, Joaquin",
+    "cls": "3.5",
+    "dob": "04/08/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "SILVA, Agustin",
+    "cls": "4.0",
+    "dob": "07/01/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "SEPULVEDA, Tomas",
+    "cls": "4.0",
+    "dob": "10/06/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "REYES, Sebastian",
+    "cls": "4.0",
+    "dob": "13/11/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "LOPEZ, Martin",
+    "cls": "4.5",
+    "dob": "16/04/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "CASTRO, Bastian",
+    "cls": "4.5",
+    "dob": "19/09/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "TAPIA, Ignacio",
+    "cls": "4.5",
+    "dob": "22/02/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Chile - Women",
+  "flag": "🇨🇱",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "NAVARRO, Antonella",
+    "cls": "1.0",
+    "dob": "23/10/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "FUENTES, Florencia",
+    "cls": "1.5",
+    "dob": "26/03/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "GUTIERREZ, Isidora",
+    "cls": "2.0",
+    "dob": "02/08/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "CARRASCO, Javiera",
+    "cls": "2.5",
+    "dob": "05/01/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "MIRANDA, Catalina",
+    "cls": "3.0",
+    "dob": "08/06/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "ESPINOZA, Constanza",
+    "cls": "3.5",
+    "dob": "11/11/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "BRAVO, Antonia",
+    "cls": "4.0",
+    "dob": "14/04/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "CORTES, Trinidad",
+    "cls": "4.0",
+    "dob": "17/09/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "PINO, Emilia",
+    "cls": "4.0",
+    "dob": "20/02/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "AGUILAR, Amanda",
+    "cls": "4.5",
+    "dob": "23/07/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "PARRA, Renata",
+    "cls": "4.5",
+    "dob": "26/12/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "TAPIA, Magdalena",
+    "cls": "4.5",
+    "dob": "02/05/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "Colombia - Men",
+  "flag": "🇨🇴",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "GOMEZ, Santiago",
+    "cls": "1.0",
+    "dob": "03/01/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "HERRERA, Sebastian",
+    "cls": "1.5",
+    "dob": "06/06/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "CASTILLO, Mateo",
+    "cls": "2.0",
+    "dob": "09/11/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "OSPINA, Samuel",
+    "cls": "2.5",
+    "dob": "12/04/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "CARDONA, Daniel",
+    "cls": "3.0",
+    "dob": "15/09/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "QUINTERO, Andres",
+    "cls": "3.5",
+    "dob": "18/02/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "OCHOA, Juan",
+    "cls": "4.0",
+    "dob": "21/07/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "VARGAS, Esteban",
+    "cls": "4.0",
+    "dob": "24/12/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "CASTANEDA, Camilo",
+    "cls": "4.0",
+    "dob": "27/05/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "GIRALDO, Nicolas",
+    "cls": "4.5",
+    "dob": "03/10/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "JARAMILLO, Diego",
+    "cls": "4.5",
+    "dob": "06/03/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "PALACIO, Emilio",
+    "cls": "4.5",
+    "dob": "09/08/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Colombia - Women",
+  "flag": "🇨🇴",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "RESTREPO, Isabella",
+    "cls": "1.0",
+    "dob": "10/04/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "OSORIO, Mariana",
+    "cls": "1.5",
+    "dob": "13/09/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "ARANGO, Valeria",
+    "cls": "2.0",
+    "dob": "16/02/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "ZAPATA, Daniela",
+    "cls": "2.5",
+    "dob": "19/07/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "BETANCUR, Sara",
+    "cls": "3.0",
+    "dob": "22/12/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "MUNERA, Salome",
+    "cls": "3.5",
+    "dob": "25/05/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "MEJIA, Natalia",
+    "cls": "4.0",
+    "dob": "01/10/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "VELASQUEZ, Manuela",
+    "cls": "4.0",
+    "dob": "04/03/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "ESCOBAR, Antonia",
+    "cls": "4.0",
+    "dob": "07/08/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "GAVIRIA, Gabriela",
+    "cls": "4.5",
+    "dob": "10/01/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "POSADA, Mariangel",
+    "cls": "4.5",
+    "dob": "13/06/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "TORO, Luciana",
+    "cls": "4.5",
+    "dob": "16/11/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "Mexico - Men",
+  "flag": "🇲🇽",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "HERNANDEZ, Miguel",
+    "cls": "1.0",
+    "dob": "17/07/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "GARCIA, Diego",
+    "cls": "1.5",
+    "dob": "20/12/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "MARTINEZ, Alejandro",
+    "cls": "2.0",
+    "dob": "23/05/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "LOPEZ, Luis",
+    "cls": "2.5",
+    "dob": "26/10/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "GONZALEZ, Jose",
+    "cls": "3.0",
+    "dob": "02/03/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "PEREZ, Eduardo",
+    "cls": "3.5",
+    "dob": "05/08/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "SANCHEZ, Ricardo",
+    "cls": "4.0",
+    "dob": "08/01/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "RAMIREZ, Emiliano",
+    "cls": "4.0",
+    "dob": "11/06/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "FLORES, Carlos",
+    "cls": "4.0",
+    "dob": "14/11/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "GUTIERREZ, Hector",
+    "cls": "4.5",
+    "dob": "17/04/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "CRUZ, Pablo",
+    "cls": "4.5",
+    "dob": "20/09/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "MORALES, Andres",
+    "cls": "4.5",
+    "dob": "23/02/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Mexico - Women",
+  "flag": "🇲🇽",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "JIMENEZ, Sofia",
+    "cls": "1.0",
+    "dob": "24/10/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "REYES, Valentina",
+    "cls": "1.5",
+    "dob": "27/03/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "TORRES, Camila",
+    "cls": "2.0",
+    "dob": "03/08/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "VAZQUEZ, Mariana",
+    "cls": "2.5",
+    "dob": "06/01/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "CASTILLO, Renata",
+    "cls": "3.0",
+    "dob": "09/06/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "GUERRERO, Regina",
+    "cls": "3.5",
+    "dob": "12/11/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "MENDOZA, Ximena",
+    "cls": "4.0",
+    "dob": "15/04/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "AGUILAR, Andrea",
+    "cls": "4.0",
+    "dob": "18/09/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "RIVERA, Maria",
+    "cls": "4.0",
+    "dob": "21/02/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "CHAVEZ, Fernanda",
+    "cls": "4.5",
+    "dob": "24/07/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "NAVARRO, Daniela",
+    "cls": "4.5",
+    "dob": "27/12/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "CAMPOS, Romina",
+    "cls": "4.5",
+    "dob": "03/05/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "United States of America - Men",
+  "flag": "🇺🇸",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "SMITH, Michael",
+    "cls": "1.0",
+    "dob": "04/01/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "JOHNSON, David",
+    "cls": "1.5",
+    "dob": "07/06/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "WILLIAMS, Christopher",
+    "cls": "2.0",
+    "dob": "10/11/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "BROWN, Andrew",
+    "cls": "2.5",
+    "dob": "13/04/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "JONES, Daniel",
+    "cls": "3.0",
+    "dob": "16/09/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "MILLER, Joshua",
+    "cls": "3.5",
+    "dob": "19/02/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "DAVIS, Matthew",
+    "cls": "4.0",
+    "dob": "22/07/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "WILSON, Anthony",
+    "cls": "4.0",
+    "dob": "25/12/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "ANDERSON, Tyler",
+    "cls": "4.0",
+    "dob": "01/05/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "TAYLOR, Brandon",
+    "cls": "4.5",
+    "dob": "04/10/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "THOMAS, Justin",
+    "cls": "4.5",
+    "dob": "07/03/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "MOORE, Aaron",
+    "cls": "4.5",
+    "dob": "10/08/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "United States of America - Women",
+  "flag": "🇺🇸",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "MILLER, Emily",
+    "cls": "1.0",
+    "dob": "11/04/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "JACKSON, Ashley",
+    "cls": "1.5",
+    "dob": "14/09/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "WHITE, Jessica",
+    "cls": "2.0",
+    "dob": "17/02/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "HARRIS, Sarah",
+    "cls": "2.5",
+    "dob": "20/07/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "CLARK, Madison",
+    "cls": "3.0",
+    "dob": "23/12/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "LEWIS, Hannah",
+    "cls": "3.5",
+    "dob": "26/05/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "WALKER, Brittany",
+    "cls": "4.0",
+    "dob": "02/10/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "ALLEN, Lauren",
+    "cls": "4.0",
+    "dob": "05/03/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "YOUNG, Megan",
+    "cls": "4.0",
+    "dob": "08/08/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "KING, Rachel",
+    "cls": "4.5",
+    "dob": "11/01/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "WRIGHT, Stephanie",
+    "cls": "4.5",
+    "dob": "14/06/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "SCOTT, Nicole",
+    "cls": "4.5",
+    "dob": "17/11/1997",
+    "gender": "Female"
+   }
+  ]
+ },
+ {
+  "team": "Venezuela - Men",
+  "flag": "🇻🇪",
+  "gender": "male",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "RODRIGUEZ, Jose",
+    "cls": "1.0",
+    "dob": "18/07/1988",
+    "gender": "Male"
+   },
+   {
+    "shirt": 5,
+    "name": "GONZALEZ, Carlos",
+    "cls": "1.5",
+    "dob": "21/12/1990",
+    "gender": "Male"
+   },
+   {
+    "shirt": 6,
+    "name": "GARCIA, Luis",
+    "cls": "2.0",
+    "dob": "24/05/1992",
+    "gender": "Male"
+   },
+   {
+    "shirt": 7,
+    "name": "HERNANDEZ, Manuel",
+    "cls": "2.5",
+    "dob": "27/10/1994",
+    "gender": "Male"
+   },
+   {
+    "shirt": 8,
+    "name": "MARTINEZ, Eduardo",
+    "cls": "3.0",
+    "dob": "03/03/1996",
+    "gender": "Male"
+   },
+   {
+    "shirt": 9,
+    "name": "PEREZ, Hugo",
+    "cls": "3.5",
+    "dob": "06/08/1998",
+    "gender": "Male"
+   },
+   {
+    "shirt": 10,
+    "name": "LOPEZ, Ricardo",
+    "cls": "4.0",
+    "dob": "09/01/2000",
+    "gender": "Male"
+   },
+   {
+    "shirt": 11,
+    "name": "SANCHEZ, Javier",
+    "cls": "4.0",
+    "dob": "12/06/2002",
+    "gender": "Male"
+   },
+   {
+    "shirt": 12,
+    "name": "RAMIREZ, Alberto",
+    "cls": "4.0",
+    "dob": "15/11/1991",
+    "gender": "Male"
+   },
+   {
+    "shirt": 13,
+    "name": "TORRES, Daniel",
+    "cls": "4.5",
+    "dob": "18/04/1993",
+    "gender": "Male"
+   },
+   {
+    "shirt": 14,
+    "name": "DIAZ, Pedro",
+    "cls": "4.5",
+    "dob": "21/09/1995",
+    "gender": "Male"
+   },
+   {
+    "shirt": 15,
+    "name": "REYES, Gabriel",
+    "cls": "4.5",
+    "dob": "24/02/1997",
+    "gender": "Male"
+   }
+  ]
+ },
+ {
+  "team": "Venezuela - Women",
+  "flag": "🇻🇪",
+  "gender": "female",
+  "players": [
+   {
+    "shirt": 4,
+    "name": "BLANCO, Maria",
+    "cls": "1.0",
+    "dob": "25/10/1988",
+    "gender": "Female"
+   },
+   {
+    "shirt": 5,
+    "name": "DELGADO, Andrea",
+    "cls": "1.5",
+    "dob": "01/03/1990",
+    "gender": "Female"
+   },
+   {
+    "shirt": 6,
+    "name": "MARQUEZ, Patricia",
+    "cls": "2.0",
+    "dob": "04/08/1992",
+    "gender": "Female"
+   },
+   {
+    "shirt": 7,
+    "name": "CARDOZO, Gabriela",
+    "cls": "2.5",
+    "dob": "07/01/1994",
+    "gender": "Female"
+   },
+   {
+    "shirt": 8,
+    "name": "PINTO, Daniela",
+    "cls": "3.0",
+    "dob": "10/06/1996",
+    "gender": "Female"
+   },
+   {
+    "shirt": 9,
+    "name": "COLMENARES, Adriana",
+    "cls": "3.5",
+    "dob": "13/11/1998",
+    "gender": "Female"
+   },
+   {
+    "shirt": 10,
+    "name": "GUEVARA, Yorgelis",
+    "cls": "4.0",
+    "dob": "16/04/2000",
+    "gender": "Female"
+   },
+   {
+    "shirt": 11,
+    "name": "PAREDES, Genesis",
+    "cls": "4.0",
+    "dob": "19/09/2002",
+    "gender": "Female"
+   },
+   {
+    "shirt": 12,
+    "name": "SALAZAR, Oriana",
+    "cls": "4.0",
+    "dob": "22/02/1991",
+    "gender": "Female"
+   },
+   {
+    "shirt": 13,
+    "name": "PEREIRA, Wilmary",
+    "cls": "4.5",
+    "dob": "25/07/1993",
+    "gender": "Female"
+   },
+   {
+    "shirt": 14,
+    "name": "VELEZ, Karelis",
+    "cls": "4.5",
+    "dob": "01/12/1995",
+    "gender": "Female"
+   },
+   {
+    "shirt": 15,
+    "name": "MEDINA, Beatriz",
+    "cls": "4.5",
+    "dob": "04/05/1997",
+    "gender": "Female"
+   }
+  ]
+ }
+]
