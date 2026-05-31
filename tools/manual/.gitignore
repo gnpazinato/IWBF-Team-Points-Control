@@ -1,0 +1,6 @@
+# Build inputs that are large or derived — fetched/recreated by the steps in README.md
+assets/fonts/
+assets/court.png
+assets/court_portrait.png
+assets/iwbf-logo-black.png
+assets/iwbf-logo-horizontal-black.png

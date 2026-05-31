@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+/* ===== Fonts (Roboto = Flutter default; Material Icons = Flutter glyphs) ===== */
+@font-face{font-family:'Roboto';font-weight:400;src:url('assets/fonts/roboto-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto';font-weight:500;src:url('assets/fonts/roboto-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto';font-weight:700;src:url('assets/fonts/roboto-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Roboto';font-weight:900;src:url('assets/fonts/roboto-latin-900-normal.woff2') format('woff2');}
+@font-face{font-family:'Material Icons';font-weight:400;src:url('assets/fonts/material-icons.woff2') format('woff2');}
+
+:root{
+  --gold:#C9A24A; --goldDeep:#A67E2D; --goldSoft:#F0E2BD;
+  --offWhite:#FAF8F2; --offWhiteElevated:#F3EFE3;
+  --textPrimary:#1F1B16; --textSecondary:#5A544A;
+  --alertRed:#B3261E; --alertRedSurface:#FDECEC;
+  --green:#1B8A3A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{background:#525659;font-family:'Roboto','Noto Color Emoji',sans-serif;color:var(--textPrimary);}
+.mi{font-family:'Material Icons';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;
+  text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}
+
+/* a screenshot frame */
+.frame{margin:0;}
+.device{width:800px;height:1280px;background:var(--offWhite);position:relative;overflow:hidden;font-size:14px;}
+
+/* ===== Android-style status bar ===== */
+.statusbar{height:26px;background:var(--offWhite);display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;font-size:13px;font-weight:500;color:var(--textPrimary);}
+.statusbar .right{display:flex;align-items:center;gap:7px;}
+.statusbar .right .mi{font-size:17px;}
+
+/* ===== AppBar ===== */
+.appbar{height:56px;background:var(--offWhite);display:flex;align-items:center;justify-content:center;gap:12px;}
+.appbar img{height:28px;}
+.appbar .title{font-size:18px;font-weight:700;color:var(--textPrimary);}
+
+/* ===== Buttons ===== */
+.btn{border-radius:10px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:default;}
+.btn .mi{font-size:18px;}
+.filled{background:var(--gold);color:var(--textPrimary);padding:14px 20px;}
+.outlined{border:1.2px solid var(--goldDeep);color:var(--textPrimary);padding:12px 18px;font-weight:600;background:transparent;}
+.tonal{background:var(--goldSoft);color:var(--textPrimary);padding:10px 16px;font-weight:600;}
+.textbtn{color:var(--goldDeep);font-weight:600;padding:10px 14px;background:transparent;}
+
+/* ===== Cards ===== */
+.card{background:var(--offWhiteElevated);border:1px solid #00000022;border-radius:10px;}
+
+/* ===== Home ===== */
+.home{padding:24px;display:flex;flex-direction:column;align-items:stretch;height:calc(1280px - 26px);}
+.brandlogo{height:140px;display:flex;justify-content:center;}
+.brandlogo img{height:140px;object-fit:contain;}
+.h-title{text-align:center;font-size:24px;font-weight:900;margin-top:12px;}
+.h-sub{text-align:center;font-size:14px;color:var(--textSecondary);margin-top:4px;}
+.h-instr{text-align:center;font-size:14px;margin-top:8px;}
+.ordiv{display:flex;align-items:center;gap:12px;padding:4px 0;color:var(--textSecondary);font-size:12px;font-weight:600;}
+.ordiv .line{flex:1;height:1px;background:#0000001A;}
+.h-foot{text-align:center;font-size:12px;color:var(--textSecondary);}
+
+/* ===== Dialog ===== */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,0.46);display:flex;align-items:center;justify-content:center;}
+.dialog{background:var(--offWhite);border-radius:28px;padding:24px;max-width:560px;width:80%;box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.dialog .dt{font-size:22px;font-weight:500;color:var(--textPrimary);}
+.dialog .dc{font-size:15px;color:var(--textSecondary);margin-top:16px;line-height:1.45;}
+.dialog .da{display:flex;justify-content:flex-end;gap:8px;margin-top:24px;flex-wrap:wrap;}
+.dialog .filled{border-radius:10px;}
+
+/* ===== Generic content padding ===== */
+.body-pad{padding:16px;}
+
+/* ===== Match setup ===== */
+.field{border:1px solid #00000066;border-radius:4px;padding:0 12px;height:56px;display:flex;align-items:center;position:relative;background:transparent;}
+.field .lbl{position:absolute;top:-9px;left:10px;background:var(--offWhite);padding:0 4px;font-size:12px;color:var(--textSecondary);}
+.field .val{display:flex;align-items:center;gap:8px;font-size:16px;flex:1;}
+.field .mi.drop{margin-left:auto;color:var(--textSecondary);font-size:24px;}
+.flag{font-family:'Noto Color Emoji';font-size:20px;line-height:1;}
+.warnbox{margin-top:12px;padding:12px;border:1px solid rgba(179,38,30,0.6);background:rgba(179,38,30,0.08);border-radius:8px;display:flex;gap:8px;align-items:flex-start;}
+.warnbox .mi{color:var(--alertRed);font-size:20px;}
+.warnbox .t{font-size:12px;color:var(--textPrimary);line-height:1.4;}
+
+/* ===== Validation summary ===== */
+.sumcard{padding:16px;}
+.sumcard .ttl{font-size:16px;font-weight:500;}
+.sumcard .ln{font-size:14px;margin-top:2px;}
+.sumstatus{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;}
+.sumstatus .mi{font-size:22px;}
+.sectionhdr{font-weight:700;font-size:14px;letter-spacing:0.4px;padding:12px 4px 4px;}
+.teamtile{border:1px solid #00000022;border-radius:10px;background:var(--offWhiteElevated);overflow:hidden;margin-bottom:8px;}
+.tilehead{display:flex;align-items:center;gap:12px;padding:14px 16px;}
+.tilehead .flag{font-size:24px;}
+.tilehead .tt{flex:1;}
+.tilehead .name{font-size:16px;}
+.tilehead .sub{font-size:12px;color:var(--textSecondary);margin-top:2px;}
+.tilehead .mi{color:var(--textSecondary);}
+.prow{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 16px;border-top:1px solid #0000000F;}
+.shirtbox{width:56px;height:40px;border:1px solid #00000066;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;}
+.pinfo{flex:1;min-width:0;}
+.pinfo .pn{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pinfo .pd{font-size:12px;color:var(--textSecondary);}
+.classbox{width:72px;height:40px;border:1px solid #00000066;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:2px;font-size:14px;}
+.classbox .mi{font-size:20px;color:var(--textSecondary);}
+
+/* issue blocks */
+.issueblock{border-radius:8px;padding:12px;margin-bottom:12px;}
+.issueblock .ih{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;}
+.issueblock .il{font-size:14px;padding:2px 0;}
+.issueblock .meta{font-size:12px;color:var(--textSecondary);padding-left:16px;}
+
+/* ===== Lineup ===== */
+.elevated{background:var(--offWhiteElevated);}
+.lhead{padding:6px 8px;display:flex;flex-direction:column;gap:6px;}
+.lhead .comp{text-align:center;font-size:14px;font-weight:700;}
+.lhead .teams{display:flex;align-items:center;justify-content:center;gap:4px;font-size:14px;font-weight:700;}
+.lhead .teams .flag{font-size:16px;}
+.scorerow{display:flex;gap:6px;}
+.scorecell{flex:1;border:1px solid rgba(0,0,0,0.12);border-radius:6px;padding:4px 6px;text-align:center;}
+.scorecell .lab{font-weight:700;font-size:12px;}
+.scorecell .val{font-size:18px;font-weight:800;line-height:1.1;}
+.scorecell .alert{height:14px;font-size:11px;font-weight:700;color:var(--alertRed);}
+.scorecell.over{background:var(--alertRedSurface);border-color:var(--alertRed);}
+.scorecell.over .val{color:var(--alertRed);}
+.plrow{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;}
+.plrow .pldrop{display:inline-flex;align-items:center;gap:2px;font-weight:600;font-size:14px;}
+.plrow .pldrop .mi{font-size:20px;}
+
+.lbody{flex:1;display:flex;align-items:stretch;min-height:0;}
+.teamcol{flex:3;display:flex;flex-direction:column;min-width:0;}
+.courtcol{flex:4;display:flex;align-items:center;justify-content:center;padding:8px;}
+.colhdr{height:28px;display:flex;align-items:center;justify-content:center;gap:4px;padding:0 6px;font-weight:700;font-size:13px;}
+.colhdr .flag{font-size:16px;}
+.plist{flex:1;display:flex;flex-direction:column;gap:0;padding:0 6px;overflow:hidden;}
+.pcard{height:56px;display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid #0000001F;border-radius:6px;margin:2px 0;}
+.pcard.sel{background:var(--goldSoft);border-color:var(--gold);}
+.pcard .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;}
+.pcard .cl{font-weight:700;font-size:14px;}
+
+.jersey{position:relative;flex:none;}
+.jersey svg{display:block;width:100%;height:100%;}
+.jersey .num{position:absolute;left:18%;right:18%;top:40%;bottom:14%;display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:-1px;}
+
+.court{position:relative;border-radius:10px;overflow:hidden;}
+.court .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.chip{position:absolute;transform:translate(-50%,-50%);border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.25);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.chip .sn{font-weight:600;text-align:center;line-height:1;}
+.chip .cc{line-height:1;}
+.courthint{position:absolute;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);
+  border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--textPrimary);white-space:nowrap;}
+
+.opbtns{box-shadow:0 -2px 6px rgba(0,0,0,0.18);background:var(--offWhite);padding:8px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.opbtns .outlined{padding:10px 16px;font-size:14px;}
+
+/* snackbar */
+.snackbar{position:absolute;left:16px;right:16px;bottom:90px;background:var(--textPrimary);color:#fff;border-radius:6px;
+  padding:14px 16px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+
+/* ===== Excel mock ===== */
+.xl{background:#fff;width:1000px;border:1px solid #d0d0d0;font-size:13px;}
+.xltabs{display:flex;background:#f3f3f3;border-bottom:1px solid #d0d0d0;}
+.xltab{padding:7px 16px;border-right:1px solid #e0e0e0;font-size:12px;color:#444;}
+.xltab.active{background:#fff;font-weight:700;color:#107c41;border-top:2px solid #107c41;}
+.xltable{border-collapse:collapse;width:100%;table-layout:fixed;}
+.xltable td,.xltable th{border:1px solid #d4d4d4;padding:4px 7px;text-align:left;font-weight:400;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.xltable .corner,.xltable .colh,.xltable .rowh{background:#f0f0f0;text-align:center;color:#666;font-weight:600;font-size:11px;}
+.xltable .rowh{width:34px;}
+.xltable thead .hdr td{background:#e8f3ec;font-weight:700;color:#1a1a1a;}
+.xltable .req{color:#107c41;}
+
+/* phone */
+.phone{width:400px;height:840px;background:var(--offWhite);position:relative;overflow:hidden;font-size:14px;}
+.tabbar{display:flex;border-bottom:1px solid #0000001F;}
+.tabbar .tab{flex:1;text-align:center;padding:12px 0;font-size:14px;font-weight:500;color:var(--textSecondary);}
+.tabbar .tab.active{color:var(--gold);border-bottom:2px solid var(--gold);font-weight:700;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* ---------------- Real sample data (from TemplateGeneratorService) ---------------- */
+const classDistribution=[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.0,4.0,4.5,4.5,4.5];
+const shirts=[4,5,6,7,8,9,10,11,12,13,14,15];
+const dobYears=[1988,1990,1992,1994,1996,1998,2000,2002,1991,1993,1995,1997];
+function dobFor(t,i){
+  const y=dobYears[i];
+  const d=((t*7+i*3)%27)+1;
+  const m=((t*3+i*5)%12)+1;
+  return String(d).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y;
+}
+const teams={
+  // teamIndex per _sampleTeams order
+  argMen:{idx:0,country:'Argentina',gender:'Men',flag:'🇦🇷',
+    surnames:['LOPEZ','RODRIGUEZ','GARCIA','MARTINEZ','GONZALEZ','HERNANDEZ','DIAZ','RAMIREZ','SANCHEZ','TORRES','ROMERO','SUAREZ'],
+    firsts:['Carlos','Juan','Pablo','Diego','Sebastian','Lucas','Matias','Nicolas','Joaquin','Tomas','Bautista','Santiago']},
+  braMen:{idx:2,country:'Brazil',gender:'Men',flag:'🇧🇷',
+    surnames:['SILVA','SANTOS','SOUZA','OLIVEIRA','PEREIRA','LIMA','COSTA','FERREIRA','RODRIGUES','ALMEIDA','CARVALHO','GOMES'],
+    firsts:['João','Pedro','Lucas','Gabriel','Matheus','Rafael','Bruno','Felipe','Thiago','Gustavo','Daniel','Leonardo']},
+  braWomen:{idx:3,country:'Brazil',gender:'Women',flag:'🇧🇷',
+    surnames:['SOUZA','RIBEIRO','ALVES','MARTINS','BARBOSA','ROCHA','DIAS','NUNES','CARDOSO','TEIXEIRA','PINTO','MENDES'],
+    firsts:['Mariana','Ana','Beatriz','Camila','Larissa','Juliana','Carolina','Fernanda','Isabela','Letícia','Bruna','Amanda']},
+};
+function roster(team){
+  return team.surnames.map((s,i)=>({
+    shirt:shirts[i], surname:s, first:team.firsts[i], cls:classDistribution[i],
+    dob:dobFor(team.idx,i),
+    name:s.toUpperCase()+', '+team.firsts[i],
+  }));
+}
+function disp(team){return team.country+' - '+team.gender;}
+const COMP="IWBF America's Cup";
+
+/* ---------------- Jersey icon (replicates _JerseyPainter path) ---------------- */
+function jersey(num,isA,size){
+  const fill=isA?'#ffffff':'#1F1B16';
+  const txt=isA?'#1F1B16':'#ffffff';
+  const border='#A67E2D';
+  const sw=(size*0.04).toFixed(2);
+  const path="M18,22 L35,10 L42,22 Q50,42 58,22 L65,10 L82,22 Q83,30 80,40 L90,92 L10,92 L20,40 Q17,30 18,22 Z";
+  const numFont=(size*0.30).toFixed(1);
+  return `<div class="jersey" style="width:${size}px;height:${size}px">
+    <svg viewBox="0 0 100 100"><path d="${path}" fill="${fill}" stroke="${border}" stroke-width="${(parseFloat(sw)/size*100).toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <div class="num" style="color:${txt};font-size:${numFont}px">${num}</div>
+  </div>`;
+}
+
+/* ---------------- Status bar ---------------- */
+function statusbar(time='14:32'){
+  return `<div class="statusbar"><div class="left">${time}</div>
+    <div class="right"><span class="mi">airplanemode_active</span><span class="mi">bluetooth</span><span class="mi">battery_full</span></div></div>`;
+}
+function appbar(title){
+  return `<div class="appbar"><img src="assets/iwbf-logo-horizontal-black.png"><span class="title">${title}</span></div>`;
+}
+
+/* ---------------- HOME ---------------- */
+function home(withDialog){
+  let dlg='';
+  if(withDialog){
+    dlg=`<div class="scrim"><div class="dialog">
+      <div class="dt">Previous data found.</div>
+      <div class="dc">Would you like to restore your previous session or start from scratch?</div>
+      <div class="da">
+        <span class="btn textbtn">Start from Scratch</span>
+        <span class="btn filled">Restore Previous Session</span>
+      </div></div></div>`;
+  }
+  return `<div class="device">
+    ${statusbar()}
+    <div class="home">
+      <div style="height:16px"></div>
+      <div class="brandlogo"><img src="assets/iwbf-logo-black.png"></div>
+      <div class="h-title">IWBF Team Points Control</div>
+      <div class="h-sub">Wheelchair basketball — team points control</div>
+      <div class="h-instr">Load the reference spreadsheet to start a match.</div>
+      <div style="height:32px"></div>
+      <span class="btn filled"><span class="mi">upload_file</span>Load Reference Spreadsheet</span>
+      <div style="height:16px"></div>
+      <span class="btn outlined"><span class="mi">file_download</span>Download Template — Single Sheet</span>
+      <div class="ordiv"><div class="line"></div>or<div class="line"></div></div>
+      <span class="btn outlined"><span class="mi">file_download</span>Download Template — One Sheet per Team</span>
+      <div style="flex:1"></div>
+      <div class="h-foot">Offline app. No login. No internet required.</div>
+    </div>
+    ${dlg}
+  </div>`;
+}
+
+/* ---------------- VALIDATION SUMMARY ---------------- */
+function classDrop(v){return `<div class="classbox">${v.toFixed(1)}<span class="mi">arrow_drop_down</span></div>`;}
+function summary(expanded){
+  const br=teams.braMen, ar=teams.argMen, bw=teams.braWomen;
+  function tile(team,open){
+    const r=roster(team);
+    let rows='';
+    if(open){
+      rows=r.map(p=>`<div class="prow">
+        <div class="shirtbox">${p.shirt}</div>
+        <div class="pinfo"><div class="pn">${p.name}</div><div class="pd">${p.dob}</div></div>
+        ${classDrop(p.cls)}
+      </div>`).join('');
+    }
+    return `<div class="teamtile">
+      <div class="tilehead"><span class="flag">${team.flag}</span>
+        <div class="tt"><div class="name">${disp(team)}</div><div class="sub">${r.length} player(s) imported</div></div>
+        <span class="mi">${open?'expand_less':'expand_more'}</span></div>
+      ${rows}
+    </div>`;
+  }
+  return `<div class="device">
+    ${statusbar()}
+    ${appbar('Spreadsheet Summary')}
+    <div class="body-pad">
+      <div class="card sumcard">
+        <div class="ttl">Competition: ${COMP}</div>
+        <div class="ln">Teams found: 16</div>
+        <div class="ln">Players found: 192</div>
+        <div class="sumstatus"><span class="mi" style="color:var(--green)">check_circle</span><span>Spreadsheet loaded successfully.</span></div>
+      </div>
+      <div class="sectionhdr" style="font-size:16px;font-weight:600;padding:16px 0 0">Teams found</div>
+      <div class="sectionhdr">Men's Teams</div>
+      ${tile(ar,false)}
+      ${tile(br,expanded)}
+      ${expanded?'':tile(bw,false)}
+    </div>
+  </div>`;
+}
+
+/* ---------------- MISSING DATA (error case) ---------------- */
+function missingData(){
+  return `<div class="device">
+    ${statusbar()}
+    ${appbar('Missing Data')}
+    <div class="body-pad">
+      <div style="font-weight:600;font-size:16px">Some players are missing required information.</div>
+      <div style="height:8px"></div>
+      <div style="font-size:14px;line-height:1.45">Please complete the missing information before continuing. Update the spreadsheet and load it again.</div>
+      <div style="height:16px"></div>
+      <div class="card" style="padding:16px;margin-bottom:12px">
+        <div class="issueblock" style="padding:0">
+          <div class="ih"><span class="mi" style="color:var(--alertRed)">error_outline</span>Players missing shirt number (1)</div>
+          <div style="height:8px"></div>
+          <div style="font-size:14px">Add a shirt number for each player in the spreadsheet.</div>
+          <div style="height:12px"></div>
+          <div class="il">• Player has no shirt number.</div>
+          <div class="meta">Sheet: Brazil Men · Team: Brazil · Player: PEREIRA, Matheus · Row: 6</div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px;margin-bottom:12px">
+        <div class="issueblock" style="padding:0">
+          <div class="ih"><span class="mi" style="color:var(--alertRed)">error_outline</span>Invalid player classes (1)</div>
+          <div style="height:8px"></div>
+          <div style="font-size:14px">Use only the IWBF values: 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5.</div>
+          <div style="height:12px"></div>
+          <div class="il">• Invalid player class "5.0".</div>
+          <div class="meta">Sheet: Argentina Men · Team: Argentina · Player: TORRES, Tomas · Row: 11</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- MATCH SETUP ---------------- */
+function matchSetup(mismatch){
+  const a=mismatch?teams.braMen:teams.braMen;
+  const b=mismatch?teams.braWomen:teams.argMen;
+  let warn='';
+  if(mismatch){
+    warn=`<div class="warnbox"><span class="mi">warning_amber</span>
+      <div class="t">You picked a Men's team against a Women's team. Official IWBF matches are same-gender. You can continue, but a confirmation will be asked.</div></div>`;
+  }
+  return `<div class="device">
+    ${statusbar()}
+    ${appbar('Match Setup')}
+    <div class="body-pad">
+      <div style="font-size:16px;font-weight:500;margin-bottom:12px">Competition: ${COMP}</div>
+      <div class="field"><span class="lbl">Select Team A</span>
+        <span class="val"><span class="flag">${a.flag}</span>${disp(a)}</span><span class="mi drop">arrow_drop_down</span></div>
+      <div style="height:16px"></div>
+      <div class="field"><span class="lbl">Select Team B</span>
+        <span class="val"><span class="flag">${b.flag}</span>${disp(b)}</span><span class="mi drop">arrow_drop_down</span></div>
+      <div style="height:16px"></div>
+      <div class="field"><span class="lbl">Point Limit</span>
+        <span class="val">14.0</span><span class="mi drop">arrow_drop_down</span></div>
+      ${warn}
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:0;padding:16px">
+      <span class="btn filled" style="width:100%"><span class="mi">play_arrow</span>Start Match</span>
+    </div>
+  </div>`;
+}
+
+/* ---------------- LINEUP CONTROL ---------------- */
+// court geometry
+const teamATargets=[[0.28,0.08],[0.72,0.08],[0.28,0.26],[0.72,0.26],[0.50,0.42]];
+const teamBTargets=[[0.28,0.92],[0.72,0.92],[0.28,0.74],[0.72,0.74],[0.50,0.58]];
+
+function playerCard(p,isA,sel,size){
+  const icon=(56*0.78); // 43.7 ~44, clamp 44
+  const fs=14;
+  return `<div class="pcard ${sel?'sel':''}">
+    ${jersey(p.shirt,isA,44)}
+    <span class="nm" style="font-size:${fs}px">${p.name}</span>
+    <span class="cl" style="font-size:${fs}px">${p.cls.toFixed(1)}</span>
+  </div>`;
+}
+function teamColumn(team,isA,selectedShirts){
+  const r=roster(team).slice().sort((x,y)=>x.shirt-y.shirt);
+  const cards=r.map(p=>playerCard(p,isA,selectedShirts.includes(p.shirt))).join('');
+  return `<div class="teamcol">
+    <div class="colhdr"><span class="flag">${team.flag}</span><span>${disp(team)}</span></div>
+    <div class="plist">${cards}</div>
+  </div>`;
+}
+function courtView(teamA,teamB,onA,onB){
+  // court box ~ flex4. compute later in CSS via flex; we fix sizes for fidelity
+  const W=304,H=569;
+  const slotW=Math.min(Math.max(W*0.34,60),150); // 103
+  const slotH=Math.min(Math.max(H*0.12,46),110);  // 68
+  const base=slotH;
+  const iconSize=Math.min(Math.max(base*0.46,18),42);
+  const fontSize=Math.min(Math.max(base*0.15,7.5),11.5);
+  function chip(p,isA,tx,ty){
+    const bg=isA?'#ffffff':'#1F1B16';
+    const fg=isA?'#1F1B16':'#ffffff';
+    const border=isA?'#A67E2D':'#1F1B16';
+    return `<div class="chip" style="left:${(tx*100).toFixed(2)}%;top:${(ty*100).toFixed(2)}%;
+       width:${slotW}px;height:${slotH}px;background:${bg};border:1.2px solid ${border};padding:4px 6px">
+       ${jersey(p.shirt,isA,iconSize)}
+       <div class="sn" style="color:${fg};font-size:${fontSize}px;margin-top:2px">${p.surname.toUpperCase()}</div>
+       <div class="cc" style="color:${fg};font-size:${fontSize}px">${p.cls.toFixed(1)}</div>
+    </div>`;
+  }
+  let chips='';
+  const ra=roster(teamA), rb=roster(teamB);
+  function find(r,sh){return r.find(p=>p.shirt===sh);}
+  onA.forEach((sh,i)=>{if(sh!=null){const p=find(ra,sh);chips+=chip(p,true,teamATargets[i][0],teamATargets[i][1]);}});
+  onB.forEach((sh,i)=>{if(sh!=null){const p=find(rb,sh);chips+=chip(p,false,teamBTargets[i][0],teamBTargets[i][1]);}});
+  const aEmpty=onA.every(x=>x==null), bEmpty=onB.every(x=>x==null);
+  let hints='';
+  if(aEmpty)hints+=`<div class="courthint" style="top:22.5%">Tap players in Team A list</div>`;
+  if(bEmpty)hints+=`<div class="courthint" style="top:77.5%">Tap players in Team B list</div>`;
+  return `<div class="courtcol"><div class="court" style="width:${W}px;height:${H}px">
+    <img class="bg" src="assets/court_portrait.png">
+    ${hints}${chips}
+  </div></div>`;
+}
+function scoreCell(label,total,limit,over){
+  return `<div class="scorecell ${over?'over':''}">
+    <div class="lab">${label}</div>
+    <div class="val">${total.toFixed(1)} / ${limit.toFixed(1)}</div>
+    <div class="alert">${over?'Point limit exceeded.':''}</div>
+  </div>`;
+}
+function lineup(opts){
+  const {a,b,onA,onB,limit,extra}=opts;
+  const ra=roster(a),rb=roster(b);
+  const sumA=onA.filter(x=>x!=null).reduce((s,sh)=>s+ra.find(p=>p.shirt===sh).cls,0);
+  const sumB=onB.filter(x=>x!=null).reduce((s,sh)=>s+rb.find(p=>p.shirt===sh).cls,0);
+  const overA=sumA>limit, overB=sumB>limit;
+  const selA=onA.filter(x=>x!=null), selB=onB.filter(x=>x!=null);
+  let overlay=extra||'';
+  return `<div class="device">
+    ${statusbar()}
+    ${appbar('Lineup Control')}
+    <div class="elevated lhead">
+      <div class="comp">${COMP}</div>
+      <div class="teams"><span class="flag">${a.flag}</span><span>${disp(a)}</span><span>&nbsp;&nbsp;vs&nbsp;&nbsp;</span><span>${disp(b)}</span><span class="flag">${b.flag}</span></div>
+      <div class="scorerow">${scoreCell('Team A',sumA,limit,overA)}${scoreCell('Team B',sumB,limit,overB)}</div>
+      <div class="plrow"><span style="font-size:13px">Point Limit:</span><span class="pldrop">${limit.toFixed(1)}<span class="mi">arrow_drop_down</span></span></div>
+    </div>
+    <div class="lbody">
+      ${teamColumn(a,true,selA)}
+      ${courtView(a,b,onA,onB)}
+      ${teamColumn(b,false,selB)}
+    </div>
+    <div class="opbtns">
+      <span class="btn outlined">Clear Team A</span>
+      <span class="btn outlined">Clear Team B</span>
+      <span class="btn outlined">Clear All</span>
+      <span class="btn outlined">Change Teams</span>
+      <span class="btn outlined">Load New Spreadsheet</span>
+    </div>
+    ${overlay}
+  </div>`;
+}
+
+/* ---------------- EXCEL MOCKS ---------------- */
+function colLetters(n){const a=[];for(let i=0;i<n;i++)a.push(String.fromCharCode(65+i));return a;}
+function excelSingle(){
+  const headers=['competition_name','team_name','shirt_number','surname','first_name','player_class','dob','gender'];
+  const br=roster(teams.braMen);
+  const ar=roster(teams.argMen);
+  function row(team,p){return [COMP,team.country,p.shirt,p.surname,p.first,p.cls.toFixed(1).replace('.',','),p.dob,team.gender.toLowerCase()==='men'?'male':'female'];}
+  const data=[];
+  ar.slice(0,4).forEach(p=>data.push(row(teams.argMen,p)));
+  br.slice(0,5).forEach(p=>data.push(row(teams.braMen,p)));
+  const letters=colLetters(headers.length);
+  let html=`<table class="xltable"><colgroup><col style="width:34px"></colgroup>`;
+  html+=`<thead><tr><td class="corner"></td>`+letters.map(l=>`<td class="colh">${l}</td>`).join('')+`</tr>`;
+  html+=`<tr class="hdr"><td class="rowh">1</td>`+headers.map(h=>`<td class="req">${h}</td>`).join('')+`</tr></thead><tbody>`;
+  data.forEach((r,i)=>{html+=`<tr><td class="rowh">${i+2}</td>`+r.map(c=>`<td>${c}</td>`).join('')+`</tr>`;});
+  html+=`</tbody></table>`;
+  return `<div class="xl"><div class="xltabs"><div class="xltab active">Players</div></div>${html}</div>`;
+}
+function excelPerTeam(){
+  const headers=['competition_name','shirt_number','surname','first_name','player_class','dob','gender'];
+  const br=roster(teams.braMen);
+  function row(p){return [COMP,p.shirt,p.surname,p.first,p.cls.toFixed(1).replace('.',','),p.dob,'male'];}
+  const data=br.slice(0,7).map(row);
+  const letters=colLetters(headers.length);
+  let html=`<table class="xltable"><colgroup><col style="width:34px"></colgroup>`;
+  html+=`<thead><tr><td class="corner"></td>`+letters.map(l=>`<td class="colh">${l}</td>`).join('')+`</tr>`;
+  html+=`<tr class="hdr"><td class="rowh">1</td>`+headers.map(h=>`<td class="req">${h}</td>`).join('')+`</tr></thead><tbody>`;
+  data.forEach((r,i)=>{html+=`<tr><td class="rowh">${i+2}</td>`+r.map(c=>`<td>${c}</td>`).join('')+`</tr>`;});
+  html+=`</tbody></table>`;
+  const tabs=['Argentina Men','Argentina Women','Brazil Men','Brazil Women','Canada Men','...'];
+  const tabsHtml=tabs.map((t,i)=>`<div class="xltab ${t==='Brazil Men'?'active':''}">${t}</div>`).join('');
+  return `<div class="xl"><div class="xltabs">${tabsHtml}</div>${html}</div>`;
+}
+
+/* ---------------- PHONE (responsive) ---------------- */
+function phone(){
+  const a=teams.braMen,b=teams.argMen;
+  const onA=[4,6,8,9,10], onB=[4,5,7,10,13];
+  // reuse court geometry but bigger box for phone width
+  const W=384,H=720;
+  const slotW=Math.min(Math.max(W*0.34,60),150);
+  const slotH=Math.min(Math.max(H*0.12,46),110);
+  const base=slotH;
+  const iconSize=Math.min(Math.max(base*0.46,18),42);
+  const fontSize=Math.min(Math.max(base*0.15,7.5),11.5);
+  const ra=roster(a),rb=roster(b);
+  function find(r,sh){return r.find(p=>p.shirt===sh);}
+  function chip(p,isA,tx,ty){
+    const bg=isA?'#ffffff':'#1F1B16';const fg=isA?'#1F1B16':'#ffffff';const border=isA?'#A67E2D':'#1F1B16';
+    return `<div class="chip" style="left:${(tx*100).toFixed(2)}%;top:${(ty*100).toFixed(2)}%;width:${slotW}px;height:${slotH}px;background:${bg};border:1.2px solid ${border};padding:4px 6px">
+      ${jersey(p.shirt,isA,iconSize)}<div class="sn" style="color:${fg};font-size:${fontSize}px;margin-top:2px">${p.surname.toUpperCase()}</div>
+      <div class="cc" style="color:${fg};font-size:${fontSize}px">${p.cls.toFixed(1)}</div></div>`;
+  }
+  let chips='';
+  onA.forEach((sh,i)=>{chips+=chip(find(ra,sh),true,teamATargets[i][0],teamATargets[i][1]);});
+  onB.forEach((sh,i)=>{chips+=chip(find(rb,sh),false,teamBTargets[i][0],teamBTargets[i][1]);});
+  const sumA=onA.reduce((s,sh)=>s+find(ra,sh).cls,0);
+  const sumB=onB.reduce((s,sh)=>s+find(rb,sh).cls,0);
+  return `<div class="phone">
+    ${statusbar()}
+    ${appbar('Lineup Control')}
+    <div class="elevated lhead">
+      <div class="comp">${COMP}</div>
+      <div class="teams"><span class="flag">${a.flag}</span><span>${disp(a)}</span><span>&nbsp;vs&nbsp;</span><span>${disp(b)}</span><span class="flag">${b.flag}</span></div>
+      <div class="scorerow">${scoreCell('Team A',sumA,14,false)}${scoreCell('Team B',sumB,14,false)}</div>
+      <div class="plrow"><span style="font-size:13px">Point Limit:</span><span class="pldrop">14.0<span class="mi">arrow_drop_down</span></span></div>
+    </div>
+    <div class="tabbar"><div class="tab">Team A</div><div class="tab active">Court</div><div class="tab">Team B</div></div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:8px">
+      <div class="court" style="width:${W}px;height:${H*0.62}px"><img class="bg" src="assets/court_portrait.png">${chips}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Leave dialog overlay & snackbar ---------------- */
+const leaveDialog=`<div class="scrim"><div class="dialog">
+  <div class="dt">Are you sure you want to leave this match?</div>
+  <div class="dc">Current selections may be lost.</div>
+  <div class="da"><span class="btn textbtn">Stay</span><span class="btn filled">Leave</span></div></div></div>`;
+
+const max5Snack=`<div class="snackbar">Only 5 players can be selected for Team A.</div>`;
+
+/* ---------------- Render all screens ---------------- */
+const A=teams.braMen, B=teams.argMen;
+const screens={
+  'home':home(false),
+  'home-restore':home(true),
+  'summary':summary(false),
+  'summary-expanded':summary(true),
+  'missing-data':missingData(),
+  'match-setup':matchSetup(false),
+  'match-setup-mismatch':matchSetup(true),
+  'lineup-empty':lineup({a:A,b:B,onA:[null,null,null,null,null],onB:[null,null,null,null,null],limit:14.0}),
+  'lineup-selected':lineup({a:A,b:B,onA:[4,6,8,9,10],onB:[4,5,7,10,13],limit:14.0}),
+  'lineup-overlimit':lineup({a:A,b:B,onA:[4,7,8,9,13],onB:[4,5,7,10,13],limit:14.0}),
+  'lineup-max5':lineup({a:A,b:B,onA:[4,6,8,9,10],onB:[4,5,7,10,13],limit:14.0,extra:max5Snack}),
+  'lineup-leave':lineup({a:A,b:B,onA:[4,6,8,9,10],onB:[4,5,7,10,13],limit:14.0,extra:leaveDialog}),
+  'excel-single':excelSingle(),
+  'excel-perteam':excelPerTeam(),
+  'phone':phone(),
+};
+const root=document.getElementById('root');
+for(const [id,html] of Object.entries(screens)){
+  const d=document.createElement('div');
+  d.className='frame';d.id='screen-'+id;d.innerHTML=html;
+  root.appendChild(d);
+}
+window.__SCREEN_IDS=Object.keys(screens);
+</script>
+</body>
+</html>
