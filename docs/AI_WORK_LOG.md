@@ -549,7 +549,7 @@ Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
 
-### 0041 - 2026-06-06 - Ajustes v1.5.1: datas 2 digitos, remover chip da quadra, bandeiras africanas
+### 0041 - 2026-06-06 - Ajustes v1.4.0: datas 2 digitos, remover chip da quadra, bandeiras africanas
 
 Contexto: 3 ajustes pedidos pelo usuario apos testes externos.
 
@@ -558,7 +558,7 @@ Entregue:
 - **1) DOB com ano de 2 digitos e separadores `-`/`.`** (`spreadsheet_parser_service.dart` `_parseDateOfBirth`): aceita `12-12-25`, `12-12-2025`, `05/06/90`, etc. ISO `yyyy-mm-dd` so e tentado quando comeca com 4 digitos (evita que `12-12-25` vire ano 12). Pivo de 2 digitos estilo POSIX: `00`-`68` -> `2000`-`2068`, `69`-`99` -> `1969`-`1999`. Adicionada validacao anti-overflow (rejeita `31/02`).
 - **2) Remover jogador tocando no chip da quadra** (`lineup_control_screen.dart`): `_CourtView`/`_CourtPlayerSlot`/`_CourtPlayerChip` recebem `onTap`; o chip vira `GestureDetector` (key `court-chip-<id>`) que chama o MESMO `_onPlayerTap` das listas laterais — como o jogador ja esta selecionado, `togglePlayer` o remove. Antes so dava para remover pelas listas/menus laterais.
 - **3) Bandeiras de paises africanos faltantes** (`country_resolver_service.dart`): a causa do "erro" do usuario era que Angola (e varios outros) NAO estavam nas tabelas `_defaultAliases`/`_countryCodes` — o resolver retornava `null` e o widget caia no icone generico (`Icons.flag_outlined`); nao havia crash. Adicionados Angola (AO), Botswana, Congo, DR Congo, Ghana, Libya, Madagascar, Mali, Mozambique, Namibia, Rwanda, Sudan, Tanzania, Zambia (+ aliases PT/IOC). A bandeira emoji e derivada do ISO alpha-2, entao basta mapear o codigo.
-- **Versao:** `pubspec.yaml` 1.3.0+4 -> **1.5.1+5**; `kAppVersion` 1.3.0 -> **1.5.1**.
+- **Versao:** `pubspec.yaml` 1.3.0+4 -> **1.4.0+5**; `kAppVersion` 1.3.0 -> **1.4.0** (segue o fluxo minor++ das versoes anteriores; o "1.5.1" inicialmente cogitado pulava a 1.4.0 e usava patch .1, fora do padrao).
 
 Arquivos alterados: `lib/services/spreadsheet_parser_service.dart`, `lib/screens/lineup_control_screen.dart`, `lib/services/country_resolver_service.dart`, `lib/constants/app_version.dart`, `pubspec.yaml`, `test/services/spreadsheet_parser_service_test.dart` (+3 testes de DOB), `test/services/country_resolver_service_test.dart` (+1 teste bandeiras africanas), `test/screens/lineup_control_screen_test.dart` (+1 teste remover via chip).
 

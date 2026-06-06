@@ -212,7 +212,7 @@ void main() {
       expect(resolver.flagEmojiFor('Marte'), isNull);
     });
 
-    test('resolve bandeiras africanas adicionadas na v1.5.1', () {
+    test('resolve bandeiras africanas adicionadas na v1.4.0', () {
       // 🇦🇴 Angola = 0x1F1E6 + 0x1F1F4
       expect(
         resolver.flagEmojiFor('Angola'),
