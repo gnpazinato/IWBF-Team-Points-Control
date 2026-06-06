@@ -277,6 +277,31 @@ void main() {
       expect(cache.saveCount, greaterThanOrEqualTo(3));
     });
 
+    testWidgets('tap no chip da quadra remove o jogador',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: _freshState(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      await _tapPlayer(tester, 'team-brazil', 1); // 1.0
+      expect(find.text('1.0 / 14.0'), findsOneWidget);
+
+      // O chip da quadra agora é tocável e remove o jogador.
+      final Finder chip = find.byKey(const Key('court-chip-team-brazil::1'));
+      expect(chip, findsOneWidget);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+
+      expect(find.text('0.0 / 14.0'), findsNWidgets(2));
+      expect(find.byKey(const Key('court-chip-team-brazil::1')), findsNothing);
+    });
+
     testWidgets('tap no mesmo jogador desseleciona',
         (WidgetTester tester) async {
       await _pump(

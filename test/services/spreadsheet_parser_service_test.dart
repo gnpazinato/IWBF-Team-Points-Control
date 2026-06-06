@@ -700,6 +700,39 @@ void main() {
           equals(DateTime.utc(1998, 1, 2)));
     });
 
+    test('aceita DOB com separador hifen e ano de 4 digitos', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '12-12-2025']),
+      ]);
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+      expect(result.teams.first.players.first.dateOfBirth,
+          equals(DateTime.utc(2025, 12, 12)));
+    });
+
+    test('aceita DOB com ano de 2 digitos (12-12-25 -> 2025)', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '12-12-25']),
+      ]);
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+      expect(result.teams.first.players.first.dateOfBirth,
+          equals(DateTime.utc(2025, 12, 12)));
+    });
+
+    test('ano de 2 digitos acima do pivo cai no seculo 1900 (90 -> 1990)', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '7', 'Silva', 'João', '2.5', '05/06/90']),
+      ]);
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+      expect(result.teams.first.players.first.dateOfBirth,
+          equals(DateTime.utc(1990, 6, 5)));
+    });
+
     test('parseBytes retorna erro para bytes invalidos', () {
       final Uint8List garbage = Uint8List.fromList(<int>[1, 2, 3, 4]);
       final SpreadsheetParseResult result = parser.parseBytes(garbage);

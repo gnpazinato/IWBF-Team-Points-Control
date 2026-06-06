@@ -459,7 +459,7 @@ class _TabletBody extends StatelessWidget {
         ),
         Expanded(
           flex: 4,
-          child: _CourtView(state: state),
+          child: _CourtView(state: state, onPlayerTap: onPlayerTap),
         ),
         Expanded(
           flex: 3,
@@ -507,7 +507,7 @@ class _PhoneBody extends StatelessWidget {
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
                   jerseyColor: state.jerseyColorA,
                 ),
-                _CourtView(state: state),
+                _CourtView(state: state, onPlayerTap: onPlayerTap),
                 _TeamPlayerList(
                   key: const Key('phone-team-b-list'),
                   team: state.teamB,
@@ -723,9 +723,13 @@ const String kCourtAsset = 'assets/images/court.png';
 /// rotacionamos 90° via `RotatedBox` para enxergar a quadra na vertical
 /// (Team A na metade superior, Team B na inferior).
 class _CourtView extends StatelessWidget {
-  const _CourtView({required this.state});
+  const _CourtView({required this.state, required this.onPlayerTap});
 
   final MatchState state;
+
+  /// Mesmo callback das listas laterais: tocar um chip em quadra remove o
+  /// jogador (togglePlayer já estava selecionado → sai da seleção).
+  final _PlayerTapCallback onPlayerTap;
 
   /// Aspect ratio da quadra pós-rotação (1504/2816 ≈ 0.534, portrait).
   static const double _aspectRatio = 1504 / 2816;
@@ -834,6 +838,7 @@ class _CourtView extends StatelessWidget {
                           slotMaxWidth: slotMaxWidth,
                           slotMaxHeight: slotMaxHeight,
                           jerseyColor: state.jerseyColorA,
+                          onTap: () => onPlayerTap(teamA[i]!, _Side.a),
                         ),
                     for (int i = 0; i < 5; i++)
                       if (teamB[i] != null)
@@ -846,6 +851,7 @@ class _CourtView extends StatelessWidget {
                           slotMaxWidth: slotMaxWidth,
                           slotMaxHeight: slotMaxHeight,
                           jerseyColor: state.jerseyColorB,
+                          onTap: () => onPlayerTap(teamB[i]!, _Side.b),
                         ),
                   ],
                 );
@@ -894,6 +900,7 @@ class _CourtPlayerSlot extends StatelessWidget {
     required this.slotMaxWidth,
     required this.slotMaxHeight,
     required this.jerseyColor,
+    required this.onTap,
   });
 
   final Player player;
@@ -904,6 +911,7 @@ class _CourtPlayerSlot extends StatelessWidget {
   final double slotMaxWidth;
   final double slotMaxHeight;
   final Color jerseyColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -918,6 +926,7 @@ class _CourtPlayerSlot extends StatelessWidget {
           maxWidth: slotMaxWidth,
           maxHeight: slotMaxHeight,
           jerseyColor: jerseyColor,
+          onTap: onTap,
         ),
       ),
     );
@@ -942,6 +951,7 @@ class _CourtPlayerChip extends StatelessWidget {
     required this.maxWidth,
     required this.maxHeight,
     required this.jerseyColor,
+    required this.onTap,
   });
 
   final Player player;
@@ -949,6 +959,7 @@ class _CourtPlayerChip extends StatelessWidget {
   final double maxWidth;
   final double maxHeight;
   final Color jerseyColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -973,54 +984,59 @@ class _CourtPlayerChip extends StatelessWidget {
     return SizedBox(
       width: maxWidth,
       height: maxHeight,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPad,
-          vertical: verticalPad,
-        ),
-        decoration: BoxDecoration(
-          color: bg,
-          border: Border.all(color: border, width: 1.2),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            PlayerJerseyIcon(
-              player: player,
-              isTeamA: isTeamA,
-              size: iconSize,
-              jerseyColor: jerseyColor,
-            ),
-            SizedBox(height: gap),
-            // _AutoShrinkText mede o sobrenome e reduz proporcionalmente
-            // o fontSize quando excede a largura do chip. Mantém o chip
-            // visualmente uniforme: todos com o mesmo tamanho externo,
-            // o sobrenome é o único elemento que muda de tamanho
-            // proporcional ao seu comprimento.
-            Flexible(
-              child: _AutoShrinkText(
-                text: _courtChipName(player.name).toUpperCase(),
-                maxFontSize: fontSize,
-                minFontSize: 8.0,
-                color: fg,
-                fontWeight: FontWeight.w600,
-                textAlign: TextAlign.center,
+      child: GestureDetector(
+        key: Key('court-chip-${player.id}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPad,
+            vertical: verticalPad,
+          ),
+          decoration: BoxDecoration(
+            color: bg,
+            border: Border.all(color: border, width: 1.2),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
               ),
-            ),
-            Text(
-              player.playerClass.toStringAsFixed(1),
-              style: TextStyle(color: fg, fontSize: fontSize, height: 1.0),
-            ),
-          ],
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              PlayerJerseyIcon(
+                player: player,
+                isTeamA: isTeamA,
+                size: iconSize,
+                jerseyColor: jerseyColor,
+              ),
+              SizedBox(height: gap),
+              // _AutoShrinkText mede o sobrenome e reduz proporcionalmente
+              // o fontSize quando excede a largura do chip. Mantém o chip
+              // visualmente uniforme: todos com o mesmo tamanho externo,
+              // o sobrenome é o único elemento que muda de tamanho
+              // proporcional ao seu comprimento.
+              Flexible(
+                child: _AutoShrinkText(
+                  text: _courtChipName(player.name).toUpperCase(),
+                  maxFontSize: fontSize,
+                  minFontSize: 8.0,
+                  color: fg,
+                  fontWeight: FontWeight.w600,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Text(
+                player.playerClass.toStringAsFixed(1),
+                style: TextStyle(color: fg, fontSize: fontSize, height: 1.0),
+              ),
+            ],
+          ),
         ),
       ),
     );

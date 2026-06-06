@@ -666,24 +666,49 @@ class SpreadsheetParserService {
   }
 
   DateTime? _parseDateOfBirth(String raw) {
-    if (raw.isEmpty) return null;
-    final DateTime? iso = DateTime.tryParse(raw);
-    if (iso != null) return DateTime.utc(iso.year, iso.month, iso.day);
-    final RegExp dmy = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$');
-    final RegExpMatch? m = dmy.firstMatch(raw);
+    final String trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+
+    // ISO 8601 (yyyy-mm-dd...) — só quando começa com ano de 4 dígitos.
+    // Restringimos para que "12-12-25" NÃO seja lido como ano 12 pelo
+    // DateTime.tryParse; esse formato cai no parser dd/mm abaixo.
+    if (RegExp(r'^\d{4}-\d{1,2}-\d{1,2}').hasMatch(trimmed)) {
+      final DateTime? iso = DateTime.tryParse(trimmed);
+      if (iso != null) return DateTime.utc(iso.year, iso.month, iso.day);
+    }
+
+    // dd[sep]mm[sep](yy|yyyy), com separador `/`, `-` ou `.`.
+    // Aceita ano de 2 dígitos (12-12-25) ou 4 dígitos (12-12-2025).
+    final RegExp dmy =
+        RegExp(r'^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2}|\d{4})$');
+    final RegExpMatch? m = dmy.firstMatch(trimmed);
     if (m != null) {
       final int day = int.parse(m.group(1)!);
       final int month = int.parse(m.group(2)!);
-      final int year = int.parse(m.group(3)!);
+      final String yearRaw = m.group(3)!;
+      int year = int.parse(yearRaw);
+      if (yearRaw.length == 2) year = _expandTwoDigitYear(year);
       if (month < 1 || month > 12 || day < 1 || day > 31) return null;
       try {
-        return DateTime.utc(year, month, day);
+        final DateTime parsed = DateTime.utc(year, month, day);
+        // Rejeita datas que estouraram (ex.: 31/02 vira 03/03).
+        if (parsed.year != year ||
+            parsed.month != month ||
+            parsed.day != day) {
+          return null;
+        }
+        return parsed;
       } catch (_) {
         return null;
       }
     }
     return null;
   }
+
+  /// Expande ano de 2 dígitos para 4 dígitos (pivô estilo POSIX strptime):
+  /// `00`–`68` → `2000`–`2068`; `69`–`99` → `1969`–`1999`. Cobre tanto
+  /// atletas veteranos (anos 70/80/90) quanto recentes.
+  int _expandTwoDigitYear(int yy) => yy <= 68 ? 2000 + yy : 1900 + yy;
 
   /// Conjunto de valores aceitos na coluna `gender` (case-insensitive).
   /// Cobre EN/PT/ES + abreviações para evitar que pequenas variações de
