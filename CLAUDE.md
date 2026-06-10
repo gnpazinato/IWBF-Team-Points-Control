@@ -6,23 +6,24 @@
 
 ## Branch ativa
 
-**O MVP completo já está na `main`** (PR #5 mergeado). A branch antiga
-`claude/review-and-continue-9ZK5v` é histórica — **não trabalhe mais a
-partir dela** e ignore avisos antigos de que "main é só scaffold": isso
-está desatualizado. `lib/main.dart` na `main` é o app real.
+**Tudo está na `main`.** O MVP (PR #5) e a modernização visual + ajustes
+estruturais (Fases 1–6 + ajustes pós-testers 0039–0041, versão `1.4.0+5`)
+foram mergeados na `main` — **PR #6 mergeado em 2026-06-10** (aprovado pelo
+usuário). As branches `claude/review-and-continue-9ZK5v` e
+`claude/visual-modernization` são históricas; **não trabalhe mais a partir
+delas** e ignore avisos antigos de que "main é só scaffold": está
+desatualizado. `lib/main.dart` na `main` é o app real e atual.
 
-A modernização visual (inspirada no app irmão CBBC, sem perder a
-identidade IWBF) está na branch **`claude/visual-modernization`** (criada
-a partir de `main`), com PR aberto para `main`. Fluxo:
+**Trabalho novo:** crie uma branch `claude/**` nova a partir da `main`.
+Nunca commite direto na `main`. Fluxo:
 
 ```bash
 git fetch origin
-git checkout claude/visual-modernization   # ou main, se o PR já mergeou
-git pull --ff-only origin claude/visual-modernization
+git checkout main
+git pull --ff-only origin main
+git checkout -b claude/<novo-escopo>
 git log --oneline -12
 ```
-
-Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
 
 ## Estado atual (resumo)
 
@@ -30,9 +31,8 @@ Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
   uma confusão de numeração — um commit gravou `1.5.1+5`, depois
   **corrigido para `1.4.0+5`** (o "1.5.1" pulava a 1.4.0 e quebrava o
   fluxo minor++). O conteúdo é o mesmo; só o número foi normalizado.
-- **Modernização visual (branch `claude/visual-modernization`):** Fases
-  1–6 implementadas e verdes no CI; PR aberto para `main` (aguardando
-  aprovação do usuário — **não mergear sozinho**). Entregue:
+- **Modernização visual (mergeada na `main` via PR #6, 2026-06-10):** Fases
+  1–6 implementadas e verdes no CI. Entregue:
   - **Fase 1:** tema modernizado (cards brancos, sombra `0x14000000`,
     radius 14, inputs/checkbox/switch dourados) + ícone IWBF preto como
     favicon/launcher Android + branding PWA.
@@ -94,18 +94,19 @@ Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
       topo + entrada da modernização visual (0038, Fases 1–6) + ajustes
       pós-testers (0039 v1.2.0, 0040 v1.3.0, 0041 v1.4.0).
 3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +
-   título) e o estado do PR de modernização visual.
+   título). Não há PR aberto (o #6 já foi mergeado).
 
 ## Próximo passo provável
 
-A modernização visual está implementada (Fases 1–6, CI verde) com PR
-aberto `claude/visual-modernization -> main`. Os caminhos típicos:
+A modernização visual + ajustes (Fases 1–6, 0039–0041, versão `1.4.0+5`)
+já foram **mergeados na `main` (PR #6, 2026-06-10)**. Não há trabalho em
+andamento nem PR aberto. Os caminhos típicos para uma nova conversa:
 
-- **Aprovar/mergear o PR** (decisão do usuário — **não mergeie sozinho**).
-  Após o merge, registre o fechamento no log.
-- **Ajustes de feedback** dos testers: nova entrada no log, commit
-  `fix(visual):...` na branch `claude/visual-modernization` (ou direto em
-  `main` se o PR já mergeou e uma nova branch for criada).
+- **Ajustes de feedback** dos testers ou novos pedidos: crie uma branch
+  `claude/**` nova a partir da `main`, adicione entrada no log e abra PR.
+- **Escopo futuro possível** (nunca iniciado): estatísticas pós-jogo/
+  scoring, publicação na Play Store, multi-idioma. Pergunte ao usuário a
+  direção antes de codar.
 
 A importação de PDF foi **descartada** — não sugira como próximo passo.
 

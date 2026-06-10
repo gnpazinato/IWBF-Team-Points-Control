@@ -4,21 +4,21 @@ Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude
 
 > ## ⚠️ ATENCAO — LEIA ANTES DE QUALQUER COISA ⚠️
 >
-> **O MVP COMPLETO JA ESTA NA `main` (PR #5 mergeado).** `lib/main.dart` na
-> `main` e o app real (upload, parser, Summary, Match Setup, Lineup Control).
-> Avisos antigos de que "main e so scaffold" e de que o codigo vive em
-> `claude/review-and-continue-9ZK5v` estao **DESATUALIZADOS** — aquela branch
-> e historica; **nao trabalhe mais a partir dela**.
+> **TUDO ESTA NA `main`.** O MVP (PR #5) e a modernizacao visual + ajustes
+> estruturais (Fases 1-6 + ajustes pos-testers 0039-0041) foram mergeados
+> via **PR #6 em 2026-06-10** (aprovado pelo usuario). `lib/main.dart` na
+> `main` e o app real e atual. As branches `claude/review-and-continue-9ZK5v`
+> e `claude/visual-modernization` sao historicas — **nao trabalhe mais a
+> partir delas**; ignore avisos antigos de "main e so scaffold".
 >
-> **Branch de trabalho atual:** `claude/visual-modernization` (criada a
-> partir de `main`), com a modernizacao visual (Fases 1-6) + ajustes
-> pos-testers (entradas 0039, 0040, 0041). **PR aberto para `main` —
-> aguardando aprovacao do usuario; NAO mergear sozinho.**
+> **Trabalho novo:** crie uma branch `claude/**` nova a partir da `main`.
+> Nao ha PR aberto. **Nunca commite direto na `main`.**
 >
 > ```bash
 > git fetch origin
-> git checkout claude/visual-modernization   # ou main, se o PR ja mergeou
-> git pull --ff-only origin claude/visual-modernization
+> git checkout main
+> git pull --ff-only origin main
+> git checkout -b claude/<novo-escopo>
 > git log --oneline -12
 > ```
 >
@@ -47,12 +47,12 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Branch de trabalho | **`claude/visual-modernization`** (a partir de `main`; NAO usar `claude/review-and-continue-9ZK5v`, que e historica) |
+| Branch de trabalho | **`main`** (tudo mergeado). Trabalho novo: branch `claude/**` nova a partir de `main`. `claude/visual-modernization` e `claude/review-and-continue-9ZK5v` sao historicas. |
 | Versao atual | **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Numeracao normalizada apos um commit ter gravado `1.5.1+5` por engano (ver bloco ATENCAO acima). |
 | Data da ultima atualizacao | 2026-06-10 |
-| Status geral | **MVP na `main` (PR #5). Modernizacao visual (Fases 1-6, entrada 0038) + 3 rodadas de ajustes pos-testers vivem em `claude/visual-modernization`, com PR aberto para `main` (NAO mergeado — aguardando aprovacao do usuario). Ajustes pos-testers: entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas). CI verde a cada push; 2 previews Web operacionais (GH Pages + CF Pages).** |
-| Fase atual | **Modernizacao visual implementada (Fases 1-6) + ajustes 0039..0041 fechados. PR `claude/visual-modernization -> main` aberto. Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento; aguardando proximo pedido do usuario.** |
-| Proximo passo recomendado | Decisao do usuario: aprovar/mergear o PR `claude/visual-modernization -> main` (NAO mergear sozinho) ou solicitar novos ajustes (nova entrada no log + commit `fix(visual):...` na branch). Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
+| Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). CI verde; 2 previews Web operacionais (GH Pages + CF Pages).** |
+| Fase atual | **Ciclo fechado. Modernizacao visual (Fases 1-6) + ajustes 0039-0041 mergeados na `main` (PR #6). Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento e sem PR aberto; aguardando proximo pedido do usuario.** |
+| Proximo passo recomendado | Aguardar proximo pedido do usuario. Para novos ajustes: criar branch `claude/**` a partir de `main`, nova entrada no log, commit convencional, abrir PR. Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
 | Testers externos | 2 pessoas com link do preview Web (compartilhado em 2026-05-14): GH Pages https://gnpazinato.github.io/IWBF-Team-Points-Control/ e CF Pages https://iwbf-team-points-control.pages.dev/. |
 | Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. (A sessao de 2026-05-15 rodou 176/176 testes localmente com Flutter 3.41.9, mas esse SDK nao persiste neste sandbox.) |
 | APK gerado | Sim, via CI a cada push, na versao `1.4.0+5`. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
@@ -557,6 +557,49 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0042 - 2026-06-10 - Merge da modernizacao visual na main (PR #6) + sincronizacao dos docs
+
+Contexto: o usuario revisou o estado, confirmou que a decisao estava tomada
+("nao quero nada em aberto") e **aprovou explicitamente o merge** do PR #6
+`claude/visual-modernization -> main`. Isso satisfaz a regra "nao mergear
+sozinho" (a aprovacao do usuario era o que faltava).
+
+Antes do merge, foi pedida (entrada anterior, mesmo dia) uma sincronizacao
+geral dos docs, que estavam parados na "Fase 5 / branch antiga / main e so
+scaffold" e geravam confusao. Entregue em duas levas:
+
+- **Sincronizacao dos docs (commit `docs:` dfc11ce):** `CLAUDE.md`,
+  `docs/AI_WORK_LOG.md`, `docs/IWBF_Team_Points_Control_Planejamento.md`,
+  `docs/PLANO_DESENVOLVIMENTO_IA.md` atualizados para o estado real (versao
+  `1.4.0+5`, entradas 0038-0041, nota da confusao `1.5.1`->`1.4.0`). Bloco
+  ATENCAO e tabela "Estado atual" reescritos; prompts de continuidade antigos
+  marcados como HISTORICOS/OBSOLETOS apontando o `CLAUDE.md` como fonte da
+  verdade; avisos de branch desatualizados corrigidos nos docs de planejamento.
+- **Fechamento (esta entrada):** docs atualizados de "PR aberto" para "PR #6
+  mergeado em 2026-06-10". Branch de trabalho na tabela passa a ser `main`;
+  trabalho novo = branch `claude/**` nova a partir de `main`. Em seguida o
+  PR #6 foi mergeado na `main` (merge commit, via `gh pr merge`).
+
+Verificacao tecnica (a pedido do usuario): o ajuste de DOB da entrada 0041
+esta correto — `_parseDateOfBirth` aceita ano de 2 digitos (`24-01-91` ->
+1991, pivo 69-99 -> 1900s) e 4 digitos; ISO so dispara com 4 digitos;
+anti-overflow rejeita `31/02`. Coberto por testes (`12-12-25 -> 2025`,
+`05/06/90 -> 1990`).
+
+Arquivos alterados: `CLAUDE.md`, `docs/AI_WORK_LOG.md`,
+`docs/IWBF_Team_Points_Control_Planejamento.md`,
+`docs/PLANO_DESENVOLVIMENTO_IA.md` (somente documentacao — nenhuma mudanca de
+codigo de produto nesta sessao).
+
+Testes: nao se aplica (docs-only); CI roda no push e deve permanecer verde.
+
+Proximo passo recomendado: ciclo fechado, sem PR aberto. Aguardar proximo
+pedido do usuario. Branches historicas (`claude/visual-modernization`,
+`claude/review-and-continue-9ZK5v`) podem ser deletadas APOS confirmar que a
+production-branch do CF Pages aponta para `main` no dashboard Cloudflare
+(senao a URL publica `iwbf-team-points-control.pages.dev` para de atualizar —
+ver entradas 0034 e 0037).
 
 ### 0041 - 2026-06-06 - Ajustes v1.4.0: datas 2 digitos, remover chip da quadra, bandeiras africanas
 
