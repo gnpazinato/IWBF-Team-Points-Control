@@ -51,7 +51,7 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Branch de trabalho | **`main`** (tudo mergeado). Trabalho novo: branch `claude/**` nova a partir de `main`. `claude/visual-modernization` e `claude/review-and-continue-9ZK5v` sao historicas. |
 | Versao atual | **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Numeracao normalizada apos um commit ter gravado `1.5.1+5` por engano (ver bloco ATENCAO acima). |
 | Data da ultima atualizacao | 2026-06-10 |
-| Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). CI verde; preview Web unico (GH Pages).** |
+| Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). Manual do usuario (.docx) atualizado para v1.4.0 na branch `claude/manual-v1.4.0` (entrada 0044). CI verde; preview Web unico (GH Pages).** |
 | Fase atual | **Ciclo fechado. Modernizacao visual (Fases 1-6) + ajustes 0039-0041 mergeados na `main` (PR #6). Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento e sem PR aberto; aguardando proximo pedido do usuario.** |
 | Proximo passo recomendado | Aguardar proximo pedido do usuario. Para novos ajustes: criar branch `claude/**` a partir de `main`, nova entrada no log, commit convencional, abrir PR. Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
 | Testers externos | 2 pessoas com link do preview Web GH Pages (compartilhado em 2026-05-14): https://gnpazinato.github.io/IWBF-Team-Points-Control/. (CF Pages removido em 2026-06-10 — entrada 0043.) |
@@ -558,6 +558,55 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0044 - 2026-06-10 - Atualiza manual do usuario (.docx) para v1.4.0
+
+Contexto: o usuario revisou o manual e pediu para (a) verificar se ele cobre
+TODAS as funcionalidades, inclusive os ajustes da v1.4.0 (entrada 0041), e
+(b) manter SOMENTE a versao Word (sem PDF). O manual versionado no repo
+estava em v1.3.0 e nao cobria a v1.4.0; o usuario tambem ja havia feito
+ajustes locais (remocao do Appendix A). Ele enviou a versao local atualizada
+como novo arquivo `docs/IWBF Team Points Control - User Manual.docx` (nome com
+espacos) para substituir o antigo `IWBF_Team_Points_Control_User_Manual.docx`.
+Nao havia nenhum PDF no repo — nada a deletar nesse sentido.
+
+Entregue (edicao direta do `word/document.xml`, preservando os 15 screenshots
+e os estilos; substituicoes exatas com assert de unicidade):
+
+- **Versao:** 4 ocorrencias `1.3.0` -> `1.4.0` (capa "Application version",
+  "captures of the app", legenda da Figure 3, nota do rodape).
+- **Datas (Section 2 "Date of birth"):** novo marcador documentando ano de
+  2 digitos e separadores `-`/`.` (`24-01-91 -> 1991`, `12-12-25 -> 2025`,
+  `05/06/90 -> 1990`; pivo `00-68 -> 2000-2068`, `69-99 -> 1969-1999`; ISO
+  `YYYY-MM-DD` so quando comeca com 4 digitos).
+- **Lineup Control (Section 8 "Selecting players"):** acrescentado que da para
+  remover o jogador tocando no colete dele NA QUADRA (alem da lista lateral).
+- **Colunas / planilhas de outros sistemas (Section 2 "The columns"):** nota
+  explicita de que colunas extras nao reconhecidas (role, status, first/last
+  name etc.) sao ignoradas — entao planilhas exportadas de outros sistemas
+  funcionam, desde que as 4 colunas principais existam com titulos
+  reconheciveis. (Confirmado no `spreadsheet_parser_service.dart`: aliases
+  amplos + colunas nao listadas "simplesmente ignoradas".)
+- **Appendix A:** removido (alinhado a versao do usuario) + limpadas as 2
+  referencias orfas "see Appendix A" que tinham sobrado no corpo (NOTE do
+  template + bullet do Summary).
+- Bandeiras africanas (0041 item 3): nenhuma mudanca necessaria — o texto
+  generico de "Team names & flags" continua correto (melhoria so de dados).
+
+Arquivos alterados:
+
+- `docs/IWBF Team Points Control - User Manual.docx` (novo; substitui o antigo)
+- `docs/IWBF_Team_Points_Control_User_Manual.docx` (deletado)
+- `docs/AI_WORK_LOG.md` (esta entrada)
+
+Validacao: `document.xml` re-parseado com `ElementTree` (bem-formado); `.docx`
+reaberto como zip (30 entradas, 15 imagens intactas); checagens de texto
+(`1.3.0`=0, `1.4.0`=4, `Appendix A`=0; novos trechos presentes). Mudanca
+docs-only — sem alteracao de codigo nem de versao do app (`pubspec` segue
+`1.4.0+5`).
+
+Proximo passo recomendado: usuario revisa o `.docx` atualizado; se aprovado,
+seguir no fluxo de PR (`claude/manual-v1.4.0 -> main`). Nao mergear sozinho.
 
 ### 0043 - 2026-06-10 - Remove Cloudflare Pages do CI (preview unico = GH Pages)
 
