@@ -24,16 +24,23 @@ class PlayerJerseyIcon extends StatelessWidget {
     required this.player,
     required this.isTeamA,
     this.size = 40,
+    this.jerseyColor,
   });
 
   final Player player;
   final bool isTeamA;
   final double size;
 
+  /// Cor da camisa. Quando nula, usa o padrão (Team A clara, Team B escura).
+  final Color? jerseyColor;
+
   @override
   Widget build(BuildContext context) {
-    final Color fill = isTeamA ? Colors.white : IwbfColors.textPrimary;
-    final Color text = isTeamA ? IwbfColors.textPrimary : Colors.white;
+    final Color fill =
+        jerseyColor ?? (isTeamA ? Colors.white : IwbfColors.textPrimary);
+    // Texto contrastante: escuro sobre camisas claras, branco sobre escuras.
+    final Color text =
+        fill.computeLuminance() > 0.5 ? IwbfColors.textPrimary : Colors.white;
     const Color border = IwbfColors.goldDeep;
 
     return SizedBox(

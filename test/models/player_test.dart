@@ -5,8 +5,7 @@ Player _build({
   String id = 'p1',
   String teamName = 'Brazil',
   int shirtNumber = 7,
-  String surname = 'Silva',
-  String firstName = 'João',
+  String name = 'João Silva',
   double playerClass = 2.5,
   DateTime? dateOfBirth,
   PlayerGender gender = PlayerGender.unspecified,
@@ -15,8 +14,7 @@ Player _build({
     id: id,
     teamName: teamName,
     shirtNumber: shirtNumber,
-    surname: surname,
-    firstName: firstName,
+    name: name,
     playerClass: playerClass,
     dateOfBirth: dateOfBirth,
     gender: gender,
@@ -25,9 +23,9 @@ Player _build({
 
 void main() {
   group('Player', () {
-    test('displayName usa SURNAME, First Name', () {
-      final Player p = _build();
-      expect(p.displayName, equals('SILVA, João'));
+    test('displayName retorna o nome completo (campo único)', () {
+      final Player p = _build(name: 'João Silva');
+      expect(p.displayName, equals('João Silva'));
     });
 
     test('hasValidClass aceita classes IWBF', () {
@@ -49,11 +47,30 @@ void main() {
       expect(restored.id, equals(original.id));
       expect(restored.teamName, equals(original.teamName));
       expect(restored.shirtNumber, equals(original.shirtNumber));
-      expect(restored.surname, equals(original.surname));
-      expect(restored.firstName, equals(original.firstName));
+      expect(restored.name, equals(original.name));
       expect(restored.playerClass, equals(original.playerClass));
       expect(restored.dateOfBirth, equals(original.dateOfBirth));
       expect(restored.gender, equals(PlayerGender.male));
+    });
+
+    test('roundtrip JSON sem dob mantém dateOfBirth nulo', () {
+      final Player p = _build();
+      final Player restored = Player.fromJson(p.toJson());
+      expect(restored.dateOfBirth, isNull);
+    });
+
+    test('fromJson aceita formato legado surname + firstName', () {
+      final Player restored = Player.fromJson(<String, dynamic>{
+        'id': 'p1',
+        'teamName': 'Brazil',
+        'shirtNumber': 7,
+        'surname': 'Silva',
+        'firstName': 'João',
+        'playerClass': 2.5,
+        'dateOfBirth': null,
+        'gender': 'male',
+      });
+      expect(restored.name, equals('João Silva'));
     });
 
     test('roundtrip JSON com gender ausente vira unspecified', () {
@@ -68,13 +85,13 @@ void main() {
       final Player p = _build();
       final Player updated = p.copyWith(shirtNumber: 11);
       expect(updated.shirtNumber, equals(11));
-      expect(updated.surname, equals(p.surname));
+      expect(updated.name, equals(p.name));
       expect(updated.id, equals(p.id));
     });
 
     test('igualdade é definida pelo id', () {
       final Player a = _build(id: 'x');
-      final Player b = _build(id: 'x', shirtNumber: 99, surname: 'Outro');
+      final Player b = _build(id: 'x', shirtNumber: 99, name: 'Outro');
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });

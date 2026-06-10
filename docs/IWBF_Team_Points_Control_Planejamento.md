@@ -4,26 +4,23 @@
 
 > ## ⚠️ ATENCAO — LEIA ANTES DE CODAR ⚠️
 >
-> **TODO o trabalho de Fase 1-5 ja existe na branch `claude/review-and-continue-9ZK5v`.**
-> A `main` ainda esta com o scaffold inicial (commit `a2cc748`). Se voce
-> abrir `lib/main.dart` e ver so um placeholder, voce esta na branch
-> errada — nao reimplemente do zero, apenas troque:
+> **O MVP completo (Fases 1-5) JA ESTA NA `main`** (PR #5 mergeado);
+> `lib/main.dart` na `main` e o app real. Avisos antigos de "main so tem
+> scaffold" e da branch `claude/review-and-continue-9ZK5v` (historica)
+> estao DESATUALIZADOS. A branch de trabalho atual e
+> **`claude/visual-modernization`** (modernizacao visual Fases 1-6 +
+> ajustes pos-testers 0039-0041, versao `1.4.0+5`), com PR aberto para
+> `main` — **nao mergear sozinho**.
 >
 > ```bash
 > git fetch origin
-> git checkout claude/review-and-continue-9ZK5v
-> git pull --ff-only origin claude/review-and-continue-9ZK5v
+> git checkout claude/visual-modernization   # ou main, se o PR ja mergeou
+> git pull --ff-only origin claude/visual-modernization
 > ```
 >
-> Confirme com `git log --oneline -5` que voce ve commits `feat(fase-5)...`,
-> nao apenas o scaffold.
->
 > Detalhes completos do estado atual estao em `docs/AI_WORK_LOG.md`
-> (entradas 0001-0033). **Sempre leia esse log antes de qualquer
-> alteracao.** Sao 33 entradas que mostram exatamente onde paramos.
-> O prompt de continuidade pronto para uso esta na ultima secao do
-> log ("Prompt curto de continuidade — Fase 5 fechada / aguardando
-> testers").
+> (tabela "Estado atual" no topo + entradas 0038-0041). **Sempre leia esse
+> log antes de qualquer alteracao.**
 
 ---
 

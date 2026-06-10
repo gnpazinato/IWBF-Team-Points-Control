@@ -8,8 +8,7 @@ Player _player(String id, String team, double cls, {int number = 1}) => Player(
       id: id,
       teamName: team,
       shirtNumber: number,
-      surname: 'P$id',
-      firstName: 'First',
+      name: 'First P$id',
       playerClass: cls,
     );
 

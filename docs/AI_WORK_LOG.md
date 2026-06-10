@@ -4,28 +4,36 @@ Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude
 
 > ## ⚠️ ATENCAO — LEIA ANTES DE QUALQUER COISA ⚠️
 >
-> **TODO o codigo de produto vive na branch `claude/review-and-continue-9ZK5v`.**
-> A `main` ainda tem APENAS o scaffold inicial (commit `a2cc748`) — nao tem
-> tela de upload, parser, Summary, Match Setup, Lineup Control nem nada do
-> Phase 1-5.
+> **TUDO ESTA NA `main`.** O MVP (PR #5) e a modernizacao visual + ajustes
+> estruturais (Fases 1-6 + ajustes pos-testers 0039-0041) foram mergeados
+> via **PR #6 em 2026-06-10** (aprovado pelo usuario). `lib/main.dart` na
+> `main` e o app real e atual. As branches `claude/review-and-continue-9ZK5v`
+> e `claude/visual-modernization` sao historicas — **nao trabalhe mais a
+> partir delas**; ignore avisos antigos de "main e so scaffold".
 >
-> **Antes de fazer qualquer alteracao:**
+> **Trabalho novo:** crie uma branch `claude/**` nova a partir da `main`.
+> Nao ha PR aberto. **Nunca commite direto na `main`.**
 >
-> 1. `git fetch origin && git checkout claude/review-and-continue-9ZK5v`
-> 2. `git pull --ff-only origin claude/review-and-continue-9ZK5v`
-> 3. Confirmar com `git log --oneline -5` que voce esta vendo commits
->    `feat(fase-5)...`, `fix(fase-5)...` etc. — nao apenas o scaffold.
+> ```bash
+> git fetch origin
+> git checkout main
+> git pull --ff-only origin main
+> git checkout -b claude/<novo-escopo>
+> git log --oneline -12
+> ```
+>
+> **Versao atual:** `1.4.0+5` (`kAppVersion = 1.4.0`, build 5). Houve uma
+> confusao de numeracao: um commit gravou `1.5.1+5`, depois **corrigido para
+> `1.4.0+5`** (o "1.5.1" pulava a 1.4.0 e quebrava o fluxo minor++). O
+> conteudo e o mesmo — so o numero foi normalizado.
 >
 > **Preview Web:** `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-> e servido a partir desta branch (a regra do environment `github-pages`
-> esta em "No restriction" — qualquer push em `claude/**` ou `main` publica;
-> ver entrada 0022).
+> (GH Pages, legado) e `https://iwbf-team-points-control.pages.dev/`
+> (CF Pages, URL neutra). Qualquer push em `claude/**` ou `main` publica
+> (ver entradas 0022 e 0034).
 >
-> Se voce esta vendo apenas o scaffold em `lib/main.dart`, voce esta na
-> branch ERRADA. Nao "implemente do zero" — apenas troque de branch.
->
-> Quando o ciclo MVP terminar, abriremos PR para `main` e mergeamos.
-> Ate la, **NUNCA** trabalhe a partir do `main`.
+> Nunca commite direto na `main`; trabalhe em `claude/visual-modernization`
+> ou numa branch `claude/**` nova a partir de `main`.
 
 Antes de qualquer nova tarefa, a IA deve ler:
 
@@ -39,14 +47,15 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
-| Data da ultima atualizacao | 2026-05-15 |
-| Status geral | **Fase 5 ENCERRADA (entrada 0037): apos 3 Robo Tests no Firebase Test Lab (Pixel 5 API 30, Galaxy Tab A9+ API 34, Pixel Tablet API 34) confirmarem que o app launcha e renderiza sem crash (limitacao conhecida: Robo crawler nao navega SAF system dialogs — comportamento by design, nao bug do app), layout tablet 10" portrait validado via CF Pages em DevTools Chrome, usuario decidiu fechar MVP. Esta entrada prepara o PR `claude/review-and-continue-9ZK5v -> main` e finaliza o ciclo Fase 1-5. CI 100% verde, 176/176 testes, 2 previews Web operacionais (GH Pages + CF Pages).** |
-| Fase atual | **Fase 5 encerrada — entradas 0023..0037 fechadas. MVP completo. PR `claude/review-and-continue-9ZK5v -> main` aberto para finalizar o ciclo. Decisao do usuario: merge para `main`, manter `claude/review-and-continue-9ZK5v` viva ate switch manual da production-branch do CF Pages para `main` no dashboard Cloudflare.** |
-| Proximo passo recomendado | Mergear o PR para `main`; aguardar CI no `main` gerar APK release final; usuario faz switch manual da production-branch CF Pages `claude/review-and-continue-9ZK5v -> main` no dashboard Cloudflare; planejar Fase 6 (estatisticas pos-jogo, scoring, Play Store, refactor, multi-language ou outro escopo a decidir). |
-| Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). Apos validacao do CF Pages, migrar gradualmente para https://iwbf-team-points-control.pages.dev/. |
-| Ultimos testes executados | 2026-05-15 — `flutter analyze --no-fatal-infos` (1 info pre-existente, nao bloqueante) + `flutter test` (**176 passed, 0 failed**). Flutter SDK 3.41.9 instalado localmente nesta sessao em `/root/flutter`. |
-| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
+| Branch de trabalho | **`main`** (tudo mergeado). Trabalho novo: branch `claude/**` nova a partir de `main`. `claude/visual-modernization` e `claude/review-and-continue-9ZK5v` sao historicas. |
+| Versao atual | **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Numeracao normalizada apos um commit ter gravado `1.5.1+5` por engano (ver bloco ATENCAO acima). |
+| Data da ultima atualizacao | 2026-06-10 |
+| Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). CI verde; 2 previews Web operacionais (GH Pages + CF Pages).** |
+| Fase atual | **Ciclo fechado. Modernizacao visual (Fases 1-6) + ajustes 0039-0041 mergeados na `main` (PR #6). Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento e sem PR aberto; aguardando proximo pedido do usuario.** |
+| Proximo passo recomendado | Aguardar proximo pedido do usuario. Para novos ajustes: criar branch `claude/**` a partir de `main`, nova entrada no log, commit convencional, abrir PR. Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
+| Testers externos | 2 pessoas com link do preview Web (compartilhado em 2026-05-14): GH Pages https://gnpazinato.github.io/IWBF-Team-Points-Control/ e CF Pages https://iwbf-team-points-control.pages.dev/. |
+| Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. (A sessao de 2026-05-15 rodou 176/176 testes localmente com Flutter 3.41.9, mas esse SDK nao persiste neste sandbox.) |
+| APK gerado | Sim, via CI a cada push, na versao `1.4.0+5`. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
 
 ## Ritual obrigatorio para a IA
 
@@ -548,6 +557,144 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0042 - 2026-06-10 - Merge da modernizacao visual na main (PR #6) + sincronizacao dos docs
+
+Contexto: o usuario revisou o estado, confirmou que a decisao estava tomada
+("nao quero nada em aberto") e **aprovou explicitamente o merge** do PR #6
+`claude/visual-modernization -> main`. Isso satisfaz a regra "nao mergear
+sozinho" (a aprovacao do usuario era o que faltava).
+
+Antes do merge, foi pedida (entrada anterior, mesmo dia) uma sincronizacao
+geral dos docs, que estavam parados na "Fase 5 / branch antiga / main e so
+scaffold" e geravam confusao. Entregue em duas levas:
+
+- **Sincronizacao dos docs (commit `docs:` dfc11ce):** `CLAUDE.md`,
+  `docs/AI_WORK_LOG.md`, `docs/IWBF_Team_Points_Control_Planejamento.md`,
+  `docs/PLANO_DESENVOLVIMENTO_IA.md` atualizados para o estado real (versao
+  `1.4.0+5`, entradas 0038-0041, nota da confusao `1.5.1`->`1.4.0`). Bloco
+  ATENCAO e tabela "Estado atual" reescritos; prompts de continuidade antigos
+  marcados como HISTORICOS/OBSOLETOS apontando o `CLAUDE.md` como fonte da
+  verdade; avisos de branch desatualizados corrigidos nos docs de planejamento.
+- **Fechamento (esta entrada):** docs atualizados de "PR aberto" para "PR #6
+  mergeado em 2026-06-10". Branch de trabalho na tabela passa a ser `main`;
+  trabalho novo = branch `claude/**` nova a partir de `main`. Em seguida o
+  PR #6 foi mergeado na `main` (merge commit, via `gh pr merge`).
+
+Verificacao tecnica (a pedido do usuario): o ajuste de DOB da entrada 0041
+esta correto — `_parseDateOfBirth` aceita ano de 2 digitos (`24-01-91` ->
+1991, pivo 69-99 -> 1900s) e 4 digitos; ISO so dispara com 4 digitos;
+anti-overflow rejeita `31/02`. Coberto por testes (`12-12-25 -> 2025`,
+`05/06/90 -> 1990`).
+
+Arquivos alterados: `CLAUDE.md`, `docs/AI_WORK_LOG.md`,
+`docs/IWBF_Team_Points_Control_Planejamento.md`,
+`docs/PLANO_DESENVOLVIMENTO_IA.md` (somente documentacao — nenhuma mudanca de
+codigo de produto nesta sessao).
+
+Testes: nao se aplica (docs-only); CI roda no push e deve permanecer verde.
+
+Proximo passo recomendado: ciclo fechado, sem PR aberto. Aguardar proximo
+pedido do usuario. Branches historicas (`claude/visual-modernization`,
+`claude/review-and-continue-9ZK5v`) podem ser deletadas APOS confirmar que a
+production-branch do CF Pages aponta para `main` no dashboard Cloudflare
+(senao a URL publica `iwbf-team-points-control.pages.dev` para de atualizar —
+ver entradas 0034 e 0037).
+
+### 0041 - 2026-06-06 - Ajustes v1.4.0: datas 2 digitos, remover chip da quadra, bandeiras africanas
+
+Contexto: 3 ajustes pedidos pelo usuario apos testes externos.
+
+Entregue:
+
+- **1) DOB com ano de 2 digitos e separadores `-`/`.`** (`spreadsheet_parser_service.dart` `_parseDateOfBirth`): aceita `12-12-25`, `12-12-2025`, `05/06/90`, etc. ISO `yyyy-mm-dd` so e tentado quando comeca com 4 digitos (evita que `12-12-25` vire ano 12). Pivo de 2 digitos estilo POSIX: `00`-`68` -> `2000`-`2068`, `69`-`99` -> `1969`-`1999`. Adicionada validacao anti-overflow (rejeita `31/02`).
+- **2) Remover jogador tocando no chip da quadra** (`lineup_control_screen.dart`): `_CourtView`/`_CourtPlayerSlot`/`_CourtPlayerChip` recebem `onTap`; o chip vira `GestureDetector` (key `court-chip-<id>`) que chama o MESMO `_onPlayerTap` das listas laterais — como o jogador ja esta selecionado, `togglePlayer` o remove. Antes so dava para remover pelas listas/menus laterais.
+- **3) Bandeiras de paises africanos faltantes** (`country_resolver_service.dart`): a causa do "erro" do usuario era que Angola (e varios outros) NAO estavam nas tabelas `_defaultAliases`/`_countryCodes` — o resolver retornava `null` e o widget caia no icone generico (`Icons.flag_outlined`); nao havia crash. Adicionados Angola (AO), Botswana, Congo, DR Congo, Ghana, Libya, Madagascar, Mali, Mozambique, Namibia, Rwanda, Sudan, Tanzania, Zambia (+ aliases PT/IOC). A bandeira emoji e derivada do ISO alpha-2, entao basta mapear o codigo.
+- **Versao:** `pubspec.yaml` 1.3.0+4 -> **1.4.0+5**; `kAppVersion` 1.3.0 -> **1.4.0** (segue o fluxo minor++ das versoes anteriores; o "1.5.1" inicialmente cogitado pulava a 1.4.0 e usava patch .1, fora do padrao).
+
+Arquivos alterados: `lib/services/spreadsheet_parser_service.dart`, `lib/screens/lineup_control_screen.dart`, `lib/services/country_resolver_service.dart`, `lib/constants/app_version.dart`, `pubspec.yaml`, `test/services/spreadsheet_parser_service_test.dart` (+3 testes de DOB), `test/services/country_resolver_service_test.dart` (+1 teste bandeiras africanas), `test/screens/lineup_control_screen_test.dart` (+1 teste remover via chip).
+
+Testes: validados no CI (Flutter ausente no Codespace).
+
+Proximo passo recomendado: usuario valida no preview/APK; segue no fluxo do PR (nao mergear sozinho).
+
+### 0040 - 2026-05-29 - Restaurar a PLANILHA INTEIRA na tela inicial (v1.3.0)
+
+Contexto:
+
+- Ao fim de uma partida o usuario costuma fechar o app ou voltar varias telas ate a inicial. Pedido: quando o app e **encerrado**, sofre **crash** ou volta do **segundo plano** (ex.: no dia seguinte), a tela inicial deve perguntar "começar do zero" ou "carregar a planilha anterior". Ja existia essa pergunta, mas ela restaurava apenas o `MatchState` (as **2 equipes** da ultima partida). O usuario quer carregar a planilha **INTEIRA** (todas as equipes/atletas da ultima planilha usada — a mais recente, caso varias tenham sido usadas).
+- **Excecao:** se o usuario esta **numa partida**, minimiza e volta, deve cair **exatamente na tela da partida** (sem pergunta). A pergunta so reaparece quando o usuario **sai da partida** (voltar de pagina / crash / encerrar) e volta a Home.
+
+Decisoes do usuario (perguntadas antes de codar):
+
+- **Destino do restore:** abre o **Resumo da planilha** (Validation Summary) com TODAS as equipes — usuario revisa/edita e segue para o Match Setup. (Nao vai direto ao Match Setup.)
+- **Resume fora da partida:** so refaz a pergunta **se ja estiver na Home**. Em Match Setup / Resumo, voltar do segundo plano **nao interrompe** (fica onde estava). Isso dispensou rastrear rotas / mexer no `main.dart`.
+
+Entregue:
+
+- **`lib/models/saved_roster.dart` (novo):** `SavedRoster { teams, competitionName }` com `toJson`/`fromJson` (reusa `Team.toJson`). Persiste a planilha inteira, separada do `MatchState`.
+- **`CacheService`:** nova chave `iwbf.roster.v1` + `saveRoster`/`loadRoster`/`hasRoster`/`clearRoster`. `clear()` agora limpa **roster E match state** (ambos os callers — "Start from Scratch" e "Load New Spreadsheet" — querem tela limpa).
+- **`ValidationSummaryScreen._continue`:** salva `SavedRoster(_teams, competitionName)` no cache (planilha validada/editada = "ultima planilha usada") antes de ir ao Match Setup. Navigator capturado antes do await (evita `use_build_context_synchronously`).
+- **`LoadSpreadsheetScreen`:** pergunta passa a checar `hasRoster()` (nao `hasMatchState()`); "Load Previous Spreadsheet" reconstroi um `SpreadsheetParseResult` limpo (sem issues) da planilha salva e abre o **Resumo** com todas as equipes. Vira `WidgetsBindingObserver`: em `resumed`, se a Home esta no topo (`ModalRoute.isCurrent`), reseta o guard e refaz a pergunta; senao nao faz nada (partida/setup/resumo intactos). Textos do dialog atualizados ("Load Previous Spreadsheet" / "...all teams and players...").
+- **Versao:** `pubspec.yaml` 1.2.0+3 -> **1.3.0+4**; `kAppVersion` 1.2.0 -> **1.3.0**.
+- **Nota:** o `MatchSetupScreen(restored:)` continua existindo (usado em testes), mas a Home nao usa mais esse caminho. Apos crash/kill o app NAO volta a partida exata (por design, conforme pedido): volta a Home e oferece a planilha inteira.
+
+Arquivos alterados: `lib/models/saved_roster.dart` (novo), `lib/services/cache_service.dart`, `lib/screens/{validation_summary,load_spreadsheet}_screen.dart`, `lib/constants/app_version.dart`, `pubspec.yaml`, `test/services/cache_service_test.dart` (grupo roster), `test/screens/load_spreadsheet_screen_test.dart` (seed por roster; restore -> Resumo com 3 equipes incl. Canada; 2 testes de ciclo de vida resume on/off-Home).
+
+Testes: validados no CI (Flutter ausente no Codespace). Novos: roster save/load/has/clear + clear() limpa ambos; dialog gateado por roster; "Load Previous Spreadsheet" abre Resumo com Brazil+Argentina+Canada (prova planilha inteira); resume na Home refaz a pergunta; resume fora da Home (no Resumo) nao interrompe.
+
+Proximo passo recomendado:
+
+- Usuario testa no preview/APK: encerrar/crashar/minimizar e confirmar (a) pergunta na Home, (b) restore traz a planilha inteira, (c) minimizar durante a partida volta a partida. Se aprovado, segue no fluxo do PR `claude/visual-modernization -> main` (**nao mergear sozinho**).
+
+### 0039 - 2026-05-27 - Parser tolerante a nomes de coluna (aliases amplos + planilha real)
+
+Contexto:
+
+- O usuario anexou uma planilha real estilo IWBF (`COMPETITION, COUNTRY, CLASS, FULL NAME, NUMBER, FIRST NAME, LAST NAME, DOB, ROLE, CS`) e pediu que o app interprete colunas com titulos **levemente diferentes** pela informacao que carregam, nao pelo titulo exato. Obrigatorias minimas: `team_name`, `class`, `full_name`, `number`. `dob`/`gender` ausentes **nao** bloqueiam (ficam em branco). Colunas irrelevantes (`role`, `cs`/`class_status`, `first_name`/`last_name` quando ha `full_name`) devem ser **ignoradas**.
+
+Entregue (em `lib/services/spreadsheet_parser_service.dart`):
+
+- **Aliases ampliados** no mapa `_columnAliases` (tokens ja normalizados): `team_name` agora aceita `country`/`nation`/`nationality`/`pais`/`equipe`...; `class` aceita `sport_class`/`classification`/`functional_class`/`classe`...; `competition` aceita `tournament`/`event`/`championship`/`torneio`...; `name` aceita `full_name`/`player`/`athlete`/`nome`...; `number` aceita `jersey`/`bib`/`numero`...; `dob` aceita `birthday`/`born`/`nascimento`... O importante e a informacao da coluna, nao o titulo.
+- **Par legado de nome** (`surname`/`first_name`) virou coluna logica com aliases proprios (`last_name`/`family_name`/`sobrenome`, `given_name`/`forename`/`nome_proprio`). `_hasLogicalColumn` e `_buildPlayer` agora resolvem via `_columnIndex` (antes liam o token cru `surname`/`first_name`).
+- **Fallback de nome unificado:** quando NAO ha coluna de nome completo, junta sobrenome + nome no formato dos templates **"SOBRENOME, Nome"** (`_composeName`, ex.: `SILVA, João`) — antes era `firstName surname`.
+- **Roteamento dirigido por CONTEUDO (titulo da aba e irrelevante):** o antigo `_parseSingleSheet(SheetData)` virou `_parseTeamColumnSheets(List<SheetData>)`. Regra nova em `parseSheets`: abas que tem coluna de equipe (`team_name`/`country`/...) listam equipes por linha — sao a fonte de verdade; havendo ao menos uma, **todas** elas sao combinadas (mesma equipe espalhada em abas distintas mescla por id) e as **demais abas sao ignoradas** (resumos, instrucoes). So quando NENHUMA aba tem coluna de equipe e que caimos no modelo "uma aba por equipe" (`_parseMultiSheet`, nome = titulo da aba). Removido o special-case do nome "Players" (agora subsumido pela deteccao por conteudo). Cobre: planilha anexada (aba generica com varios paises), aba com titulo aleatorio + coluna `country`, master + aba de instrucoes ignorada, e multiplas abas com coluna de equipe combinadas.
+
+Arquivos alterados: `lib/services/spreadsheet_parser_service.dart`, `test/services/spreadsheet_parser_service_test.dart` (novo grupo "aliases de coluna (entrada 0039)" + 2 assertions de nome atualizadas para o formato "SOBRENOME, Nome").
+
+Testes: validados no CI a cada push (Flutter ausente no Codespace). Novos casos: planilha real IWBF (COUNTRY/FULL NAME + colunas ignoradas, 3 paises -> 3 equipes), aliases `country/classification/tournament/player_name/jersey_number`, reconstrucao `SOBRENOME, Nome` de `last_name`+`first_name`, obrigatorias minimas sem dob/gender, titulo de aba irrelevante, aba "todas as equipes" vence (demais ignoradas), multiplas abas combinadas.
+
+Proximo passo recomendado:
+
+- Usuario testa importando a planilha real no preview Web. Se aprovado, segue no fluxo do PR `claude/visual-modernization -> main` (**nao mergear sozinho**).
+
+### 0038 - 2026-05-27 - Modernizacao visual (Fases 1-6) na branch claude/visual-modernization
+
+Contexto:
+
+- O app irmao CBBC (fork deste) recebeu um refinamento visual/UX e ficou mais moderno. O usuario pediu para trazer esse refinamento para o IWBF **sem perder a identidade** (paleta dourada `IwbfColors`, fonte atual, 3 logos IWBF, bandeiras, UI em ingles, regras sem bonificacao, parser/fluxo). Apos analise dos prompts (Antigravity/Claude/Codex) e respostas do usuario, o escopo cresceu alem do visual e incluiu mudancas estruturais aprovadas.
+- **Correcao de estado:** ao contrario do que dizia o CLAUDE.md/log antigos, a `main` JA TEM o app completo (PR #5 mergeado). O trabalho partiu de `main` numa branch nova `claude/visual-modernization`. Flutter NAO esta instalado no Codespace -> toda validacao roda no CI a cada push.
+
+Entregue (cada fase deixou o CI verde):
+
+- **Fase 1 — tema + icone + PWA:** tokens novos em `IwbfColors` (`successGreen`, `warningSurface`, `cardWhite`, `slate50/100/200`); `cardTheme` branco (elevation 1, sombra `0x14000000`, radius 14, borda slate200); `inputDecorationTheme` (fill slate50, foco dourado), `checkboxTheme`/`switchTheme` dourados; raios FilledButton 14 / OutlinedButton 12. Icone do app = logo preto IWBF (gerado com Pillow) em `web/favicon.png`, `web/icons/Icon-{192,512}` + maskable e `android/.../mipmap-*/ic_launcher.png`. `web/manifest.json`/`index.html` com nome humano + cores douradas. `lib/constants/app_version.dart` (`kAppVersion`).
+- **Fase 2 — modelo + parser + templates:** `Player` passa a ter **`name` unico** (substitui surname+firstName; `fromJson` faz back-compat lendo o formato antigo do cache). `dob`/`gender` **opcionais** (dob em branco nao gera issue; invalido vira warning, nao erro). Parser com **aliases de colunas** (formatos antigos continuam abrindo) + **recuperacao de classe "data-like"** (`classFromDateLikeString` em `player_classes.dart` reconstroi a classe que o Excel autoformatou como data, ex. `2026-05-02` -> `2.5`). Templates novos (`competition, team_name, class, name, number, dob, gender`) com **colunas pre-expandidas** (`setColumnWidth`).
+- **Fase 3 — nomes adaptaveis + orientacao:** `_AutoShrinkText` reescrito — encolhe a fonte e, se ainda nao couber, **quebra em ate 2 linhas (nunca reticencias)**; nome completo sempre visivel. Chip da quadra usa `player.name`. **Rotacao so em tablets** (`shortestSide>=600`); celular travado em portrait (`_applyOrientationPreference` em `main.dart`).
+- **Fase 4 — restyle das telas:** home com upload card (circulo + nuvem), card "Reference Templates" com 2 botoes lado a lado e footer com versao; match setup com cards de friso dourado; lineup com placar em `AnimatedContainer` (glow vermelho ao estourar limite, tabular figures), limite de pontos movido para `PopupMenuButton` na AppBar, quadra com borda/sombra, chips e botoes com icones. Telas viraram `SingleChildScrollView` para nao estourar viewport.
+- **Fase 5 — features novas:** **Jersey Color Picker** (cor da camisa por time guardada no `MatchState`, defaults preservam o visual atual; propagada a `PlayerJerseyIcon`/chips/lista) + **edicao completa do roster** na tela de validacao (editar nome, numero, data de nascimento via `showDatePicker`, genero, classe; excluir atleta com confirmacao; renomear/excluir equipe com confirmacao). Restyle do summary: badges (X Teams / Y Players), status pill, issue blocks com barra-acento. Classe invalida destaca o dropdown em `alertRedSurface`.
+- **Fase 6 — polish + docs:** iconografia padronizada para `_outlined` (`warning_amber_outlined`, `file_upload_outlined`; demais ja eram outlined ou intencionalmente solidos como `play_arrow` no CTA). CLAUDE.md/log corrigidos (estado da branch).
+
+Fora de escopo (DESCARTADO):
+
+- **Importacao de PDF (`syncfusion_flutter_pdf`):** avaliada e **descartada pelo usuario em 2026-05-27** — complexa/fragil demais (extracao depende do layout do PDF) + exigiria Community License Syncfusion. O app foca **somente** nas planilhas template ja criadas. Nao ha menção a PDF no codigo nem na UI; nao reabrir sem novo pedido explicito.
+
+Arquivos principais alterados: `lib/theme/iwbf_theme.dart`, `lib/constants/{app_version,player_classes}.dart`, `lib/models/{player,match_state}.dart`, `lib/services/{spreadsheet_parser_service,template_generator_service}.dart`, `lib/main.dart`, `lib/screens/{load_spreadsheet,match_setup,validation_summary,lineup_control,missing_data}_screen.dart`, `lib/widgets/player_jersey_icon.dart`, assets de icone web/android, + testes em lockstep (nome unificado, dob opcional, jersey colors, limite na AppBar, exclusao no roster).
+
+Testes: validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. Preview Web atualizado a cada push em `claude/**` (GH Pages + CF Pages).
+
+Proximo passo recomendado:
+
+- Usuario revisa o preview no navegador (portrait + landscape, desktop + mobile) e o APK no Android (icone IWBF na home). Se aprovado, mergear o PR `claude/visual-modernization -> main` (**nao mergear sozinho**). PDF foi descartado; proximo escopo a definir pelo usuario.
 
 ### 0037 - 2026-05-15 - Encerramento da Fase 5 e preparacao do merge MVP -> main
 
@@ -1801,7 +1948,16 @@ Decisoes fechadas:
 - `Color.withOpacity(x)` foi deprecated no Flutter 3.41+: usar `Color.withValues(alpha: x)`.
 - Para posicionar elementos sobre uma imagem mantendo proporcao em todos os tamanhos de tela: `AspectRatio` + `Stack` + `LayoutBuilder` + `Positioned(left/top = w*dx, h*dy)` + `FractionalTranslation(-0.5, -0.5)` para centralizar no ponto. Evita coordenadas em pixels e funciona igualmente em tablet/phone.
 
-## Prompt curto de continuidade
+## Prompts de continuidade — HISTÓRICOS (NÃO usar)
+
+> ⚠️ **Os dois prompts abaixo estão OBSOLETOS** (falam em Fase 4/Fase 5 e na
+> branch histórica `claude/review-and-continue-9ZK5v`). A continuidade hoje é
+> feita pelo **`CLAUDE.md`** (auto-carregado pelo Claude Code) + a tabela
+> **"Estado atual"** no topo deste log. Estado real: MVP na `main`,
+> modernização visual + ajustes 0039-0041 na `claude/visual-modernization`
+> (versão `1.4.0+5`), PR aberto. Mantidos apenas como registro histórico.
+
+### Prompt histórico 1 — Fase 4 (obsoleto)
 
 ```text
 Voce esta retomando o IWBF Team Points Control (Flutter offline para
@@ -1850,11 +2006,11 @@ Comece pelo proximo passo recomendado do AI_WORK_LOG e me confirme
 em uma frase qual e o estado atual antes de codar.
 ```
 
-## Prompt curto de continuidade — Fase 5 fechada / aguardando testers (atual)
+### Prompt histórico 2 — Fase 5 fechada / aguardando testers (OBSOLETO)
 
-> Este prompt e o que o usuario deve colar numa nova conversa. Ele
-> assume que o chat anterior fechou a Fase 5 (entradas 0023..0033).
-> Nao precisa pedir prompt novo — esta secao e a fonte de verdade.
+> ⚠️ OBSOLETO — assume Fase 5 (entradas 0023..0033) e a branch histórica
+> `claude/review-and-continue-9ZK5v`. NÃO usar; a fonte de verdade hoje é o
+> `CLAUDE.md` + a tabela "Estado atual" no topo deste log.
 
 ```text
 Você está retomando o IWBF Team Points Control (Flutter offline para

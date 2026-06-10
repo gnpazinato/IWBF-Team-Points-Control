@@ -37,7 +37,7 @@ class MissingDataScreen extends StatelessWidget {
             key: const Key('back-to-load-button'),
             onPressed: () =>
                 Navigator.of(context).popUntil((Route<void> r) => r.isFirst),
-            icon: const Icon(Icons.upload_file),
+            icon: const Icon(Icons.file_upload_outlined),
             label: const Text('Load Different Spreadsheet'),
           ),
         ),
@@ -221,8 +221,8 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(Icons.check_circle_outline,
-                size: 48, color: Colors.green.shade400),
+            const Icon(Icons.check_circle_outline,
+                size: 48, color: IwbfColors.successGreen),
             const SizedBox(height: 16),
             const Text(
               'No blocking issues to fix.',

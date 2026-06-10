@@ -71,12 +71,9 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
     unawaited(_wakelock.enable());
     unawaited(_persist());
   }
-
-  @override
-  void dispose() {
-    unawaited(_wakelock.disable());
-    super.dispose();
-  }
+  // O wakelock NÃO é desligado no dispose: a tela fica acordada em todo o
+  // app (o `main` liga no início e reafirma no resume). Desligar aqui faria
+  // a tela poder inativar ao sair da partida.
 
   Future<void> _persist() => _cache.saveMatchState(_state);
 
@@ -192,14 +189,17 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const IwbfAppBarTitle(text: 'Lineup Control'),
+          actions: <Widget>[
+            _PointLimitMenu(
+              value: _state.pointLimit,
+              onChanged: _onPointLimitChanged,
+            ),
+          ],
         ),
         body: SafeArea(
           child: Column(
             children: <Widget>[
-              _Header(
-                state: _state,
-                onPointLimitChanged: _onPointLimitChanged,
-              ),
+              _Header(state: _state),
               Expanded(
                 child: LayoutBuilder(
                   builder: (BuildContext _, BoxConstraints c) {
@@ -236,10 +236,9 @@ enum _Side { a, b }
 typedef _PlayerTapCallback = void Function(Player player, _Side side);
 
 class _Header extends StatelessWidget {
-  const _Header({required this.state, required this.onPointLimitChanged});
+  const _Header({required this.state});
 
   final MatchState state;
-  final ValueChanged<double> onPointLimitChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -294,7 +293,6 @@ class _Header extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: _ScoreCell(
-                    label: 'Team A',
                     total: state.totalPointsTeamA,
                     limit: state.pointLimit,
                     isOver: state.isTeamAOverLimit,
@@ -303,41 +301,11 @@ class _Header extends StatelessWidget {
                 ),
                 Expanded(
                   child: _ScoreCell(
-                    label: 'Team B',
                     total: state.totalPointsTeamB,
                     limit: state.pointLimit,
                     isOver: state.isTeamBOverLimit,
                     keyName: 'score-team-b',
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text('Point Limit:', style: TextStyle(fontSize: 13)),
-                const SizedBox(width: 6),
-                DropdownButton<double>(
-                  key: const Key('lineup-point-limit-dropdown'),
-                  value: state.pointLimit,
-                  isDense: true,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: IwbfColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  items: kAcceptedPointLimits
-                      .map(
-                        (double v) => DropdownMenuItem<double>(
-                          value: v,
-                          child: Text(v.toStringAsFixed(1)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (double? next) {
-                    if (next != null) onPointLimitChanged(next);
-                  },
                 ),
               ],
             ),
@@ -348,16 +316,48 @@ class _Header extends StatelessWidget {
   }
 }
 
+/// Menu discreto na AppBar para ajustar o limite de pontos, liberando o
+/// cabeçalho. O limite atual continua visível no denominador do placar.
+class _PointLimitMenu extends StatelessWidget {
+  const _PointLimitMenu({required this.value, required this.onChanged});
+
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<double>(
+      key: const Key('lineup-point-limit-dropdown'),
+      tooltip: 'Point Limit',
+      icon: const Icon(Icons.tune),
+      initialValue: value,
+      onSelected: onChanged,
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<double>>[
+        const PopupMenuItem<double>(
+          enabled: false,
+          child: Text('Point Limit',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+        ),
+        const PopupMenuDivider(),
+        ...kAcceptedPointLimits.map(
+          (double v) => PopupMenuItem<double>(
+            value: v,
+            child: Text(v.toStringAsFixed(1)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ScoreCell extends StatelessWidget {
   const _ScoreCell({
-    required this.label,
     required this.total,
     required this.limit,
     required this.isOver,
     required this.keyName,
   });
 
-  final String label;
   final double total;
   final double limit;
   final bool isOver;
@@ -367,34 +367,51 @@ class _ScoreCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color textColor =
         isOver ? IwbfColors.alertRed : IwbfColors.textPrimary;
-    return Container(
+    return AnimatedContainer(
       key: Key(keyName),
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: isOver ? IwbfColors.alertRedSurface : Colors.transparent,
+        color: isOver ? IwbfColors.alertRedSurface : IwbfColors.cardWhite,
         border: Border.all(
-          color: isOver ? IwbfColors.alertRed : Colors.black12,
+          color: isOver ? IwbfColors.alertRed : IwbfColors.slate200,
+          width: isOver ? 1.6 : 1,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isOver
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: IwbfColors.alertRed.withValues(alpha: 0.35),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ]
+            : const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            '${total.toStringAsFixed(1)} / ${limit.toStringAsFixed(1)}',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '${total.toStringAsFixed(1)} / ${limit.toStringAsFixed(1)}',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                height: 1.05,
+                fontFeatures: const <FontFeature>[
+                  FontFeature.tabularFigures(),
+                ],
+              ),
             ),
           ),
           // Espaço fixo reservado pro alerta — mantém os dois boxes com a
@@ -437,11 +454,12 @@ class _TabletBody extends StatelessWidget {
             isTeamA: true,
             selectedIds: state.selectedTeamAIds,
             onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
+            jerseyColor: state.jerseyColorA,
           ),
         ),
         Expanded(
           flex: 4,
-          child: _CourtView(state: state),
+          child: _CourtView(state: state, onPlayerTap: onPlayerTap),
         ),
         Expanded(
           flex: 3,
@@ -451,6 +469,7 @@ class _TabletBody extends StatelessWidget {
             isTeamA: false,
             selectedIds: state.selectedTeamBIds,
             onPlayerTap: (Player p) => onPlayerTap(p, _Side.b),
+            jerseyColor: state.jerseyColorB,
           ),
         ),
       ],
@@ -486,14 +505,16 @@ class _PhoneBody extends StatelessWidget {
                   isTeamA: true,
                   selectedIds: state.selectedTeamAIds,
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.a),
+                  jerseyColor: state.jerseyColorA,
                 ),
-                _CourtView(state: state),
+                _CourtView(state: state, onPlayerTap: onPlayerTap),
                 _TeamPlayerList(
                   key: const Key('phone-team-b-list'),
                   team: state.teamB,
                   isTeamA: false,
                   selectedIds: state.selectedTeamBIds,
                   onPlayerTap: (Player p) => onPlayerTap(p, _Side.b),
+                  jerseyColor: state.jerseyColorB,
                 ),
               ],
             ),
@@ -511,12 +532,14 @@ class _TeamPlayerList extends StatelessWidget {
     required this.isTeamA,
     required this.selectedIds,
     required this.onPlayerTap,
+    required this.jerseyColor,
   });
 
   final Team team;
   final bool isTeamA;
   final Set<String> selectedIds;
   final ValueChanged<Player> onPlayerTap;
+  final Color jerseyColor;
 
   @override
   Widget build(BuildContext context) {
@@ -583,6 +606,7 @@ class _TeamPlayerList extends StatelessWidget {
                     selected: selectedIds.contains(p.id),
                     height: slotHeight,
                     onTap: () => onPlayerTap(p),
+                    jerseyColor: jerseyColor,
                   );
                 },
               ),
@@ -601,6 +625,7 @@ class _PlayerCard extends StatelessWidget {
     required this.selected,
     required this.height,
     required this.onTap,
+    required this.jerseyColor,
   });
 
   final Player player;
@@ -608,6 +633,7 @@ class _PlayerCard extends StatelessWidget {
   final bool selected;
   final double height;
   final VoidCallback onTap;
+  final Color jerseyColor;
 
   @override
   Widget build(BuildContext context) {
@@ -619,18 +645,23 @@ class _PlayerCard extends StatelessWidget {
     final double verticalPadding = (height * 0.08).clamp(2.0, 6.0);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: verticalPadding * 0.4),
-      child: Material(
-        color: selected ? cs.primaryContainer : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: BorderSide(
-            color: selected ? cs.primary : Colors.black12,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: selected ? cs.primaryContainer : IwbfColors.cardWhite,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? IwbfColors.gold : IwbfColors.slate200,
+            width: selected ? 1.5 : 1,
           ),
         ),
-        child: InkWell(
-          key: Key('player-card-${player.id}'),
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            key: Key('player-card-${player.id}'),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 6,
@@ -642,6 +673,7 @@ class _PlayerCard extends StatelessWidget {
                   player: player,
                   isTeamA: isTeamA,
                   size: iconSize,
+                  jerseyColor: jerseyColor,
                 ),
                 const SizedBox(width: 6),
                 // _AutoShrinkText mede o texto com TextPainter e reduz
@@ -674,6 +706,7 @@ class _PlayerCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -690,9 +723,13 @@ const String kCourtAsset = 'assets/images/court.png';
 /// rotacionamos 90° via `RotatedBox` para enxergar a quadra na vertical
 /// (Team A na metade superior, Team B na inferior).
 class _CourtView extends StatelessWidget {
-  const _CourtView({required this.state});
+  const _CourtView({required this.state, required this.onPlayerTap});
 
   final MatchState state;
+
+  /// Mesmo callback das listas laterais: tocar um chip em quadra remove o
+  /// jogador (togglePlayer já estava selecionado → sai da seleção).
+  final _PlayerTapCallback onPlayerTap;
 
   /// Aspect ratio da quadra pós-rotação (1504/2816 ≈ 0.534, portrait).
   static const double _aspectRatio = 1504 / 2816;
@@ -739,8 +776,19 @@ class _CourtView extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: AspectRatio(
           aspectRatio: _aspectRatio,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: IwbfColors.slate200),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
             child: LayoutBuilder(
               builder: (BuildContext _, BoxConstraints c) {
                 final double w = c.maxWidth;
@@ -789,6 +837,8 @@ class _CourtView extends StatelessWidget {
                           height: h,
                           slotMaxWidth: slotMaxWidth,
                           slotMaxHeight: slotMaxHeight,
+                          jerseyColor: state.jerseyColorA,
+                          onTap: () => onPlayerTap(teamA[i]!, _Side.a),
                         ),
                     for (int i = 0; i < 5; i++)
                       if (teamB[i] != null)
@@ -800,6 +850,8 @@ class _CourtView extends StatelessWidget {
                           height: h,
                           slotMaxWidth: slotMaxWidth,
                           slotMaxHeight: slotMaxHeight,
+                          jerseyColor: state.jerseyColorB,
+                          onTap: () => onPlayerTap(teamB[i]!, _Side.b),
                         ),
                   ],
                 );
@@ -847,6 +899,8 @@ class _CourtPlayerSlot extends StatelessWidget {
     required this.height,
     required this.slotMaxWidth,
     required this.slotMaxHeight,
+    required this.jerseyColor,
+    required this.onTap,
   });
 
   final Player player;
@@ -856,6 +910,8 @@ class _CourtPlayerSlot extends StatelessWidget {
   final double height;
   final double slotMaxWidth;
   final double slotMaxHeight;
+  final Color jerseyColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -869,10 +925,23 @@ class _CourtPlayerSlot extends StatelessWidget {
           isTeamA: isTeamA,
           maxWidth: slotMaxWidth,
           maxHeight: slotMaxHeight,
+          jerseyColor: jerseyColor,
+          onTap: onTap,
         ),
       ),
     );
   }
+}
+
+/// Nome curto exibido no chip da quadra: apenas a parte antes da vírgula.
+/// As planilhas vêm no formato "SOBRENOME, Nome" (ex.: "LOPEZ, Alvarez"),
+/// então o chip mostra só "LOPEZ" — sem a vírgula, para ocupar pouco espaço.
+/// Sem vírgula, usa o nome inteiro. As relações laterais mantêm o nome
+/// completo (com a vírgula).
+String _courtChipName(String name) {
+  final int comma = name.indexOf(',');
+  final String base = comma >= 0 ? name.substring(0, comma) : name;
+  return base.trim();
 }
 
 class _CourtPlayerChip extends StatelessWidget {
@@ -881,12 +950,16 @@ class _CourtPlayerChip extends StatelessWidget {
     required this.isTeamA,
     required this.maxWidth,
     required this.maxHeight,
+    required this.jerseyColor,
+    required this.onTap,
   });
 
   final Player player;
   final bool isTeamA;
   final double maxWidth;
   final double maxHeight;
+  final Color jerseyColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -911,51 +984,59 @@ class _CourtPlayerChip extends StatelessWidget {
     return SizedBox(
       width: maxWidth,
       height: maxHeight,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPad,
-          vertical: verticalPad,
-        ),
-        decoration: BoxDecoration(
-          color: bg,
-          border: Border.all(color: border, width: 1.2),
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            PlayerJerseyIcon(
-              player: player,
-              isTeamA: isTeamA,
-              size: iconSize,
-            ),
-            SizedBox(height: gap),
-            // _AutoShrinkText mede o sobrenome e reduz proporcionalmente
-            // o fontSize quando excede a largura do chip. Mantém o chip
-            // visualmente uniforme: todos com o mesmo tamanho externo,
-            // o sobrenome é o único elemento que muda de tamanho
-            // proporcional ao seu comprimento.
-            _AutoShrinkText(
-              text: player.surname.toUpperCase(),
-              maxFontSize: fontSize,
-              minFontSize: 6.0,
-              color: fg,
-              fontWeight: FontWeight.w600,
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              player.playerClass.toStringAsFixed(1),
-              style: TextStyle(color: fg, fontSize: fontSize, height: 1.0),
-            ),
-          ],
+      child: GestureDetector(
+        key: Key('court-chip-${player.id}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPad,
+            vertical: verticalPad,
+          ),
+          decoration: BoxDecoration(
+            color: bg,
+            border: Border.all(color: border, width: 1.2),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              PlayerJerseyIcon(
+                player: player,
+                isTeamA: isTeamA,
+                size: iconSize,
+                jerseyColor: jerseyColor,
+              ),
+              SizedBox(height: gap),
+              // _AutoShrinkText mede o sobrenome e reduz proporcionalmente
+              // o fontSize quando excede a largura do chip. Mantém o chip
+              // visualmente uniforme: todos com o mesmo tamanho externo,
+              // o sobrenome é o único elemento que muda de tamanho
+              // proporcional ao seu comprimento.
+              Flexible(
+                child: _AutoShrinkText(
+                  text: _courtChipName(player.name).toUpperCase(),
+                  maxFontSize: fontSize,
+                  minFontSize: 8.0,
+                  color: fg,
+                  fontWeight: FontWeight.w600,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Text(
+                player.playerClass.toStringAsFixed(1),
+                style: TextStyle(color: fg, fontSize: fontSize, height: 1.0),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -980,7 +1061,7 @@ class _OperationalButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      elevation: 4,
+      elevation: 6,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -990,30 +1071,35 @@ class _OperationalButtons extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: <Widget>[
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('clear-team-a-button'),
                 onPressed: onClearTeamA,
-                child: const Text('Clear Team A'),
+                icon: const Icon(Icons.backspace_outlined, size: 18),
+                label: const Text('Clear Team A'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('clear-team-b-button'),
                 onPressed: onClearTeamB,
-                child: const Text('Clear Team B'),
+                icon: const Icon(Icons.backspace_outlined, size: 18),
+                label: const Text('Clear Team B'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('clear-all-button'),
                 onPressed: onClearAll,
-                child: const Text('Clear All'),
+                icon: const Icon(Icons.clear_all, size: 18),
+                label: const Text('Clear All'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('change-teams-button'),
                 onPressed: onChangeTeams,
-                child: const Text('Change Teams'),
+                icon: const Icon(Icons.swap_horiz, size: 18),
+                label: const Text('Change Teams'),
               ),
-              OutlinedButton(
+              OutlinedButton.icon(
                 key: const Key('load-new-spreadsheet-button'),
                 onPressed: onLoadNewSpreadsheet,
-                child: const Text('Load New Spreadsheet'),
+                icon: const Icon(Icons.folder_open_outlined, size: 18),
+                label: const Text('Load New Spreadsheet'),
               ),
             ],
           ),
@@ -1057,55 +1143,82 @@ class _AutoShrinkText extends StatelessWidget {
   final Color? color;
   final TextAlign textAlign;
 
+  /// Piso absoluto de fonte ao quebrar em 2 linhas (last resort).
+  static const double _hardMinFontSize = 6.0;
+
+  TextStyle _styleFor(double size) => TextStyle(
+        fontSize: size,
+        fontWeight: fontWeight,
+        color: color,
+        height: 1.05,
+      );
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final TextStyle baseStyle = TextStyle(
-          fontSize: maxFontSize,
-          fontWeight: fontWeight,
-          color: color,
-        );
-        final TextPainter painter = TextPainter(
-          text: TextSpan(text: text, style: baseStyle),
+        final double maxW = constraints.maxWidth;
+        final double maxH = constraints.maxHeight;
+
+        // Sem largura definida: renderiza direto (até 2 linhas, sem corte).
+        if (!maxW.isFinite) {
+          return Text(text,
+              maxLines: 2,
+              softWrap: true,
+              textAlign: textAlign,
+              style: _styleFor(maxFontSize));
+        }
+
+        // 1) Cabe em UMA linha no tamanho máximo?
+        final TextPainter p1 = TextPainter(
+          text: TextSpan(text: text, style: _styleFor(maxFontSize)),
           textDirection: TextDirection.ltr,
           maxLines: 1,
         )..layout();
 
-        double finalFontSize = maxFontSize;
-        bool useEllipsis = false;
-
-        if (constraints.maxWidth.isFinite && painter.size.width > 0) {
-          if (painter.size.width > constraints.maxWidth) {
-            final double idealFontSize =
-                maxFontSize * constraints.maxWidth / painter.size.width;
-            if (idealFontSize < minFontSize) {
-              // Mesmo no piso o texto não cabe → trava no piso e
-              // aplica ellipsis. Melhor "THOMPSON, Eth..." do que
-              // texto cortado/sumindo silenciosamente.
-              finalFontSize = minFontSize;
-              useEllipsis = true;
-            } else {
-              // Pequena margem de seguranca (98%) pra evitar 1-2px
-              // de overflow por arredondamento.
-              finalFontSize = idealFontSize * 0.98;
-            }
-          }
+        if (p1.size.width <= maxW) {
+          return Text(text,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: textAlign,
+              overflow: TextOverflow.clip,
+              style: _styleFor(maxFontSize));
         }
 
-        return Text(
-          text,
-          maxLines: 1,
-          softWrap: false,
-          textAlign: textAlign,
-          overflow: useEllipsis ? TextOverflow.ellipsis : TextOverflow.clip,
-          style: TextStyle(
-            fontSize: finalFontSize,
-            fontWeight: fontWeight,
-            color: color,
-            height: 1.0,
-          ),
-        );
+        // 2) ENCOLHE a fonte para caber em uma linha, até o piso legível
+        //    (minFontSize). Mantém o nome inteiro numa linha só.
+        final double oneLineFont = maxFontSize * maxW / p1.size.width;
+        if (oneLineFont >= minFontSize) {
+          return Text(text,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: textAlign,
+              overflow: TextOverflow.clip,
+              style: _styleFor(oneLineFont * 0.98));
+        }
+
+        // 3) Se mesmo no piso não cabe em uma linha → QUEBRA em até 2
+        //    linhas, escolhendo a maior fonte que couber (largura + altura).
+        //    Nunca usa ellipsis: o nome completo permanece visível.
+        double fit = _hardMinFontSize;
+        for (double f = maxFontSize; f >= _hardMinFontSize; f -= 0.5) {
+          final TextPainter p2 = TextPainter(
+            text: TextSpan(text: text, style: _styleFor(f)),
+            textDirection: TextDirection.ltr,
+            maxLines: 2,
+          )..layout(maxWidth: maxW);
+          final bool heightOk = !maxH.isFinite || p2.height <= maxH + 0.5;
+          if (!p2.didExceedMaxLines && heightOk) {
+            fit = f;
+            break;
+          }
+        }
+        return Text(text,
+            maxLines: 2,
+            softWrap: true,
+            textAlign: textAlign,
+            overflow: TextOverflow.clip,
+            style: _styleFor(fit));
       },
     );
   }

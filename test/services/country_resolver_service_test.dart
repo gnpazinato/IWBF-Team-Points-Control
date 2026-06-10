@@ -211,6 +211,21 @@ void main() {
     test('retorna null quando o pais nao for reconhecido', () {
       expect(resolver.flagEmojiFor('Marte'), isNull);
     });
+
+    test('resolve bandeiras africanas adicionadas na v1.4.0', () {
+      // 🇦🇴 Angola = 0x1F1E6 + 0x1F1F4
+      expect(
+        resolver.flagEmojiFor('Angola'),
+        equals(String.fromCharCodes(<int>[0x1F1E6, 0x1F1F4])),
+      );
+      expect(resolver.countryCodeFor('Angola'), equals('AO'));
+      expect(resolver.countryCodeFor('ANG'), equals('AO'));
+      expect(resolver.countryCodeFor('Ghana'), equals('GH'));
+      expect(resolver.countryCodeFor('Mali'), equals('ML'));
+      expect(resolver.countryCodeFor('Mozambique'), equals('MZ'));
+      expect(resolver.countryCodeFor('Namibia'), equals('NA'));
+      expect(resolver.countryCodeFor('Zambia'), equals('ZM'));
+    });
   });
 
   group('countryFlagEmoji helper', () {
