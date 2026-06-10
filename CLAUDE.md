@@ -76,8 +76,12 @@ git log --oneline -12
     (`12-12-25 → 2025`, `05/06/90 → 1990`).
 - **Testers externos:** 2 pessoas com o link do GH Pages
   (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`). O preview
-  atualiza a cada push em `claude/**` ou `main`. CF Pages:
-  `https://iwbf-team-points-control.pages.dev/`.
+  atualiza a cada push em `claude/**` ou `main`.
+- **Cloudflare Pages — REMOVIDO (2026-06-10):** o usuário não precisava
+  mais do preview no CF Pages; o job foi retirado do `deploy-web.yml`
+  (mantido só o GH Pages). Isso liberou as branches históricas para
+  deleção (a `claude/review-and-continue-9ZK5v` só estava viva como
+  production-source do CF Pages).
 - **Validação local:** Flutter **não** está instalado no Codespace; toda
   validação (`analyze`/`test`/`build`) roda no **CI a cada push**.
 - **Última atualização:** 2026-06-10.
@@ -148,11 +152,12 @@ Pergunte ao usuário qual caminho aplica antes de codar.
 ## Repositório
 
 - GitHub: `gnpazinato/iwbf-team-points-control`
-- Preview Web (GH Pages — legado, expõe handle pessoal):
+- Preview Web (GH Pages — único preview ativo; expõe handle pessoal):
   `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-- Preview Web (CF Pages — URL neutra para testers, adicionado na entrada
-  0034 do log): `https://iwbf-team-points-control.pages.dev/`
-- Ambos são servidos a partir da branch ativa e atualizados a cada push
-  em `claude/**` ou `main` via `.github/workflows/deploy-web.yml`.
+- Servido a partir da branch que recebeu o push (`claude/**` ou `main`)
+  via `.github/workflows/deploy-web.yml`.
+- **Cloudflare Pages foi removido em 2026-06-10** (entrada 0043) — o job
+  saiu do `deploy-web.yml`. A URL antiga `iwbf-team-points-control.pages.dev`
+  deixa de ser atualizada (e pode ser apagada no dashboard Cloudflare).
 - CI de build/test: `.github/workflows/build-apk.yml` valida `analyze` +
   `test` e gera APK em cada push.
