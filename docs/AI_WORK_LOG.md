@@ -28,12 +28,13 @@ Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude
 > conteudo e o mesmo — so o numero foi normalizado.
 >
 > **Preview Web:** `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-> (GH Pages, legado) e `https://iwbf-team-points-control.pages.dev/`
-> (CF Pages, URL neutra). Qualquer push em `claude/**` ou `main` publica
-> (ver entradas 0022 e 0034).
+> (GH Pages — único preview ativo). Qualquer push em `claude/**` ou `main`
+> publica (ver entrada 0022). **Cloudflare Pages foi REMOVIDO em 2026-06-10
+> (entrada 0043)** — o job saiu do `deploy-web.yml`; a URL antiga
+> `iwbf-team-points-control.pages.dev` deixa de ser atualizada.
 >
-> Nunca commite direto na `main`; trabalhe em `claude/visual-modernization`
-> ou numa branch `claude/**` nova a partir de `main`.
+> Nunca commite direto na `main`; trabalhe numa branch `claude/**` nova a
+> partir de `main`.
 
 Antes de qualquer nova tarefa, a IA deve ler:
 
@@ -50,12 +51,12 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Branch de trabalho | **`main`** (tudo mergeado). Trabalho novo: branch `claude/**` nova a partir de `main`. `claude/visual-modernization` e `claude/review-and-continue-9ZK5v` sao historicas. |
 | Versao atual | **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Numeracao normalizada apos um commit ter gravado `1.5.1+5` por engano (ver bloco ATENCAO acima). |
 | Data da ultima atualizacao | 2026-06-10 |
-| Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). CI verde; 2 previews Web operacionais (GH Pages + CF Pages).** |
+| Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). CI verde; preview Web unico (GH Pages).** |
 | Fase atual | **Ciclo fechado. Modernizacao visual (Fases 1-6) + ajustes 0039-0041 mergeados na `main` (PR #6). Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento e sem PR aberto; aguardando proximo pedido do usuario.** |
 | Proximo passo recomendado | Aguardar proximo pedido do usuario. Para novos ajustes: criar branch `claude/**` a partir de `main`, nova entrada no log, commit convencional, abrir PR. Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
-| Testers externos | 2 pessoas com link do preview Web (compartilhado em 2026-05-14): GH Pages https://gnpazinato.github.io/IWBF-Team-Points-Control/ e CF Pages https://iwbf-team-points-control.pages.dev/. |
+| Testers externos | 2 pessoas com link do preview Web GH Pages (compartilhado em 2026-05-14): https://gnpazinato.github.io/IWBF-Team-Points-Control/. (CF Pages removido em 2026-06-10 — entrada 0043.) |
 | Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. (A sessao de 2026-05-15 rodou 176/176 testes localmente com Flutter 3.41.9, mas esse SDK nao persiste neste sandbox.) |
-| APK gerado | Sim, via CI a cada push, na versao `1.4.0+5`. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
+| APK gerado | Sim, via CI a cada push, na versao `1.4.0+5`. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages — unico, apos remocao do CF Pages na entrada 0043) a cada push em `claude/**` ou `main`. |
 
 ## Ritual obrigatorio para a IA
 
@@ -557,6 +558,50 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0043 - 2026-06-10 - Remove Cloudflare Pages do CI (preview unico = GH Pages)
+
+Contexto: apos o merge do PR #6 (entrada 0042), discutiu-se a production-branch
+do CF Pages. Investigacao do CI confirmou que o projeto CF Pages foi criado
+apontando para `claude/review-and-continue-9ZK5v` (entrada 0034) e que o
+workflow NAO reconfigura a production-branch depois disso (o passo "Ensure
+project exists" imprime "Project iwbf-team-points-control already exists." e
+pula a linha de `create --production-branch`). Pushes na `main` saiam como
+**preview** (URL com hash, ex.: `12bbe738.iwbf-team-points-control.pages.dev`),
+logo a URL publica `pages.dev` continuava servindo a branch antiga. O usuario
+decidiu que **nao precisa mais do preview no Cloudflare Pages**.
+
+Entregue:
+
+- **`.github/workflows/deploy-web.yml`:** removido o job `cloudflare-pages`
+  inteiro (build CF + `wrangler pages project ... --production-branch` +
+  `wrangler pages deploy`). Mantido apenas o GH Pages (`build` + `deploy`).
+  Nome do workflow: "Deploy Web (GitHub Pages + Cloudflare Pages)" ->
+  "Deploy Web (GitHub Pages)". Isso elimina o footgun da branch hardcoded
+  (`--production-branch=claude/review-and-continue-9ZK5v`).
+- **Docs:** CLAUDE.md e tabela "Estado atual" deste log atualizados —
+  preview unico = GH Pages; CF Pages marcado como removido.
+
+Consequencias:
+
+- A URL `iwbf-team-points-control.pages.dev` deixa de ser atualizada (pode
+  ser apagada no dashboard Cloudflare; os secrets `CLOUDFLARE_API_TOKEN`/
+  `CLOUDFLARE_ACCOUNT_ID` ficam ociosos e podem ser removidos das settings
+  do GitHub se desejado).
+- **Supersede a recomendacao da entrada 0042** sobre "switch da
+  production-branch para main": nao e mais necessario. Com o CF Pages fora,
+  **ambas as branches historicas** (`claude/visual-modernization`,
+  `claude/review-and-continue-9ZK5v`) ficam livres para deletar — nenhuma e
+  mais production-source de nada.
+
+Arquivos alterados: `.github/workflows/deploy-web.yml`, `CLAUDE.md`,
+`docs/AI_WORK_LOG.md` (somente CI + documentacao; nenhuma mudanca de codigo
+de produto).
+
+Testes: nao se aplica (mudanca de CI/docs). O proprio CI valida no push.
+
+Proximo passo recomendado: mergear este cleanup na `main` e deletar as
+branches historicas. Ciclo encerrado; sem PR aberto depois disso.
 
 ### 0042 - 2026-06-10 - Merge da modernizacao visual na main (PR #6) + sincronizacao dos docs
 
