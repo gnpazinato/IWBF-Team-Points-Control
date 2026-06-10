@@ -26,6 +26,10 @@ Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
 
 ## Estado atual (resumo)
 
+- **Versão atual:** **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Houve
+  uma confusão de numeração — um commit gravou `1.5.1+5`, depois
+  **corrigido para `1.4.0+5`** (o "1.5.1" pulava a 1.4.0 e quebrava o
+  fluxo minor++). O conteúdo é o mesmo; só o número foi normalizado.
 - **Modernização visual (branch `claude/visual-modernization`):** Fases
   1–6 implementadas e verdes no CI; PR aberto para `main` (aguardando
   aprovação do usuário — **não mergear sozinho**). Entregue:
@@ -53,13 +57,30 @@ Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
   - **Importação de PDF — DESCARTADA (decisão do usuário, 2026-05-27):**
     complexa/frágil demais; o app foca **somente** nas planilhas template
     já criadas. Não há (nem deve haver) menção a PDF no código ou na UI.
+- **Ajustes pós-testers (na mesma branch, após as Fases 1–6):**
+  - **Entrada 0039 (v1.2.0):** parser tolerante a nomes de coluna —
+    aliases amplos (`country`/`nation`/`full_name`/`jersey`/`bib`...) e
+    roteamento dirigido por **conteúdo** (abas com coluna de equipe são a
+    fonte de verdade; demais são ignoradas).
+  - **Entrada 0040 (v1.3.0):** ao reabrir/voltar do segundo plano na
+    Home, o app restaura a **planilha INTEIRA** (todas as equipes, via
+    `SavedRoster`/`CacheService`) e abre o Resumo — não só as 2 equipes
+    da última partida. Minimizar **durante** a partida volta à partida.
+  - **Entrada 0041 (v1.4.0):** **DOB aceita ano de 2 dígitos** e
+    separadores `-`/`.` (`24-01-91` → 1991, `12-12-25` → 2025; antes só
+    `dd-mm-yyyy` funcionava e `24-01-91` dava erro/era lido como ano 24).
+    Pivô POSIX: `00`–`68` → `2000`–`2068`, `69`–`99` → `1969`–`1999`; ISO
+    `yyyy-mm-dd` só quando começa com 4 dígitos; anti-overflow rejeita
+    `31/02`. Também: **remover jogador tocando no chip da quadra** +
+    **bandeiras de países africanos** (Angola etc.). Validado com testes
+    (`12-12-25 → 2025`, `05/06/90 → 1990`).
 - **Testers externos:** 2 pessoas com o link do GH Pages
   (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`). O preview
   atualiza a cada push em `claude/**` ou `main`. CF Pages:
   `https://iwbf-team-points-control.pages.dev/`.
 - **Validação local:** Flutter **não** está instalado no Codespace; toda
   validação (`analyze`/`test`/`build`) roda no **CI a cada push**.
-- **Última atualização:** 2026-05-27.
+- **Última atualização:** 2026-06-10.
 
 ## O que fazer quando o usuário abre uma nova conversa
 
@@ -70,7 +91,8 @@ Você deve ver commits `feat(visual): Fase N — ...` e `fix(visual): ...`.
    2. `docs/PLANO_DESENVOLVIMENTO_IA.md` (fases e estratégia);
    3. `docs/AI_WORK_LOG.md` (fonte da verdade — estado, decisões,
       convenções, histórico). Em particular: tabela "Estado atual" no
-      topo + entrada da modernização visual (Fases 1–6).
+      topo + entrada da modernização visual (0038, Fases 1–6) + ajustes
+      pós-testers (0039 v1.2.0, 0040 v1.3.0, 0041 v1.4.0).
 3. Reporte ao usuário, em **uma frase**, o último commit que viu (sha +
    título) e o estado do PR de modernização visual.
 

@@ -4,28 +4,36 @@ Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude
 
 > ## ⚠️ ATENCAO — LEIA ANTES DE QUALQUER COISA ⚠️
 >
-> **TODO o codigo de produto vive na branch `claude/review-and-continue-9ZK5v`.**
-> A `main` ainda tem APENAS o scaffold inicial (commit `a2cc748`) — nao tem
-> tela de upload, parser, Summary, Match Setup, Lineup Control nem nada do
-> Phase 1-5.
+> **O MVP COMPLETO JA ESTA NA `main` (PR #5 mergeado).** `lib/main.dart` na
+> `main` e o app real (upload, parser, Summary, Match Setup, Lineup Control).
+> Avisos antigos de que "main e so scaffold" e de que o codigo vive em
+> `claude/review-and-continue-9ZK5v` estao **DESATUALIZADOS** — aquela branch
+> e historica; **nao trabalhe mais a partir dela**.
 >
-> **Antes de fazer qualquer alteracao:**
+> **Branch de trabalho atual:** `claude/visual-modernization` (criada a
+> partir de `main`), com a modernizacao visual (Fases 1-6) + ajustes
+> pos-testers (entradas 0039, 0040, 0041). **PR aberto para `main` —
+> aguardando aprovacao do usuario; NAO mergear sozinho.**
 >
-> 1. `git fetch origin && git checkout claude/review-and-continue-9ZK5v`
-> 2. `git pull --ff-only origin claude/review-and-continue-9ZK5v`
-> 3. Confirmar com `git log --oneline -5` que voce esta vendo commits
->    `feat(fase-5)...`, `fix(fase-5)...` etc. — nao apenas o scaffold.
+> ```bash
+> git fetch origin
+> git checkout claude/visual-modernization   # ou main, se o PR ja mergeou
+> git pull --ff-only origin claude/visual-modernization
+> git log --oneline -12
+> ```
+>
+> **Versao atual:** `1.4.0+5` (`kAppVersion = 1.4.0`, build 5). Houve uma
+> confusao de numeracao: um commit gravou `1.5.1+5`, depois **corrigido para
+> `1.4.0+5`** (o "1.5.1" pulava a 1.4.0 e quebrava o fluxo minor++). O
+> conteudo e o mesmo — so o numero foi normalizado.
 >
 > **Preview Web:** `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-> e servido a partir desta branch (a regra do environment `github-pages`
-> esta em "No restriction" — qualquer push em `claude/**` ou `main` publica;
-> ver entrada 0022).
+> (GH Pages, legado) e `https://iwbf-team-points-control.pages.dev/`
+> (CF Pages, URL neutra). Qualquer push em `claude/**` ou `main` publica
+> (ver entradas 0022 e 0034).
 >
-> Se voce esta vendo apenas o scaffold em `lib/main.dart`, voce esta na
-> branch ERRADA. Nao "implemente do zero" — apenas troque de branch.
->
-> Quando o ciclo MVP terminar, abriremos PR para `main` e mergeamos.
-> Ate la, **NUNCA** trabalhe a partir do `main`.
+> Nunca commite direto na `main`; trabalhe em `claude/visual-modernization`
+> ou numa branch `claude/**` nova a partir de `main`.
 
 Antes de qualquer nova tarefa, a IA deve ler:
 
@@ -39,14 +47,15 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Branch de trabalho | **`claude/review-and-continue-9ZK5v`** (NAO main) |
-| Data da ultima atualizacao | 2026-05-15 |
-| Status geral | **Fase 5 ENCERRADA (entrada 0037): apos 3 Robo Tests no Firebase Test Lab (Pixel 5 API 30, Galaxy Tab A9+ API 34, Pixel Tablet API 34) confirmarem que o app launcha e renderiza sem crash (limitacao conhecida: Robo crawler nao navega SAF system dialogs — comportamento by design, nao bug do app), layout tablet 10" portrait validado via CF Pages em DevTools Chrome, usuario decidiu fechar MVP. Esta entrada prepara o PR `claude/review-and-continue-9ZK5v -> main` e finaliza o ciclo Fase 1-5. CI 100% verde, 176/176 testes, 2 previews Web operacionais (GH Pages + CF Pages).** |
-| Fase atual | **Fase 5 encerrada — entradas 0023..0037 fechadas. MVP completo. PR `claude/review-and-continue-9ZK5v -> main` aberto para finalizar o ciclo. Decisao do usuario: merge para `main`, manter `claude/review-and-continue-9ZK5v` viva ate switch manual da production-branch do CF Pages para `main` no dashboard Cloudflare.** |
-| Proximo passo recomendado | Mergear o PR para `main`; aguardar CI no `main` gerar APK release final; usuario faz switch manual da production-branch CF Pages `claude/review-and-continue-9ZK5v -> main` no dashboard Cloudflare; planejar Fase 6 (estatisticas pos-jogo, scoring, Play Store, refactor, multi-language ou outro escopo a decidir). |
-| Testers externos | 2 pessoas com link do preview Web https://gnpazinato.github.io/IWBF-Team-Points-Control/ (compartilhado em 2026-05-14). Apos validacao do CF Pages, migrar gradualmente para https://iwbf-team-points-control.pages.dev/. |
-| Ultimos testes executados | 2026-05-15 — `flutter analyze --no-fatal-infos` (1 info pre-existente, nao bloqueante) + `flutter test` (**176 passed, 0 failed**). Flutter SDK 3.41.9 instalado localmente nesta sessao em `/root/flutter`. |
-| APK gerado | Sim, via CI a cada push. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e tambem em https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
+| Branch de trabalho | **`claude/visual-modernization`** (a partir de `main`; NAO usar `claude/review-and-continue-9ZK5v`, que e historica) |
+| Versao atual | **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Numeracao normalizada apos um commit ter gravado `1.5.1+5` por engano (ver bloco ATENCAO acima). |
+| Data da ultima atualizacao | 2026-06-10 |
+| Status geral | **MVP na `main` (PR #5). Modernizacao visual (Fases 1-6, entrada 0038) + 3 rodadas de ajustes pos-testers vivem em `claude/visual-modernization`, com PR aberto para `main` (NAO mergeado — aguardando aprovacao do usuario). Ajustes pos-testers: entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas). CI verde a cada push; 2 previews Web operacionais (GH Pages + CF Pages).** |
+| Fase atual | **Modernizacao visual implementada (Fases 1-6) + ajustes 0039..0041 fechados. PR `claude/visual-modernization -> main` aberto. Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento; aguardando proximo pedido do usuario.** |
+| Proximo passo recomendado | Decisao do usuario: aprovar/mergear o PR `claude/visual-modernization -> main` (NAO mergear sozinho) ou solicitar novos ajustes (nova entrada no log + commit `fix(visual):...` na branch). Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
+| Testers externos | 2 pessoas com link do preview Web (compartilhado em 2026-05-14): GH Pages https://gnpazinato.github.io/IWBF-Team-Points-Control/ e CF Pages https://iwbf-team-points-control.pages.dev/. |
+| Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. (A sessao de 2026-05-15 rodou 176/176 testes localmente com Flutter 3.41.9, mas esse SDK nao persiste neste sandbox.) |
+| APK gerado | Sim, via CI a cada push, na versao `1.4.0+5`. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages) e https://iwbf-team-points-control.pages.dev/ (CF Pages, entrada 0034) a cada push em `claude/**` ou `main`. |
 
 ## Ritual obrigatorio para a IA
 
@@ -1896,7 +1905,16 @@ Decisoes fechadas:
 - `Color.withOpacity(x)` foi deprecated no Flutter 3.41+: usar `Color.withValues(alpha: x)`.
 - Para posicionar elementos sobre uma imagem mantendo proporcao em todos os tamanhos de tela: `AspectRatio` + `Stack` + `LayoutBuilder` + `Positioned(left/top = w*dx, h*dy)` + `FractionalTranslation(-0.5, -0.5)` para centralizar no ponto. Evita coordenadas em pixels e funciona igualmente em tablet/phone.
 
-## Prompt curto de continuidade
+## Prompts de continuidade — HISTÓRICOS (NÃO usar)
+
+> ⚠️ **Os dois prompts abaixo estão OBSOLETOS** (falam em Fase 4/Fase 5 e na
+> branch histórica `claude/review-and-continue-9ZK5v`). A continuidade hoje é
+> feita pelo **`CLAUDE.md`** (auto-carregado pelo Claude Code) + a tabela
+> **"Estado atual"** no topo deste log. Estado real: MVP na `main`,
+> modernização visual + ajustes 0039-0041 na `claude/visual-modernization`
+> (versão `1.4.0+5`), PR aberto. Mantidos apenas como registro histórico.
+
+### Prompt histórico 1 — Fase 4 (obsoleto)
 
 ```text
 Voce esta retomando o IWBF Team Points Control (Flutter offline para
@@ -1945,11 +1963,11 @@ Comece pelo proximo passo recomendado do AI_WORK_LOG e me confirme
 em uma frase qual e o estado atual antes de codar.
 ```
 
-## Prompt curto de continuidade — Fase 5 fechada / aguardando testers (atual)
+### Prompt histórico 2 — Fase 5 fechada / aguardando testers (OBSOLETO)
 
-> Este prompt e o que o usuario deve colar numa nova conversa. Ele
-> assume que o chat anterior fechou a Fase 5 (entradas 0023..0033).
-> Nao precisa pedir prompt novo — esta secao e a fonte de verdade.
+> ⚠️ OBSOLETO — assume Fase 5 (entradas 0023..0033) e a branch histórica
+> `claude/review-and-continue-9ZK5v`. NÃO usar; a fonte de verdade hoje é o
+> `CLAUDE.md` + a tabela "Estado atual" no topo deste log.
 
 ```text
 Você está retomando o IWBF Team Points Control (Flutter offline para

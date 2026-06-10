@@ -5,17 +5,21 @@ Ele transforma o planejamento inicial em um roteiro curto, testavel e facil de c
 
 > ## ⚠️ ATENCAO — BRANCH ATIVA ⚠️
 >
-> **TODO o trabalho de Fase 1-5 esta na branch `claude/review-and-continue-9ZK5v`.**
-> A `main` so tem o scaffold inicial. Antes de qualquer coisa:
+> **O MVP completo (Fases 1-5) JA ESTA NA `main`** (PR #5 mergeado). Avisos
+> antigos de que "main so tem scaffold" e de que o codigo vive em
+> `claude/review-and-continue-9ZK5v` estao DESATUALIZADOS — aquela branch e
+> historica. A branch de trabalho atual e **`claude/visual-modernization`**
+> (modernizacao visual Fases 1-6 + ajustes pos-testers 0039-0041, versao
+> `1.4.0+5`), com PR aberto para `main`. Antes de qualquer coisa:
 >
 > ```bash
 > git fetch origin
-> git checkout claude/review-and-continue-9ZK5v
-> git pull --ff-only
+> git checkout claude/visual-modernization   # ou main, se o PR ja mergeou
+> git pull --ff-only origin claude/visual-modernization
 > ```
 >
-> Se voce abrir `lib/main.dart` e ver apenas um placeholder de scaffold,
-> voce esta na branch errada. Nao reimplemente — apenas troque.
+> O estado completo e a fonte da verdade estao em `docs/AI_WORK_LOG.md`
+> (tabela "Estado atual" no topo + entradas 0038-0041).
 
 ## Regra principal
 
