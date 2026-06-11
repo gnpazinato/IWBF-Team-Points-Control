@@ -1,0 +1,43 @@
+name: Screenshot (manual)
+
+# Workflow temporário/manual para gerar o print da Home (manual do usuário).
+# Não roda em push — só via "Run workflow" (workflow_dispatch).
+on:
+  workflow_dispatch:
+
+jobs:
+  shot:
+    name: Render Home screenshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android project files
+        run: |
+          flutter create . \
+            --project-name iwbf_team_points_control \
+            --org com.iwbf \
+            --platforms=android \
+            --description "IWBF Team Points Control"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Render Home (update golden)
+        run: flutter test --update-goldens test/screenshots/home_screenshot.dart
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-screenshot
+          path: test/screenshots/home.png
+          if-no-files-found: error
+          retention-days: 7
