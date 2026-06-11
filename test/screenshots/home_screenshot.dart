@@ -2,7 +2,7 @@
 //
 // NÃO termina em `_test.dart` de propósito: o `flutter test` padrão (sem
 // argumentos, usado no build-apk.yml) ignora este arquivo. Executado SOMENTE
-// pelo workflow `screenshot.yml` com:
+// pelo workflow `screenshot.yml`:
 //   flutter test test/screenshots/home_screenshot.dart
 // que grava `test/screenshots/home.png` (Home real v1.5.x, com o card
 // "Load from Online Link") em 3x, publicado como artifact para o manual.
@@ -23,16 +23,58 @@ import 'package:iwbf_team_points_control/theme/iwbf_theme.dart';
 import 'package:iwbf_team_points_control/widgets/iwbf_logo_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Carrega um TTF sans-serif do sistema (CI Ubuntu) como família [family],
+/// para o texto renderizar de verdade (o golden do flutter_test desenha
+/// caixas pretas quando a fonte do estilo não está carregada — caso dos
+/// rótulos de botão, cujo `textStyle` do tema não fixa família).
+Future<String?> _loadDocFont() async {
+  const String family = 'DocSans';
+  const List<String> candidates = <String>[
+    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+    '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+    '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+  ];
+  for (final String path in candidates) {
+    final File f = File(path);
+    if (f.existsSync()) {
+      final Uint8List bytes = f.readAsBytesSync();
+      final FontLoader loader = FontLoader(family)
+        ..addFont(Future<ByteData>.value(ByteData.view(bytes.buffer)));
+      await loader.load();
+      return family;
+    }
+  }
+  return null; // fallback: usa o que o loadAppFonts trouxe
+}
+
+ThemeData _screenshotTheme(String? family) {
+  final ThemeData base = buildIwbfTheme();
+  if (family == null) return base;
+  ButtonStyle withFamily(ButtonStyle? s, FontWeight w) =>
+      (s ?? const ButtonStyle()).copyWith(
+        textStyle: WidgetStatePropertyAll<TextStyle>(
+          TextStyle(fontFamily: family, fontWeight: w),
+        ),
+      );
+  return base.copyWith(
+    textTheme: base.textTheme.apply(fontFamily: family),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: family),
+    filledButtonTheme: FilledButtonThemeData(
+      style: withFamily(base.filledButtonTheme.style, FontWeight.w700),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: withFamily(base.outlinedButtonTheme.style, FontWeight.w600),
+    ),
+  );
+}
+
 void main() {
   testWidgets('render Home v1.5.x', (WidgetTester tester) async {
-    // Carrega as fontes reais (MaterialIcons + texto) — sem isto o golden do
-    // flutter_test desenha tudo como caixas pretas.
-    await loadAppFonts();
+    await loadAppFonts(); // MaterialIcons + fontes do manifesto
+    final String? family = await _loadDocFont();
 
-    // Cache vazio: sem diálogo de restauração e sem rede.
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
-    // Retrato ~phone, alto o suficiente para os 3 cards + rodapé.
     tester.view.physicalSize = const Size(400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -43,13 +85,12 @@ void main() {
       key: boundaryKey,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: buildIwbfTheme(),
+        theme: _screenshotTheme(family),
         home: LoadSpreadsheetScreen(cache: CacheService()),
       ),
     ));
     await tester.pumpAndSettle();
 
-    // Garante a decodificação do logo (Image.asset) antes do print.
     await tester.runAsync(() async {
       final BuildContext ctx =
           tester.element(find.byType(LoadSpreadsheetScreen));
@@ -57,7 +98,6 @@ void main() {
     });
     await tester.pumpAndSettle();
 
-    // Captura em 3x para um print nítido (1200×3000 px).
     await tester.runAsync(() async {
       final RenderRepaintBoundary boundary =
           tester.renderObject(find.byKey(boundaryKey));
