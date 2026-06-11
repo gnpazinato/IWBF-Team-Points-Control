@@ -74,6 +74,10 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
     _vibration = widget._vibration ?? const VibrationService();
     _wakelock = widget._wakelock ?? const WakelockController();
     _remoteSync = widget._remoteSync ?? RemoteSyncController.instance;
+    // Marca que uma partida está em andamento: enquanto isso, uma mudança na
+    // planilha do link fica RETIDA (não é aplicada na tela de edição por
+    // baixo) e só é oferecida quando o usuário sai do jogo.
+    _remoteSync.matchInProgress = true;
     _wasOverA = _state.isTeamAOverLimit;
     _wasOverB = _state.isTeamBOverLimit;
     unawaited(_wakelock.enable());
@@ -82,6 +86,14 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
   // O wakelock NÃO é desligado no dispose: a tela fica acordada em todo o
   // app (o `main` liga no início e reafirma no resume). Desligar aqui faria
   // a tela poder inativar ao sair da partida.
+
+  @override
+  void dispose() {
+    // Fim da partida: libera a retenção de atualizações do link (a tela de
+    // edição volta a aplicar mudanças em tempo real).
+    _remoteSync.matchInProgress = false;
+    super.dispose();
+  }
 
   Future<void> _persist() => _cache.saveMatchState(_state);
 

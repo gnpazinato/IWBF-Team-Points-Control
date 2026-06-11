@@ -93,6 +93,15 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
     _remoteSync = widget._remoteSync ?? RemoteSyncController.instance;
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferRestore());
+    unawaited(_prefillSavedLink());
+  }
+
+  /// Recarrega o último link online no campo de link, para que ele continue
+  /// "colado" depois de fechar e reabrir o app (pedido do usuário).
+  Future<void> _prefillSavedLink() async {
+    final String? url = await _cache.loadLastLink();
+    if (!mounted || url == null) return;
+    if (_linkController.text.isEmpty) _linkController.text = url;
   }
 
   @override
@@ -193,6 +202,7 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
       );
     } else {
       _remoteSync.deactivate();
+      _linkController.clear();
       await _cache.clear();
     }
   }
@@ -205,8 +215,11 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
       if (bytes == null) return;
       final SpreadsheetParseResult result = _parser.parseBytes(bytes);
       if (!mounted) return;
-      // Planilha local substitui qualquer fonte de link: desliga o polling.
+      // Planilha local substitui qualquer fonte de link: desliga o polling
+      // e esquece o link salvo (o campo de link volta a ficar vazio).
       _remoteSync.deactivate();
+      unawaited(_cache.clearLastLink());
+      _linkController.clear();
       if (result.hasBlockingIssues && result.teams.isEmpty) {
         // Erro grave: arquivo ilegível ou colunas obrigatórias faltando.
         await Navigator.of(context).push<void>(
@@ -251,6 +264,7 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
       // Liga a sincronização com a versão recém-carregada (hash conhecido,
       // para não re-disparar aviso de "atualização" da mesma versão).
       _remoteSync.activate(url, fetched.contentHash);
+      unawaited(_cache.saveLastLink(url));
       if (result.hasBlockingIssues && result.teams.isEmpty) {
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(

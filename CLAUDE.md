@@ -29,10 +29,14 @@ git log --oneline -12
 
 ## Estado atual (resumo)
 
-- **Versão atual:** **`1.5.0+6`** (`kAppVersion = 1.5.0`, build 6) —
-  entrada 0045. (Histórico: a `1.4.0+5` saiu de uma confusão em que um
-  commit gravou `1.5.1+5` e foi corrigido para `1.4.0+5`; o `1.5.0+6` atual
-  segue o fluxo minor++ normal a partir da 1.4.0.)
+- **Versão atual:** **`1.5.1+7`** (`kAppVersion = 1.5.1`, build 7) —
+  entradas 0045 (camisa "0"/"00" + link online) e **0046** (fix do
+  auto-refresh do link: `RemoteSyncController.matchInProgress` segura a
+  atualização durante a partida; `ValidationSummary` aplica o `pending`
+  também via `addPostFrameCallback` no `initState`; polling 25s→15s; link
+  fica "colado" via `CacheService.saveLastLink`; coluna DOB no Summary
+  alargada). (Histórico: a `1.4.0+5` saiu de uma confusão `1.5.1+5`→`1.4.0+5`;
+  daí em diante o fluxo de versão é normal.)
 - **Entrada 0045 (`1.5.0+6`, 2026-06-11) — mergeada na `main`:**
   - **Camisa "0" E "00" (rótulos distintos), ponta a ponta.**
     `Player.shirtNumber` virou **`String`** (preserva zeros à esquerda;

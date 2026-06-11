@@ -49,7 +49,7 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 | Campo | Valor |
 |---|---|
 | Branch de trabalho | **`main`** (tudo mergeado, ate a entrada 0045). A branch `claude/jersey-00-and-online-link` foi mergeada e deletada. Trabalho novo: branch `claude/**` nova a partir de `main`. |
-| Versao atual | **`1.5.0+6`** (`kAppVersion = 1.5.0`, build 6). Bump minor da entrada 0045 (camisa "0"/"00" texto + carregar planilha por link online). |
+| Versao atual | **`1.5.1+7`** (`kAppVersion = 1.5.1`, build 7). 0045 = camisa "0"/"00" texto + link online; 0046 = fix do auto-refresh do link (matchInProgress + apply-on-mount), link "colado" e DOB legivel no Summary. |
 | Data da ultima atualizacao | 2026-06-11 |
 | Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). Manual do usuario (.docx) atualizado para v1.4.0 na branch `claude/manual-v1.4.0` (entrada 0044). CI verde; preview Web unico (GH Pages).** |
 | Fase atual | **Entrada 0045 em andamento na branch `claude/jersey-00-and-online-link` (NAO mergeada): camisa "0"/"00" como texto + carregar planilha por link online (SharePoint/OneDrive/Google) com auto-refresh, so no APK Android. GitHub Pages REMOVIDO nesta sessao (pedido do usuario). Importacao de PDF DESCARTADA (2026-05-27) — nao reabrir.** |
@@ -558,6 +558,46 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0046 - 2026-06-11 - Fix: auto-refresh do link nao aplicava + link "colado" + DOB legivel (v1.5.1)
+
+Contexto: testando a 0045 no APK, o usuario reportou que ao editar a classe
+de um atleta na planilha online o app NAO atualizava — nem em tempo real nem
+ao fechar/reabrir. Diagnostico por rede: o SharePoint serve a versao NOVA
+corretamente (ETag `,10`→`,12`, Last-Modified do dia, bytes 20550→20572), ou
+seja, **o servidor estava ok — o bug era no app**.
+
+Causas e correcoes:
+- **Tela de edicao consumia a atualizacao "por baixo" da partida.** A
+  `ValidationSummary` continua montada na pilha durante o jogo; o listener
+  dela aplicava (e dava `markApplied`) a versao nova mesmo escondida, entao
+  ela sumia e o `LineupControl` nunca via o `pending`. **Fix:**
+  `RemoteSyncController.matchInProgress` (ligado no `initState` do
+  `LineupControl`, desligado no `dispose`); a `ValidationSummary` so aplica
+  quando `!matchInProgress`. Durante a partida fica retido e e oferecido ao
+  sair (dialog `remote-update-dialog`).
+- **Corrida na restauracao/abertura.** A versao nova podia chegar (notify)
+  antes do listener existir, e a tela ficava na versao antiga. **Fix:**
+  `ValidationSummary` aplica o `pending` tambem num `addPostFrameCallback`
+  no `initState` (`_applyRemoteUpdate`), nao so via notify.
+- **Polling 25s → 15s** para sensacao mais "tempo real" (continua + check
+  imediato ao voltar do 2o plano).
+- **Link "colado" apos reabrir o app:** `CacheService.saveLastLink/
+  loadLastLink/clearLastLink`; a Home pre-preenche o campo de link com o
+  ultimo link no `initState`. Upload local / "Start from Scratch" / "Load
+  New Spreadsheet" limpam o link.
+- **Ajuste leve de UI (pedido):** coluna de nascimento no Spreadsheet
+  Summary alargada (`_kRosterDobW` 124→150, `_kRosterMinWidth` 580→606) para
+  a data `DD/MM/YYYY` caber inteira; o nome (Expanded) cede o espaco.
+
+Docs: manual `.docx` ganhou a secao do link (ja na 0045) + legenda da
+Figura 3 avisando que o print e anterior a v1.5.0 (o card de link aparece
+entre upload e templates) + capa para v1.5.1. **OBS:** o print real da Home
+nao foi regerado (sem app/emulador no ambiente) — depende de um screenshot
+novo do usuario.
+
+Versao: `1.5.0+6` → **`1.5.1+7`** (`kAppVersion = 1.5.1`). Branch
+`claude/online-link-refresh-fix`. Validacao no CI no push.
 
 ### 0045 - 2026-06-11 - Camisa "0"/"00" (texto) + carregar planilha por link online (v1.5.0)
 

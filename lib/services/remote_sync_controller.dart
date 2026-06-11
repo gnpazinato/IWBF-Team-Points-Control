@@ -30,7 +30,7 @@ class RemoteSyncController extends ChangeNotifier {
   RemoteSyncController({
     RemoteSpreadsheetService? remote,
     SpreadsheetParserService? parser,
-    Duration pollInterval = const Duration(seconds: 25),
+    Duration pollInterval = const Duration(seconds: 15),
   })  : _remote = remote ?? RemoteSpreadsheetService(),
         _parser = parser ?? SpreadsheetParserService(),
         _pollInterval = pollInterval;
@@ -50,6 +50,11 @@ class RemoteSyncController extends ChangeNotifier {
   bool _paused = false;
   Object? _lastError;
   Timer? _timer;
+
+  /// Quando `true`, há uma partida em andamento: o polling continua detectando
+  /// mudanças (`pending`), mas a tela de edição NÃO as aplica — segura até o
+  /// usuário sair do jogo (`LineupControlScreen` liga/desliga esta flag).
+  bool matchInProgress = false;
 
   String? get sourceUrl => _sourceUrl;
   String? get appliedHash => _appliedHash;
