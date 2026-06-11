@@ -590,11 +590,12 @@ Causas e correcoes:
   Summary alargada (`_kRosterDobW` 124→150, `_kRosterMinWidth` 580→606) para
   a data `DD/MM/YYYY` caber inteira; o nome (Expanded) cede o espaco.
 
-Docs: manual `.docx` ganhou a secao do link (ja na 0045) + legenda da
-Figura 3 avisando que o print e anterior a v1.5.0 (o card de link aparece
-entre upload e templates) + capa para v1.5.1. **OBS:** o print real da Home
-nao foi regerado (sem app/emulador no ambiente) — depende de um screenshot
-novo do usuario.
+Docs: manual `.docx` ganhou a secao do link (0045) + **print da Home v1.5.1
+regerado** mostrando o card "Load from Online Link" (Figura 3) + capa v1.5.1.
+O print foi renderizado num workflow TEMPORARIO (`screenshot.yml` +
+`test/screenshots/home_screenshot.dart` + dev-dep `golden_toolkit`, com
+`loadAppFonts` p/ fontes reais e captura `RepaintBoundary.toImage(3x)`);
+**toda essa engrenagem foi removida antes do merge** na main.
 
 Versao: `1.5.0+6` → **`1.5.1+7`** (`kAppVersion = 1.5.1`). Branch
 `claude/online-link-refresh-fix`. Validacao no CI no push.

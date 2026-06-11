@@ -23,9 +23,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  # TEMPORÁRIO: só para renderizar o print da Home (manual). Removido antes
-  # do merge na main junto com test/screenshots/ e .github/workflows/screenshot.yml.
-  golden_toolkit: ^0.15.0
 
 flutter:
   uses-material-design: true
