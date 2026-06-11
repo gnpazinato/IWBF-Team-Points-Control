@@ -10,6 +10,7 @@
 // Tudo isto (este arquivo, o workflow e a dev-dep golden_toolkit) é
 // TEMPORÁRIO e removido antes do merge na main.
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
