@@ -1,8 +1,11 @@
 name: Screenshot (manual)
 
-# Workflow temporário/manual para gerar o print da Home (manual do usuário).
-# Não roda em push — só via "Run workflow" (workflow_dispatch).
+# Workflow temporário para gerar o print da Home (manual do usuário).
+# Roda só nesta branch de trabalho e é DELETADO antes do merge na main.
 on:
+  push:
+    branches:
+      - claude/online-link-refresh-fix
   workflow_dispatch:
 
 jobs:
