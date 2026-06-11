@@ -36,6 +36,16 @@ String _nameFromJson(Map<String, dynamic> json) {
   return '$firstName $surname'.trim();
 }
 
+/// Lê o número da camisa aceitando tanto o formato novo (`String`, que
+/// preserva zeros à esquerda — "0" e "00" são valores distintos) quanto o
+/// legado (`int`, gravado em caches/rosters de versões anteriores).
+String _shirtNumberFromJson(Object? raw) {
+  if (raw is String) return raw;
+  if (raw is int) return raw.toString();
+  if (raw is num) return raw.toInt().toString();
+  return raw?.toString() ?? '';
+}
+
 /// Atleta importado da planilha de referência.
 class Player {
   Player({
@@ -50,7 +60,12 @@ class Player {
 
   final String id;
   final String teamName;
-  final int shirtNumber;
+
+  /// Número da camisa como **texto**, preservando zeros à esquerda. "0" e
+  /// "00" são rótulos distintos (jogadores diferentes). Para ordenar use
+  /// [compareShirtLabels], que ordena pelo valor numérico mas mantém a
+  /// distinção entre "0" e "00".
+  final String shirtNumber;
 
   /// Nome completo do atleta (campo único; substitui surname + firstName).
   final String name;
@@ -63,10 +78,25 @@ class Player {
 
   bool get hasValidClass => isAcceptedPlayerClass(playerClass);
 
+  /// Ordena rótulos de camisa numericamente (1, 2, …, 10) — não
+  /// lexicograficamente —, mas mantendo "0" e "00" como valores distintos:
+  /// quando o valor numérico empata, o rótulo mais curto vem primeiro
+  /// ("0" antes de "00"). Rótulos não numéricos caem no compareTo padrão.
+  static int compareShirtLabels(String a, String b) {
+    final int? na = int.tryParse(a);
+    final int? nb = int.tryParse(b);
+    if (na != null && nb != null) {
+      final int byValue = na.compareTo(nb);
+      if (byValue != 0) return byValue;
+      return a.length.compareTo(b.length);
+    }
+    return a.compareTo(b);
+  }
+
   Player copyWith({
     String? id,
     String? teamName,
-    int? shirtNumber,
+    String? shirtNumber,
     String? name,
     double? playerClass,
     DateTime? dateOfBirth,
@@ -97,7 +127,7 @@ class Player {
     return Player(
       id: json['id'] as String,
       teamName: json['teamName'] as String,
-      shirtNumber: json['shirtNumber'] as int,
+      shirtNumber: _shirtNumberFromJson(json['shirtNumber']),
       name: _nameFromJson(json),
       playerClass: (json['playerClass'] as num).toDouble(),
       dateOfBirth: (json['dateOfBirth'] as String?) == null

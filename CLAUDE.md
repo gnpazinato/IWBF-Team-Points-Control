@@ -6,13 +6,15 @@
 
 ## Branch ativa
 
-**Tudo está na `main`.** O MVP (PR #5) e a modernização visual + ajustes
-estruturais (Fases 1–6 + ajustes pós-testers 0039–0041, versão `1.4.0+5`)
-foram mergeados na `main` — **PR #6 mergeado em 2026-06-10** (aprovado pelo
-usuário). As branches `claude/review-and-continue-9ZK5v` e
-`claude/visual-modernization` são históricas; **não trabalhe mais a partir
-delas** e ignore avisos antigos de que "main é só scaffold": está
-desatualizado. `lib/main.dart` na `main` é o app real e atual.
+**Tudo está na `main`.** O MVP (PR #5), a modernização visual + ajustes
+(Fases 1–6 + 0039–0041, `1.4.0+5`, **PR #6, 2026-06-10**) e a entrada
+**0045 (`1.5.0+6`, 2026-06-11): camisa "0"/"00" como texto + carregar
+planilha por link online** foram **mergeados na `main`** (aprovados pelo
+usuário; a branch `claude/jersey-00-and-online-link` foi mergeada e
+**deletada**). As branches `claude/review-and-continue-9ZK5v`,
+`claude/visual-modernization` e `claude/jersey-00-and-online-link` são
+históricas; **não trabalhe mais a partir delas** e ignore avisos antigos de
+que "main é só scaffold". `lib/main.dart` na `main` é o app real e atual.
 
 **Trabalho novo:** crie uma branch `claude/**` nova a partir da `main`.
 Nunca commite direto na `main`. Fluxo:
@@ -27,10 +29,28 @@ git log --oneline -12
 
 ## Estado atual (resumo)
 
-- **Versão atual:** **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Houve
-  uma confusão de numeração — um commit gravou `1.5.1+5`, depois
-  **corrigido para `1.4.0+5`** (o "1.5.1" pulava a 1.4.0 e quebrava o
-  fluxo minor++). O conteúdo é o mesmo; só o número foi normalizado.
+- **Versão atual:** **`1.5.0+6`** (`kAppVersion = 1.5.0`, build 6) —
+  entrada 0045. (Histórico: a `1.4.0+5` saiu de uma confusão em que um
+  commit gravou `1.5.1+5` e foi corrigido para `1.4.0+5`; o `1.5.0+6` atual
+  segue o fluxo minor++ normal a partir da 1.4.0.)
+- **Entrada 0045 (`1.5.0+6`, 2026-06-11) — mergeada na `main`:**
+  - **Camisa "0" E "00" (rótulos distintos), ponta a ponta.**
+    `Player.shirtNumber` virou **`String`** (preserva zeros à esquerda;
+    `fromJson` lê `int` legado por back-compat). Ordenação por
+    **`Player.compareShirtLabels`** (valor numérico, mas "0" antes de "00").
+    Parser preserva texto "00"/"07" e converte "7.0"→"7"; duplicata por
+    `String` (então "0" e "00" **não** são duplicata um do outro). Template
+    grava a coluna de número como **TEXTO** (`TextCellValue` +
+    `NumFormat.standard_49` = numFmt 49 `"@"`) — **nunca `IntCellValue`** —
+    para o Excel não converter `00`→`0`. Edição valida `^\d{1,2}$`.
+  - **Carregar planilha por LINK online** (SharePoint/OneDrive corporativo,
+    Google Drive, Google Sheets, OneDrive pessoal) com **auto-refresh**, só
+    no **APK Android** (sem proxy/sem CORS). Detalhes na seção "Arquitetura
+    do link online" abaixo.
+  - **GitHub Pages REMOVIDO** (pedido do usuário): `deploy-web.yml`
+    deletado; o usuário testa **apenas o APK final**. Não há mais preview
+    Web. O código segue web-safe (stubs), então nada quebra se um dia
+    rodar `flutter build web`.
 - **Modernização visual (mergeada na `main` via PR #6, 2026-06-10):** Fases
   1–6 implementadas e verdes no CI. Entregue:
   - **Fase 1:** tema modernizado (cards brancos, sombra `0x14000000`,
@@ -74,17 +94,47 @@ git log --oneline -12
     `31/02`. Também: **remover jogador tocando no chip da quadra** +
     **bandeiras de países africanos** (Angola etc.). Validado com testes
     (`12-12-25 → 2025`, `05/06/90 → 1990`).
-- **Testers externos:** 2 pessoas com o link do GH Pages
-  (`https://gnpazinato.github.io/IWBF-Team-Points-Control/`). O preview
-  atualiza a cada push em `claude/**` ou `main`.
-- **Cloudflare Pages — REMOVIDO (2026-06-10):** o usuário não precisava
-  mais do preview no CF Pages; o job foi retirado do `deploy-web.yml`
-  (mantido só o GH Pages). Isso liberou as branches históricas para
-  deleção (a `claude/review-and-continue-9ZK5v` só estava viva como
-  production-source do CF Pages).
+- **Testers externos:** 2 pessoas. Testam **apenas o APK final** (baixado
+  do artifact do CI `build-apk.yml`). **Preview Web descartado** — GH Pages
+  removido em 2026-06-11 (entrada 0045); Cloudflare Pages já saíra em
+  2026-06-10 (0043). Não há mais preview Web ativo.
 - **Validação local:** Flutter **não** está instalado no Codespace; toda
-  validação (`analyze`/`test`/`build`) roda no **CI a cada push**.
-- **Última atualização:** 2026-06-10.
+  validação (`analyze`/`test`/`build` + APK) roda no **CI a cada push**
+  (`build-apk.yml`). O APK sai como artifact `iwbf-team-points-control-
+  version-<versão>` em cada run.
+- **Última atualização:** 2026-06-11.
+
+## Arquitetura do link online (entrada 0045)
+
+Só funciona no **APK Android** (nativo). A Web lança `UnsupportedError`
+(CORS: SharePoint/Drive não enviam `Access-Control-Allow-Origin`, e o
+usuário não usa mais Web). Camadas:
+
+- **`lib/services/remote_fetcher.dart`** (+ `_io`/`_web`/`_stub`, padrão de
+  import condicional igual ao `template_saver`): baixa os bytes. O `_io` usa
+  **`dart:io HttpClient` com redirect MANUAL repassando cookies** — é o que
+  faz o link anônimo do SharePoint funcionar (o 1º `302` entrega um
+  `FedAuth` anônimo que precisa acompanhar o salto seguinte; sem ele →
+  `403`). **Não trocar por `http`/`dio` sem replicar o cookie-jar.**
+- **`lib/services/remote_spreadsheet_service.dart`**: `normalize(url)`
+  resolve cada provedor → download direto (SharePoint `?download=1`; Google
+  Drive `uc?export=download&id`; Google Sheets `export?format=xlsx`;
+  OneDrive pessoal `api.onedrive.com/.../shares/u!{base64url}/root/content`;
+  senão link direto). Valida assinatura `.xlsx` (`PK`) e calcula
+  `contentHashOf` (FNV-1a) para detectar mudanças. `fetcher` é injetável
+  nos testes. `normalize` é **idempotente** (o polling renormaliza).
+- **`lib/services/remote_sync_controller.dart`**: `ChangeNotifier`
+  singleton (`RemoteSyncController.instance`) que faz **polling** (25 s + ao
+  voltar do 2º plano via `main.dart`). Inativo (sem timer/rede) até
+  `activate(url, hash)`. Quando o hash muda, expõe a versão nova como
+  `pending` e notifica — **não aplica sozinho**. Comportamento (pedido do
+  usuário): a tela de edição (`ValidationSummary`) **aplica em tempo real**;
+  durante a **partida** (`LineupControl`) segura e, ao **sair do jogo**,
+  pergunta (dialog `remote-update-dialog`). `SavedRoster` ganhou
+  `sourceUrl`/`sourceHash`; a restauração na Home **retoma o sync**.
+- **Home** (`load_spreadsheet_screen.dart`): card "Load from Online Link"
+  (`spreadsheet-link-input` + `load-link-button`). Upload local chama
+  `deactivate()`. `AndroidManifest.xml` tem permissão `INTERNET`.
 
 ## O que fazer quando o usuário abre uma nova conversa
 
@@ -102,10 +152,14 @@ git log --oneline -12
 
 ## Próximo passo provável
 
-A modernização visual + ajustes (Fases 1–6, 0039–0041, versão `1.4.0+5`)
-já foram **mergeados na `main` (PR #6, 2026-06-10)**. Não há trabalho em
-andamento nem PR aberto. Os caminhos típicos para uma nova conversa:
+Tudo está mergeado na `main` (até a entrada 0045, `1.5.0+6`). **Não há
+trabalho em andamento nem PR aberto.** Os caminhos típicos para uma nova
+conversa:
 
+- **Atualizar o manual do usuário (.docx)** para a v1.5.0: o manual
+  versionado ainda reflete a v1.4.0 (entrada 0044). Os recursos novos da
+  0045 — camisa "0"/"00" e **carregar planilha por link online** — ainda
+  **não** estão no manual. Provável próximo pedido de documentação.
 - **Ajustes de feedback** dos testers ou novos pedidos: crie uma branch
   `claude/**` nova a partir da `main`, adicione entrada no log e abra PR.
 - **Escopo futuro possível** (nunca iniciado): estatísticas pós-jogo/
@@ -118,8 +172,9 @@ Pergunte ao usuário qual caminho aplica antes de codar.
 
 ## Regras de trabalho (não revisitar sem motivo técnico)
 
-- **Branch:** trabalhe em `claude/visual-modernization` (ou numa branch
-  `claude/**` nova a partir de `main`). Nunca commite direto na `main`.
+- **Branch:** crie uma branch `claude/**` **nova a partir de `main`**.
+  Nunca commite direto na `main`. (A `claude/visual-modernization` é
+  histórica — não usar.)
 - **Validação local:** se `/root/flutter/bin/flutter` existir, rode
   `flutter pub get && flutter analyze --no-fatal-infos && flutter test`
   antes de cada push. Se Flutter ausente no sandbox, CI valida no push.
@@ -138,6 +193,21 @@ Pergunte ao usuário qual caminho aplica antes de codar.
   `CardThemeData`/`DialogThemeData` (não `CardTheme`/`DialogTheme`).
 - **Cores de alerta:** sempre via `IwbfColors` (`alertRed`,
   `alertRedSurface`, `goldDeep`) — não `Colors.red.shade*`.
+- **Camisa é `String` (entrada 0045):** `Player.shirtNumber` é texto e
+  preserva zeros à esquerda ("0" ≠ "00"). Ordene com
+  `Player.compareShirtLabels` (numérico, mas "0" antes de "00") — **nunca**
+  `String.compareTo` direto (daria ordem lexicográfica "10" < "2").
+  `fromJson` aceita `int` legado. No template, a coluna de número é
+  **TEXTO** (`TextCellValue` + `NumFormat.standard_49`) — **nunca**
+  `IntCellValue` (o Excel converteria `00`→`0`).
+- **Link online (entrada 0045):** ver "Arquitetura do link online". Só
+  Android; a Web é stub (CORS). O fetch nativo (`remote_fetcher_io.dart`)
+  precisa do redirect manual com **cookie passthrough** (SharePoint). O
+  `RemoteSyncController` é singleton injetável; nos testes passe um próprio
+  e chame `deactivate()`/`dispose()` para não vazar `Timer`. Mudou a UI da
+  Home (3 cards) — **widget tests que tocam os botões de template precisam
+  de `tester.ensureVisible(...)` antes do `tap`** (ficam abaixo da fold da
+  viewport 800×600).
 
 ## Rotina por incremento
 
@@ -145,19 +215,17 @@ Pergunte ao usuário qual caminho aplica antes de codar.
 2. `analyze` + `test` verdes localmente (ou push se Flutter ausente).
 3. Atualiza `docs/AI_WORK_LOG.md`: nova entrada `### 00NN`, tabela de
    estado, arquivos alterados, testes rodados, próximo passo.
-4. Commit + push em `claude/visual-modernization` (ou branch `claude/**`).
+4. Commit + push numa branch `claude/**` nova a partir de `main`.
 5. Reporte ao usuário em 4-8 linhas: o que entregou, testes que
    passaram (números reais), pendências, próximo passo.
 
 ## Repositório
 
 - GitHub: `gnpazinato/iwbf-team-points-control`
-- Preview Web (GH Pages — único preview ativo; expõe handle pessoal):
-  `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-- Servido a partir da branch que recebeu o push (`claude/**` ou `main`)
-  via `.github/workflows/deploy-web.yml`.
-- **Cloudflare Pages foi removido em 2026-06-10** (entrada 0043) — o job
-  saiu do `deploy-web.yml`. A URL antiga `iwbf-team-points-control.pages.dev`
-  deixa de ser atualizada (e pode ser apagada no dashboard Cloudflare).
-- CI de build/test: `.github/workflows/build-apk.yml` valida `analyze` +
-  `test` e gera APK em cada push.
+- **Sem preview Web.** GitHub Pages foi removido em 2026-06-11 (entrada
+  0045): o workflow `deploy-web.yml` foi **deletado**. Cloudflare Pages já
+  saíra em 2026-06-10 (0043). O usuário testa apenas o APK.
+- **Único workflow:** `.github/workflows/build-apk.yml` — valida `analyze`
+  + `test` e **gera o APK release** (artifact `iwbf-team-points-control-
+  version-<versão>`) em cada push em `main`/`claude/**` e em PRs para `main`.
+  O usuário baixa o APK pela aba **Actions → run → Artifacts**.

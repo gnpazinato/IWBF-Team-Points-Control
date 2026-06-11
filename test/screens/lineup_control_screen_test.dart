@@ -49,7 +49,7 @@ class _FakeWakelock extends WakelockController {
   }
 }
 
-Player _player(String teamId, int shirt, double cls, {String? name}) =>
+Player _player(String teamId, String shirt, double cls, {String? name}) =>
     Player(
       id: '$teamId::$shirt',
       teamName: teamId,
@@ -62,12 +62,12 @@ Team _teamA() => Team(
       id: 'team-brazil',
       teamName: 'Brazil',
       players: <Player>[
-        _player('team-brazil', 1, 1.0),
-        _player('team-brazil', 2, 2.0),
-        _player('team-brazil', 3, 3.0),
-        _player('team-brazil', 4, 4.0),
-        _player('team-brazil', 5, 4.5),
-        _player('team-brazil', 6, 3.5),
+        _player('team-brazil', '1', 1.0),
+        _player('team-brazil', '2', 2.0),
+        _player('team-brazil', '3', 3.0),
+        _player('team-brazil', '4', 4.0),
+        _player('team-brazil', '5', 4.5),
+        _player('team-brazil', '6', 3.5),
       ],
     );
 
@@ -75,12 +75,12 @@ Team _teamB() => Team(
       id: 'team-argentina',
       teamName: 'Argentina',
       players: <Player>[
-        _player('team-argentina', 7, 1.5),
-        _player('team-argentina', 8, 2.5),
-        _player('team-argentina', 9, 3.0),
-        _player('team-argentina', 10, 3.5),
-        _player('team-argentina', 11, 4.0),
-        _player('team-argentina', 12, 4.5),
+        _player('team-argentina', '7', 1.5),
+        _player('team-argentina', '8', 2.5),
+        _player('team-argentina', '9', 3.0),
+        _player('team-argentina', '10', 3.5),
+        _player('team-argentina', '11', 4.0),
+        _player('team-argentina', '12', 4.5),
       ],
     );
 

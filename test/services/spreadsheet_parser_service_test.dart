@@ -68,7 +68,7 @@ void main() {
           result.teams.firstWhere((t) => t.teamName == 'Brazil');
       expect(teamBrazil.players, hasLength(2));
       expect(teamBrazil.players.first.name, equals('SILVA, João'));
-      expect(teamBrazil.players.first.shirtNumber, equals(7));
+      expect(teamBrazil.players.first.shirtNumber, equals('7'));
       expect(teamBrazil.players.first.playerClass, equals(2.5));
       expect(
         teamBrazil.players.first.dateOfBirth,
@@ -209,6 +209,44 @@ void main() {
           .toList();
       expect(dups, hasLength(1));
       expect(dups.first.severity, equals(ParseIssueSeverity.warning));
+    });
+
+    test('preserva "00" e "0" como camisas distintas (texto)', () {
+      // "00" e "0" são rótulos diferentes: o parser deve preservar o texto
+      // exato (zeros à esquerda) e não tratá-los como números iguais.
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '00', 'Silva', 'João', '2.5', '1998-01-02']),
+        _row(<String?>['Brazil', '0', 'Souza', 'Pedro', '4.0', '1995-12-31']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      final Team brazil =
+          result.teams.firstWhere((Team t) => t.teamName == 'Brazil');
+      final List<String> shirts =
+          brazil.players.map((Player p) => p.shirtNumber).toList();
+      expect(shirts, containsAll(<String>['00', '0']));
+      // Distintos: dois jogadores, rótulos diferentes.
+      expect(brazil.players, hasLength(2));
+      expect(shirts.toSet(), hasLength(2));
+    });
+
+    test('celula numerica "7.0" vira camisa "7" (sem ".0")', () {
+      final SheetData sheet = _sheet('Players', <List<String?>>[
+        _row(<String?>['team_name', 'shirt_number', 'surname', 'first_name', 'player_class', 'dob']),
+        _row(<String?>['Brazil', '7.0', 'Silva', 'João', '2.5', '1998-01-02']),
+      ]);
+
+      final SpreadsheetParseResult result =
+          parser.parseSheets(<SheetData>[sheet]);
+
+      expect(result.hasBlockingIssues, isFalse,
+          reason: result.issues.toString());
+      expect(result.teams.first.players.first.shirtNumber, equals('7'));
     });
   });
 
@@ -777,7 +815,7 @@ void main() {
       expect(result.teams, hasLength(1));
       expect(result.teams.first.teamName, equals('Brazil'));
       expect(result.teams.first.players, hasLength(1));
-      expect(result.teams.first.players.first.shirtNumber, equals(7));
+      expect(result.teams.first.players.first.shirtNumber, equals('7'));
       expect(result.teams.first.players.first.playerClass, equals(2.5));
     });
   });
@@ -825,7 +863,7 @@ void main() {
       // Usou FULL NAME (não reconstruiu de first/last name).
       expect(arg.players.first.name, equals('Paiva, Evangelina'));
       expect(arg.players.first.playerClass, equals(4.0));
-      expect(arg.players.first.shirtNumber, equals(4));
+      expect(arg.players.first.shirtNumber, equals('4'));
       expect(arg.players.first.dateOfBirth, equals(DateTime.utc(1987, 12, 27)));
     });
 
@@ -848,7 +886,7 @@ void main() {
       expect(result.teams.first.teamName, equals('Brazil'));
       expect(result.teams.first.players.first.name, equals('SILVA, João'));
       expect(result.teams.first.players.first.playerClass, equals(2.5));
-      expect(result.teams.first.players.first.shirtNumber, equals(7));
+      expect(result.teams.first.players.first.shirtNumber, equals('7'));
     });
 
     test('sem FULL NAME: reconstrói "SOBRENOME, Nome" de last/first name', () {

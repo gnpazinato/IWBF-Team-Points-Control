@@ -6,7 +6,7 @@ import 'package:iwbf_team_points_control/widgets/player_jersey_icon.dart';
 
 Player _player({
   PlayerGender gender = PlayerGender.unspecified,
-  int shirt = 7,
+  String shirt = '7',
 }) =>
     Player(
       id: 'team-x::$shirt',
@@ -26,7 +26,7 @@ void main() {
           home: Scaffold(
             body: Center(
               child: PlayerJerseyIcon(
-                player: _player(shirt: 12),
+                player: _player(shirt: '12'),
                 isTeamA: true,
               ),
             ),
@@ -45,8 +45,8 @@ void main() {
           home: Scaffold(
             body: Row(
               children: <Widget>[
-                PlayerJerseyIcon(player: _player(shirt: 4), isTeamA: true),
-                PlayerJerseyIcon(player: _player(shirt: 23), isTeamA: false),
+                PlayerJerseyIcon(player: _player(shirt: '4'), isTeamA: true),
+                PlayerJerseyIcon(player: _player(shirt: '23'), isTeamA: false),
               ],
             ),
           ),
@@ -62,7 +62,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: PlayerJerseyIcon(player: _player(shirt: 9), isTeamA: true),
+            body: PlayerJerseyIcon(player: _player(shirt: '9'), isTeamA: true),
           ),
         ),
       );
@@ -77,7 +77,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: PlayerJerseyIcon(player: _player(shirt: 9), isTeamA: false),
+            body: PlayerJerseyIcon(player: _player(shirt: '9'), isTeamA: false),
           ),
         ),
       );

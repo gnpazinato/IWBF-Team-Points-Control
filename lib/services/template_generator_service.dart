@@ -114,18 +114,23 @@ class TemplateGeneratorService {
           .map((String h) => xlsx.TextCellValue(h))
           .toList(growable: false),
     );
+    int dataRows = 0;
     for (final _SampleRow row in _expandSampleRows()) {
       excel.appendRow(singleSheetTabName, <xlsx.CellValue?>[
         xlsx.TextCellValue(sampleCompetition),
         xlsx.TextCellValue(row.teamName),
         xlsx.TextCellValue(_formatPlayerClass(row.playerClass)),
         xlsx.TextCellValue(row.fullName),
-        xlsx.IntCellValue(row.shirt),
+        // Camisa como TEXTO (não IntCellValue): preserva "0"/"00".
+        xlsx.TextCellValue(row.shirt.toString()),
         xlsx.TextCellValue(_formatDob(row.dob)),
         xlsx.TextCellValue(row.gender),
       ]);
+      dataRows++;
     }
     _applyColumnWidths(excel, singleSheetTabName, singleSheetHeaders);
+    _applyTextFormatToColumn(
+        excel, singleSheetTabName, singleSheetHeaders.indexOf('number'), dataRows);
 
     return _encode(excel);
   }
@@ -154,12 +159,15 @@ class TemplateGeneratorService {
           xlsx.TextCellValue(sampleCompetition),
           xlsx.TextCellValue(_formatPlayerClass(row.playerClass)),
           xlsx.TextCellValue(row.fullName),
-          xlsx.IntCellValue(row.shirt),
+          // Camisa como TEXTO (não IntCellValue): preserva "0"/"00".
+          xlsx.TextCellValue(row.shirt.toString()),
           xlsx.TextCellValue(_formatDob(row.dob)),
           xlsx.TextCellValue(row.gender),
         ]);
       }
       _applyColumnWidths(excel, tabName, perTeamHeaders);
+      _applyTextFormatToColumn(excel, tabName,
+          perTeamHeaders.indexOf('number'), rowsByTab[tabName]!.length);
     }
 
     if (defaultSheet != null && !rowsByTab.containsKey(defaultSheet)) {
@@ -184,6 +192,29 @@ class TemplateGeneratorService {
     final xlsx.Sheet sheet = excel[sheetName];
     for (int c = 0; c < headers.length; c++) {
       sheet.setColumnWidth(c, _columnWidthFor(headers[c]));
+    }
+  }
+
+  /// Marca como **texto** (Excel `numFmt` 49 = `"@"`) as células de dados da
+  /// coluna do número da camisa. Sem isso, o Excel converteria `00`/`07`
+  /// digitados pelo usuário em `0`/`7` (perdendo o zero à esquerda) ao
+  /// editar/reabrir a planilha. Estiliza as linhas de dados já existentes
+  /// (1..[dataRowCount]; a linha 0 é o cabeçalho).
+  void _applyTextFormatToColumn(
+    xlsx.Excel excel,
+    String sheetName,
+    int columnIndex,
+    int dataRowCount,
+  ) {
+    if (columnIndex < 0) return;
+    final xlsx.Sheet sheet = excel[sheetName];
+    final xlsx.CellStyle textStyle =
+        xlsx.CellStyle(numberFormat: xlsx.NumFormat.standard_49);
+    for (int r = 1; r <= dataRowCount; r++) {
+      final xlsx.Data cell = sheet.cell(
+        xlsx.CellIndex.indexByColumnRow(columnIndex: columnIndex, rowIndex: r),
+      );
+      cell.cellStyle = textStyle;
     }
   }
 

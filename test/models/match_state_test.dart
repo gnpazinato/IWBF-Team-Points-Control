@@ -4,7 +4,7 @@ import 'package:iwbf_team_points_control/models/match_state.dart';
 import 'package:iwbf_team_points_control/models/player.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 
-Player _player(String id, String team, double cls, {int number = 1}) => Player(
+Player _player(String id, String team, double cls, {String number = '1'}) => Player(
       id: id,
       teamName: team,
       shirtNumber: number,
@@ -31,7 +31,7 @@ void main() {
   group('MatchState - seleção', () {
     test('selectPlayer adiciona até 5 e bloqueia o 6º', () {
       final List<Player> roster = <Player>[
-        for (int i = 0; i < 6; i++) _player('a$i', 'Brazil', 1.0, number: i),
+        for (int i = 0; i < 6; i++) _player('a$i', 'Brazil', 1.0, number: '$i'),
       ];
       final MatchState match = _matchOf(teamAPlayers: roster, teamBPlayers: <Player>[]);
 
@@ -45,7 +45,7 @@ void main() {
 
     test('deselectPlayer libera vaga para outro atleta', () {
       final List<Player> roster = <Player>[
-        for (int i = 0; i < 6; i++) _player('a$i', 'Brazil', 1.0, number: i),
+        for (int i = 0; i < 6; i++) _player('a$i', 'Brazil', 1.0, number: '$i'),
       ];
       final MatchState match = _matchOf(teamAPlayers: roster, teamBPlayers: <Player>[]);
 
@@ -91,11 +91,11 @@ void main() {
   group('MatchState - pontuação', () {
     test('soma classes dos atletas selecionados', () {
       final List<Player> roster = <Player>[
-        _player('a1', 'Brazil', 1.0, number: 1),
-        _player('a2', 'Brazil', 2.0, number: 2),
-        _player('a3', 'Brazil', 3.0, number: 3),
-        _player('a4', 'Brazil', 3.5, number: 4),
-        _player('a5', 'Brazil', 4.0, number: 5),
+        _player('a1', 'Brazil', 1.0, number: '1'),
+        _player('a2', 'Brazil', 2.0, number: '2'),
+        _player('a3', 'Brazil', 3.0, number: '3'),
+        _player('a4', 'Brazil', 3.5, number: '4'),
+        _player('a5', 'Brazil', 4.0, number: '5'),
       ];
       final MatchState match =
           _matchOf(teamAPlayers: roster, teamBPlayers: <Player>[]);
@@ -107,10 +107,10 @@ void main() {
 
     test('isTeamAOverLimit dispara quando soma supera o limite', () {
       final List<Player> roster = <Player>[
-        _player('a1', 'Brazil', 4.0, number: 1),
-        _player('a2', 'Brazil', 4.0, number: 2),
-        _player('a3', 'Brazil', 4.0, number: 3),
-        _player('a4', 'Brazil', 4.0, number: 4),
+        _player('a1', 'Brazil', 4.0, number: '1'),
+        _player('a2', 'Brazil', 4.0, number: '2'),
+        _player('a3', 'Brazil', 4.0, number: '3'),
+        _player('a4', 'Brazil', 4.0, number: '4'),
       ];
       final MatchState match =
           _matchOf(teamAPlayers: roster, teamBPlayers: <Player>[], limit: 14.0);
@@ -123,10 +123,10 @@ void main() {
 
     test('isTeamAOverLimit é falso quando igual ao limite', () {
       final List<Player> roster = <Player>[
-        _player('a1', 'Brazil', 3.5, number: 1),
-        _player('a2', 'Brazil', 3.5, number: 2),
-        _player('a3', 'Brazil', 3.5, number: 3),
-        _player('a4', 'Brazil', 3.5, number: 4),
+        _player('a1', 'Brazil', 3.5, number: '1'),
+        _player('a2', 'Brazil', 3.5, number: '2'),
+        _player('a3', 'Brazil', 3.5, number: '3'),
+        _player('a4', 'Brazil', 3.5, number: '4'),
       ];
       final MatchState match =
           _matchOf(teamAPlayers: roster, teamBPlayers: <Player>[], limit: 14.0);
@@ -189,11 +189,11 @@ void main() {
   group('MatchState - serialização', () {
     test('roundtrip preserva equipes, seleções e limite', () {
       final List<Player> rosterA = <Player>[
-        _player('a1', 'Brazil', 2.5, number: 7),
-        _player('a2', 'Brazil', 3.0, number: 9),
+        _player('a1', 'Brazil', 2.5, number: '7'),
+        _player('a2', 'Brazil', 3.0, number: '9'),
       ];
       final List<Player> rosterB = <Player>[
-        _player('b1', 'Argentina', 1.5, number: 4),
+        _player('b1', 'Argentina', 1.5, number: '4'),
       ];
       final MatchState original = MatchState(
         teamA: _teamWith('Brazil', rosterA),
