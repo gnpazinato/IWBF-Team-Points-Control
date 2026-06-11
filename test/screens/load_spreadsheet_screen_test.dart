@@ -89,6 +89,9 @@ void main() {
     await _pumpScreen(tester, saveTemplate: saver.save);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(
+        find.byKey(const Key('download-template-single-sheet')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('download-template-single-sheet')));
     await tester.pumpAndSettle();
 
@@ -108,6 +111,9 @@ void main() {
     await _pumpScreen(tester, saveTemplate: saver.save);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(
+        find.byKey(const Key('download-template-per-team')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('download-template-per-team')));
     await tester.pumpAndSettle();
 
@@ -123,6 +129,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(
+        find.byKey(const Key('download-template-single-sheet')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('download-template-single-sheet')));
     await tester.pumpAndSettle();
 
