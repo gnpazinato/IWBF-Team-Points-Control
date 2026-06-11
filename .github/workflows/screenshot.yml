@@ -34,8 +34,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Render Home (update golden)
-        run: flutter test --update-goldens test/screenshots/home_screenshot.dart
+      - name: Render Home screenshot
+        run: flutter test test/screenshots/home_screenshot.dart
 
       - name: Upload screenshot
         uses: actions/upload-artifact@v4
