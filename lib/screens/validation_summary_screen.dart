@@ -70,6 +70,11 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
     _teams = <Team>[...widget.result.teams];
     _sync = widget.remoteSync ?? RemoteSyncController.instance;
     _sync.addListener(_onRemoteChanged);
+    // Aplica uma versão nova que já tenha chegado ANTES desta tela montar
+    // (ex.: ao restaurar do cache e re-buscar o link na inicialização). Sem
+    // isto, a notificação podia acontecer antes do listener existir e a tela
+    // ficava mostrando a versão antiga até o app reiniciar.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyRemoteUpdate());
   }
 
   @override
@@ -78,11 +83,20 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
     super.dispose();
   }
 
+  void _onRemoteChanged() => _applyRemoteUpdate();
+
   /// Aplica em TEMPO REAL uma versão nova vinda do link — pedido do usuário:
   /// mesmo com a tela de edição aberta, a mudança na planilha online reflete
-  /// na hora. Só age quando esta tela representa a fonte de link ativa.
-  void _onRemoteChanged() {
+  /// na hora.
+  ///
+  /// **Não** aplica enquanto uma partida está em andamento: nesse caso a
+  /// atualização fica RETIDA no controller e é oferecida quando o usuário sai
+  /// do jogo (ver `LineupControlScreen._leaveWithPossibleUpdate`). Sem esta
+  /// trava, esta tela (que continua montada por baixo da partida) consumia a
+  /// atualização silenciosamente e ela nunca aparecia.
+  void _applyRemoteUpdate() {
     if (!mounted) return;
+    if (_sync.matchInProgress) return;
     final RemoteUpdate? pending = _sync.pending;
     if (pending == null) return;
     if (widget.sourceUrl == null && !_sync.isActive) return;
@@ -765,16 +779,19 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
 /// "tabela". O nome ocupa o espaço restante (Expanded). Abaixo de
 /// `_kRosterMinWidth` a tabela rola na horizontal mantendo essas larguras.
 const double _kRosterShirtW = 44;
-const double _kRosterDobW = 124;
+// Largura da coluna de nascimento aumentada (124 -> 150) para a data
+// `DD/MM/YYYY` caber inteira sem reticências; o nome (Expanded) cede o
+// espaço. Ajuste leve pedido pelo usuário.
+const double _kRosterDobW = 150;
 const double _kRosterGenderW = 104;
 const double _kRosterClassW = 80;
 const double _kRosterDeleteW = 36;
 const double _kRosterGap = 8;
-// Soma das colunas fixas + gaps + padding = 446. Abaixo de `_kRosterMinWidth`
+// Soma das colunas fixas + gaps + padding ≈ 472. Abaixo de `_kRosterMinWidth`
 // a tabela rola na horizontal (mantém todas as colunas legíveis); acima
 // disso ocupa toda a largura disponível, com o nome (Expanded) absorvendo
 // o espaço restante.
-const double _kRosterMinWidth = 580;
+const double _kRosterMinWidth = 606;
 
 /// Cabeçalho de colunas da tabela de atletas (mostrado uma vez por equipe).
 class _RosterHeaderRow extends StatelessWidget {

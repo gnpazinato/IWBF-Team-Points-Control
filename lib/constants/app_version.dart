@@ -2,4 +2,4 @@
 ///
 /// Mantida em sincronia com o campo `version:` do `pubspec.yaml`
 /// (parte semântica, sem o build number).
-const String kAppVersion = '1.5.0';
+const String kAppVersion = '1.5.1';

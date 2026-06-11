@@ -23,6 +23,7 @@ class CacheService {
 
   static const String _matchStateKey = 'iwbf.match_state.v1';
   static const String _rosterKey = 'iwbf.roster.v1';
+  static const String _linkKey = 'iwbf.remote_link.v1';
 
   final SharedPreferences? _injected;
 
@@ -88,11 +89,30 @@ class CacheService {
     await prefs.remove(_rosterKey);
   }
 
-  /// Limpa TUDO (match state + roster). Usado por "Start from Scratch" e
-  /// "Load New Spreadsheet" — ambos querem partir de uma tela limpa.
+  /// Guarda o ÚLTIMO link online carregado, para que o campo de link na tela
+  /// inicial continue preenchido após fechar e reabrir o app.
+  Future<void> saveLastLink(String url) async {
+    final SharedPreferences prefs = await _prefs();
+    await prefs.setString(_linkKey, url);
+  }
+
+  Future<String?> loadLastLink() async {
+    final SharedPreferences prefs = await _prefs();
+    final String? url = prefs.getString(_linkKey);
+    return (url == null || url.isEmpty) ? null : url;
+  }
+
+  Future<void> clearLastLink() async {
+    final SharedPreferences prefs = await _prefs();
+    await prefs.remove(_linkKey);
+  }
+
+  /// Limpa TUDO (match state + roster + link). Usado por "Start from Scratch"
+  /// e "Load New Spreadsheet" — ambos querem partir de uma tela limpa.
   Future<void> clear() async {
     final SharedPreferences prefs = await _prefs();
     await prefs.remove(_matchStateKey);
     await prefs.remove(_rosterKey);
+    await prefs.remove(_linkKey);
   }
 }
