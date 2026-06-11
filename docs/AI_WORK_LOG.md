@@ -48,7 +48,7 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Branch de trabalho | **`claude/jersey-00-and-online-link`** (a partir de `main`) — entrada 0045, ainda NAO mergeada. `main` tem ate a 0044. |
+| Branch de trabalho | **`main`** (tudo mergeado, ate a entrada 0045). A branch `claude/jersey-00-and-online-link` foi mergeada e deletada. Trabalho novo: branch `claude/**` nova a partir de `main`. |
 | Versao atual | **`1.5.0+6`** (`kAppVersion = 1.5.0`, build 6). Bump minor da entrada 0045 (camisa "0"/"00" texto + carregar planilha por link online). |
 | Data da ultima atualizacao | 2026-06-11 |
 | Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). Manual do usuario (.docx) atualizado para v1.4.0 na branch `claude/manual-v1.4.0` (entrada 0044). CI verde; preview Web unico (GH Pages).** |
