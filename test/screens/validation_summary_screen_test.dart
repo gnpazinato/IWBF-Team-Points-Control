@@ -11,7 +11,7 @@ Future<void> _pump(WidgetTester tester, SpreadsheetParseResult result) async {
   ));
 }
 
-Player _p(String id, int n, double cls) => Player(
+Player _p(String id, String n, double cls) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: n,
@@ -29,7 +29,7 @@ void main() {
         Team(
           id: 'team-brazil',
           teamName: 'Brazil',
-          players: <Player>[_p('p1', 7, 2.5), _p('p2', 9, 4.0)],
+          players: <Player>[_p('p1', '7', 2.5), _p('p2', '9', 4.0)],
         ),
       ],
       issues: const <ParseIssue>[],
@@ -48,7 +48,7 @@ void main() {
       (WidgetTester tester) async {
     final SpreadsheetParseResult result = SpreadsheetParseResult(
       teams: <Team>[
-        Team(id: 'team-brazil', teamName: 'Brazil', players: <Player>[_p('p1', 7, 2.5)]),
+        Team(id: 'team-brazil', teamName: 'Brazil', players: <Player>[_p('p1', '7', 2.5)]),
       ],
       issues: const <ParseIssue>[],
     );
@@ -86,7 +86,7 @@ void main() {
       (WidgetTester tester) async {
     final SpreadsheetParseResult result = SpreadsheetParseResult(
       teams: <Team>[
-        Team(id: 'team-atlantis', teamName: 'Atlantis', players: <Player>[_p('p1', 7, 2.5)]),
+        Team(id: 'team-atlantis', teamName: 'Atlantis', players: <Player>[_p('p1', '7', 2.5)]),
       ],
       issues: const <ParseIssue>[
         ParseIssue(
@@ -132,7 +132,7 @@ void main() {
         Team(
           id: 'team-brazil',
           teamName: 'Brazil',
-          players: <Player>[_p('p1', 7, 2.5), _p('p2', 9, 4.0)],
+          players: <Player>[_p('p1', '7', 2.5), _p('p2', '9', 4.0)],
         ),
       ],
       issues: const <ParseIssue>[],
@@ -162,7 +162,7 @@ void main() {
         Team(
           id: 'team-brazil',
           teamName: 'Brazil',
-          players: <Player>[_p('p1', 7, 2.5)],
+          players: <Player>[_p('p1', '7', 2.5)],
         ),
       ],
       issues: const <ParseIssue>[],

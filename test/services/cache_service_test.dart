@@ -6,7 +6,7 @@ import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/services/cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Player _player(String id, double cls, {int number = 1}) => Player(
+Player _player(String id, double cls, {String number = '1'}) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: number,
@@ -20,14 +20,14 @@ MatchState _seed() {
       id: 'team-brazil',
       teamName: 'Brazil',
       players: <Player>[
-        _player('a1', 2.5, number: 7),
-        _player('a2', 4.0, number: 9),
+        _player('a1', 2.5, number: '7'),
+        _player('a2', 4.0, number: '9'),
       ],
     ),
     teamB: Team(
       id: 'team-argentina',
       teamName: 'Argentina',
-      players: <Player>[_player('b1', 1.5, number: 4)],
+      players: <Player>[_player('b1', 1.5, number: '4')],
     ),
     pointLimit: 15.0,
     competitionName: 'Americas Championship',
@@ -121,8 +121,8 @@ void main() {
               id: 'team-brazil',
               teamName: 'Brazil',
               players: <Player>[
-                _player('a1', 2.5, number: 7),
-                _player('a2', 4.0, number: 9),
+                _player('a1', 2.5, number: '7'),
+                _player('a2', 4.0, number: '9'),
               ],
             ),
             Team(id: 'team-argentina', teamName: 'Argentina'),

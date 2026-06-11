@@ -466,7 +466,7 @@ class SpreadsheetParserService {
       valid = false;
     }
 
-    final int? shirtNumber = _parseShirtNumber(shirtRaw);
+    final String? shirtNumber = _parseShirtNumber(shirtRaw);
     if (shirtNumber == null) {
       issues.add(ParseIssue(
         category: ParseIssueCategory.missingShirtNumber,
@@ -547,11 +547,13 @@ class SpreadsheetParserService {
     String? sheetName,
   ) {
     for (final Team team in teams) {
-      final Map<int, int> count = <int, int>{};
+      // "0" e "00" são rótulos distintos (chaves String diferentes): não
+      // são reportados como duplicata um do outro.
+      final Map<String, int> count = <String, int>{};
       for (final Player p in team.players) {
         count[p.shirtNumber] = (count[p.shirtNumber] ?? 0) + 1;
       }
-      count.forEach((int number, int n) {
+      count.forEach((String number, int n) {
         if (n > 1) {
           issues.add(ParseIssue(
             category: ParseIssueCategory.duplicateShirtNumber,
@@ -653,16 +655,27 @@ class SpreadsheetParserService {
   // Parsers de campos
   // ---------------------------------------------------------------------------
 
-  int? _parseShirtNumber(String? raw) {
+  /// Lê o número da camisa como **texto**, preservando zeros à esquerda.
+  ///
+  /// - Célula de texto com 1–2 dígitos (`"0"`, `"00"`, `"07"`, `"5"`) é
+  ///   mantida **verbatim** — é o que permite distinguir "0" de "00".
+  ///   (Por isso a checagem de dígitos vem ANTES de `double.tryParse`, que
+  ///   colapsaria `"00"` em `0`.)
+  /// - Célula numérica (`"7"`, `"7.0"`, `"12,0"`) vira o rótulo inteiro
+  ///   correspondente (`"7"`, `"12"`) — não há zero à esquerda a preservar.
+  /// - Frações (`"7.5"`) e valores negativos são rejeitados (→ null).
+  String? _parseShirtNumber(String? raw) {
     if (raw == null) return null;
     final String trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
+    // Texto puro de 1–2 dígitos: preserva exatamente ("00" continua "00").
+    if (RegExp(r'^\d{1,2}$').hasMatch(trimmed)) return trimmed;
+    // Célula numérica com casas decimais ("7.0", "12,0") → rótulo inteiro.
     final double? asDouble = double.tryParse(trimmed.replaceAll(',', '.'));
-    if (asDouble == null) return null;
-    if (asDouble < 0) return null;
+    if (asDouble == null || asDouble < 0) return null;
     final int asInt = asDouble.toInt();
     if (asInt != asDouble) return null;
-    return asInt;
+    return asInt.toString();
   }
 
   DateTime? _parseDateOfBirth(String raw) {

@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../constants/app_version.dart';
 import '../models/saved_roster.dart';
 import '../services/cache_service.dart';
+import '../services/remote_spreadsheet_service.dart';
+import '../services/remote_sync_controller.dart';
 import '../services/spreadsheet_parser_service.dart';
 import '../services/template_generator_service.dart';
 import '../theme/iwbf_theme.dart';
@@ -42,17 +44,23 @@ class LoadSpreadsheetScreen extends StatefulWidget {
     FilePickerFn? filePicker,
     TemplateGeneratorService? templates,
     TemplateSaveFn? saveTemplate,
+    RemoteSpreadsheetService? remote,
+    RemoteSyncController? remoteSync,
   })  : _parser = parser,
         _cache = cache,
         _filePicker = filePicker,
         _templates = templates,
-        _saveTemplate = saveTemplate;
+        _saveTemplate = saveTemplate,
+        _remote = remote,
+        _remoteSync = remoteSync;
 
   final SpreadsheetParserService? _parser;
   final CacheService? _cache;
   final FilePickerFn? _filePicker;
   final TemplateGeneratorService? _templates;
   final TemplateSaveFn? _saveTemplate;
+  final RemoteSpreadsheetService? _remote;
+  final RemoteSyncController? _remoteSync;
 
   @override
   State<LoadSpreadsheetScreen> createState() => _LoadSpreadsheetScreenState();
@@ -65,6 +73,10 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
   late final FilePickerFn _pickFile;
   late final TemplateGeneratorService _templates;
   late final TemplateSaveFn _saveTemplate;
+  late final RemoteSpreadsheetService _remote;
+  late final RemoteSyncController _remoteSync;
+
+  final TextEditingController _linkController = TextEditingController();
 
   bool _busy = false;
   bool _hasPromptedRestore = false;
@@ -77,12 +89,15 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
     _pickFile = widget._filePicker ?? _defaultFilePicker;
     _templates = widget._templates ?? const TemplateGeneratorService();
     _saveTemplate = widget._saveTemplate ?? platform_saver.defaultSaveTemplate;
+    _remote = widget._remote ?? RemoteSpreadsheetService();
+    _remoteSync = widget._remoteSync ?? RemoteSyncController.instance;
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferRestore());
   }
 
   @override
   void dispose() {
+    _linkController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -150,6 +165,15 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
         _showSnack('Saved spreadsheet could not be restored.');
         return;
       }
+      // Se a planilha veio de um LINK, retoma a sincronização (e verifica
+      // já se há versão mais nova). Caso contrário, garante o polling
+      // desligado (planilha local não sincroniza).
+      if (roster.sourceUrl != null && roster.sourceHash != null) {
+        _remoteSync.activate(roster.sourceUrl!, roster.sourceHash!);
+        unawaited(_remoteSync.checkNow());
+      } else {
+        _remoteSync.deactivate();
+      }
       // Reconstroi um resultado de parser limpo (sem issues) a partir da
       // planilha salva — leva o usuario ao Resumo da planilha com TODAS as
       // equipes/atletas, de onde pode revisar/editar e seguir para o setup.
@@ -163,10 +187,12 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
           builder: (_) => ValidationSummaryScreen(
             result: result,
             cache: _cache,
+            sourceUrl: roster.sourceUrl,
           ),
         ),
       );
     } else {
+      _remoteSync.deactivate();
       await _cache.clear();
     }
   }
@@ -179,6 +205,8 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
       if (bytes == null) return;
       final SpreadsheetParseResult result = _parser.parseBytes(bytes);
       if (!mounted) return;
+      // Planilha local substitui qualquer fonte de link: desliga o polling.
+      _remoteSync.deactivate();
       if (result.hasBlockingIssues && result.teams.isEmpty) {
         // Erro grave: arquivo ilegível ou colunas obrigatórias faltando.
         await Navigator.of(context).push<void>(
@@ -196,6 +224,56 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
           ),
         ),
       );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Carrega a planilha a partir de um link online (SharePoint/OneDrive/
+  /// Google). Baixa, parseia, liga a sincronização para a versão atual e
+  /// segue para o Resumo. Erros (link inválido, offline, arquivo não-xlsx)
+  /// viram um SnackBar amigável.
+  Future<void> _onLoadLinkPressed() async {
+    if (_busy) return;
+    final String url = _linkController.text.trim();
+    if (url.isEmpty) return;
+    if (!_remote.looksLikeSupportedLink(url)) {
+      _showSnack('Enter a valid http(s) link (SharePoint, OneDrive or '
+          'Google Drive/Sheets).');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final RemoteFetchResult fetched = await _remote.fetch(url);
+      if (!mounted) return;
+      final SpreadsheetParseResult result = _parser.parseBytes(fetched.bytes);
+      if (!mounted) return;
+      // Liga a sincronização com a versão recém-carregada (hash conhecido,
+      // para não re-disparar aviso de "atualização" da mesma versão).
+      _remoteSync.activate(url, fetched.contentHash);
+      if (result.hasBlockingIssues && result.teams.isEmpty) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => MissingDataScreen(result: result),
+          ),
+        );
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => ValidationSummaryScreen(
+            result: result,
+            cache: _cache,
+            sourceUrl: url,
+          ),
+        ),
+      );
+    } on RemoteFetchException catch (e) {
+      if (mounted) _showSnack(e.message);
+    } catch (_) {
+      if (mounted) {
+        _showSnack('Could not load the spreadsheet from the link.');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -239,6 +317,12 @@ class _LoadSpreadsheetScreenState extends State<LoadSpreadsheetScreen>
               ),
               const SizedBox(height: 22),
               _UploadCard(onTap: _busy ? null : _onLoadPressed),
+              const SizedBox(height: 16),
+              _LinkCard(
+                controller: _linkController,
+                busy: _busy,
+                onLoad: _onLoadLinkPressed,
+              ),
               const SizedBox(height: 16),
               _TemplatesCard(
                 busy: _busy,
@@ -317,6 +401,84 @@ class _UploadCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: IwbfColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card para carregar a planilha a partir de um link online e mantê-la em
+/// sincronia. O download/sync só funciona no app Android (na Web o navegador
+/// bloqueia por CORS — o serviço lança erro amigável nesse caso).
+class _LinkCard extends StatelessWidget {
+  const _LinkCard({
+    required this.controller,
+    required this.busy,
+    required this.onLoad,
+  });
+
+  final TextEditingController controller;
+  final bool busy;
+  final Future<void> Function() onLoad;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Icon(Icons.link_outlined,
+                    size: 20, color: IwbfColors.goldDeep),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Load from Online Link',
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Paste a SharePoint, OneDrive or Google Drive/Sheets link '
+              'shared as "anyone with the link". Edits to that file sync '
+              'automatically while you are online.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: IwbfColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('spreadsheet-link-input'),
+              controller: controller,
+              enabled: !busy,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                isDense: true,
+                border: OutlineInputBorder(),
+                hintText: 'https://…',
+                prefixIcon: Icon(Icons.cloud_sync_outlined, size: 20),
+              ),
+              onSubmitted: busy ? null : (_) => unawaited(onLoad()),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                key: const Key('load-link-button'),
+                onPressed: busy ? null : onLoad,
+                icon:
+                    const Icon(Icons.download_for_offline_outlined, size: 18),
+                label: const Text('Load from Link'),
+              ),
             ),
           ],
         ),
@@ -420,7 +582,7 @@ class _OfflineFooter extends StatelessWidget {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    'Offline app. No login. No internet required.',
+                    'No login. Works offline — online link is optional.',
                     style: style,
                   ),
                 ),

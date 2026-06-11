@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Necessário para carregar a planilha a partir de um link online
+         (SharePoint/OneDrive/Google) e sincronizar mudanças. O app continua
+         funcionando 100% offline quando o usuário não usa um link. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:label="IWBF Team Points Control"

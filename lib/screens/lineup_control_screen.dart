@@ -5,14 +5,17 @@ import 'package:flutter/material.dart';
 import '../constants/point_limits.dart';
 import '../models/match_state.dart';
 import '../models/player.dart';
+import '../models/saved_roster.dart';
 import '../models/team.dart';
 import '../services/cache_service.dart';
+import '../services/remote_sync_controller.dart';
 import '../services/vibration_service.dart';
 import '../services/wakelock_controller.dart';
 import '../theme/iwbf_theme.dart';
 import '../widgets/country_flag.dart';
 import '../widgets/iwbf_logo_header.dart';
 import '../widgets/player_jersey_icon.dart';
+import 'validation_summary_screen.dart';
 
 /// Tela principal da partida.
 ///
@@ -35,14 +38,17 @@ class LineupControlScreen extends StatefulWidget {
     CacheService? cache,
     VibrationService? vibration,
     WakelockController? wakelock,
+    RemoteSyncController? remoteSync,
   })  : _cache = cache,
         _vibration = vibration,
-        _wakelock = wakelock;
+        _wakelock = wakelock,
+        _remoteSync = remoteSync;
 
   final MatchState initialState;
   final CacheService? _cache;
   final VibrationService? _vibration;
   final WakelockController? _wakelock;
+  final RemoteSyncController? _remoteSync;
 
   @override
   State<LineupControlScreen> createState() => _LineupControlScreenState();
@@ -55,6 +61,7 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
   late final CacheService _cache;
   late final VibrationService _vibration;
   late final WakelockController _wakelock;
+  late final RemoteSyncController _remoteSync;
 
   bool _wasOverA = false;
   bool _wasOverB = false;
@@ -66,6 +73,7 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
     _cache = widget._cache ?? CacheService();
     _vibration = widget._vibration ?? const VibrationService();
     _wakelock = widget._wakelock ?? const WakelockController();
+    _remoteSync = widget._remoteSync ?? RemoteSyncController.instance;
     _wasOverA = _state.isTeamAOverLimit;
     _wasOverB = _state.isTeamBOverLimit;
     unawaited(_wakelock.enable());
@@ -158,15 +166,80 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
   Future<void> _onChangeTeams() async {
     final bool ok = await _confirmLeave();
     if (!mounted || !ok) return;
-    Navigator.of(context).pop();
+    await _leaveWithPossibleUpdate();
   }
 
   Future<void> _onLoadNewSpreadsheet() async {
     final bool ok = await _confirmLeave();
     if (!mounted || !ok) return;
+    // "Load New Spreadsheet" parte do zero: desliga a sincronização do link
+    // e limpa o cache antes de voltar à Home.
+    _remoteSync.deactivate();
     await _cache.clear();
     if (!mounted) return;
     Navigator.of(context).popUntil((Route<void> r) => r.isFirst);
+  }
+
+  /// Ao SAIR da partida: se a planilha do link mudou enquanto o jogo
+  /// acontecia (atualização ficou em espera), pergunta se o usuário quer
+  /// atualizar os dados agora. Sim → recarrega o Resumo com a versão nova;
+  /// não → mantém os dados atuais. Sem atualização pendente, sai normalmente.
+  Future<void> _leaveWithPossibleUpdate() async {
+    final NavigatorState navigator = Navigator.of(context);
+    final RemoteUpdate? pending = _remoteSync.pending;
+    if (pending == null) {
+      navigator.pop();
+      return;
+    }
+    final bool? apply = await _confirmApplyUpdate();
+    if (!mounted) return;
+    if (apply == true) {
+      _remoteSync.markApplied(pending);
+      await _cache.saveRoster(SavedRoster(
+        teams: pending.result.teams,
+        competitionName: pending.result.competitionName,
+        sourceUrl: _remoteSync.sourceUrl,
+        sourceHash: pending.contentHash,
+      ));
+      if (!mounted) return;
+      navigator.popUntil((Route<void> r) => r.isFirst);
+      navigator.push<void>(MaterialPageRoute<void>(
+        builder: (_) => ValidationSummaryScreen(
+          result: pending.result,
+          cache: _cache,
+          sourceUrl: _remoteSync.sourceUrl,
+        ),
+      ));
+    } else {
+      _remoteSync.dismissPending();
+      navigator.pop();
+    }
+  }
+
+  Future<bool?> _confirmApplyUpdate() {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        key: const Key('remote-update-dialog'),
+        title: const Text('Spreadsheet updated'),
+        content: const Text(
+          'The online spreadsheet changed during the match. Update the data '
+          'now (you will pick the teams again), or keep the current data?',
+        ),
+        actions: <Widget>[
+          TextButton(
+            key: const Key('remote-update-keep'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep current'),
+          ),
+          FilledButton(
+            key: const Key('remote-update-apply'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Update data'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSnack(String message) {
@@ -181,10 +254,9 @@ class _LineupControlScreenState extends State<LineupControlScreen> {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? _) async {
         if (didPop) return;
-        final NavigatorState navigator = Navigator.of(context);
         final bool ok = await _confirmLeave();
-        if (!ok) return;
-        navigator.pop();
+        if (!mounted || !ok) return;
+        await _leaveWithPossibleUpdate();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -547,7 +619,7 @@ class _TeamPlayerList extends StatelessWidget {
     // mesma ordem usada na Summary.
     final List<Player> sortedPlayers = <Player>[...team.players]
       ..sort((Player a, Player b) =>
-          a.shirtNumber.compareTo(b.shirtNumber));
+          Player.compareShirtLabels(a.shirtNumber, b.shirtNumber));
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {

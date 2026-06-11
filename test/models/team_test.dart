@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iwbf_team_points_control/models/player.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 
-Player _player(String id, int number, double cls) => Player(
+Player _player(String id, String number, double cls) => Player(
       id: id,
       teamName: 'Brazil',
       shirtNumber: number,
@@ -27,9 +27,9 @@ void main() {
       final Team t = Team(
         id: 't1',
         teamName: 'Brazil',
-        players: <Player>[_player('p1', 1, 1.0)],
+        players: <Player>[_player('p1', '1', 1.0)],
       );
-      expect(() => t.players.add(_player('p2', 2, 2.0)),
+      expect(() => t.players.add(_player('p2', '2', 2.0)),
           throwsUnsupportedError);
     });
 
@@ -39,8 +39,8 @@ void main() {
         teamName: 'Brazil',
         flagAssetPath: 'assets/flags/bra.png',
         players: <Player>[
-          _player('p1', 7, 2.5),
-          _player('p2', 9, 4.0),
+          _player('p1', '7', 2.5),
+          _player('p2', '9', 4.0),
         ],
       );
       final Team restored = Team.fromJson(original.toJson());
@@ -49,7 +49,7 @@ void main() {
       expect(restored.teamName, equals(original.teamName));
       expect(restored.flagAssetPath, equals(original.flagAssetPath));
       expect(restored.players, hasLength(2));
-      expect(restored.players.first.shirtNumber, equals(7));
+      expect(restored.players.first.shirtNumber, equals('7'));
     });
 
     test('displayName ganha sufixo "- Men"/"- Women" conforme o gênero', () {

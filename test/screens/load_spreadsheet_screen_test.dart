@@ -52,7 +52,7 @@ Future<void> _seedRoster(CacheService cache) async {
           Player(
             id: 'team-brazil::7',
             teamName: 'Brazil',
-            shirtNumber: 7,
+            shirtNumber: '7',
             name: 'João Silva',
             playerClass: 2.5,
           ),

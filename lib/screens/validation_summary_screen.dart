@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,6 +8,7 @@ import '../models/player.dart';
 import '../models/saved_roster.dart';
 import '../models/team.dart';
 import '../services/cache_service.dart';
+import '../services/remote_sync_controller.dart';
 import '../services/spreadsheet_parser_service.dart';
 import '../theme/iwbf_theme.dart';
 import '../widgets/country_flag.dart';
@@ -35,10 +38,20 @@ class ValidationSummaryScreen extends StatefulWidget {
     super.key,
     required this.result,
     this.cache,
+    this.sourceUrl,
+    this.remoteSync,
   });
 
   final SpreadsheetParseResult result;
   final CacheService? cache;
+
+  /// Link online de origem, quando a planilha foi carregada por link.
+  /// Habilita o auto-refresh em tempo real desta tela de edição.
+  final String? sourceUrl;
+
+  /// Controlador de sincronização (injetável nos testes). Nulo → usa a
+  /// instância compartilhada [RemoteSyncController.instance].
+  final RemoteSyncController? remoteSync;
 
   @override
   State<ValidationSummaryScreen> createState() =>
@@ -46,19 +59,57 @@ class ValidationSummaryScreen extends StatefulWidget {
 }
 
 class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
+  late SpreadsheetParseResult _result;
   late List<Team> _teams;
+  late final RemoteSyncController _sync;
 
   @override
   void initState() {
     super.initState();
+    _result = widget.result;
     _teams = <Team>[...widget.result.teams];
+    _sync = widget.remoteSync ?? RemoteSyncController.instance;
+    _sync.addListener(_onRemoteChanged);
   }
 
-  List<ParseIssue> get _errors => widget.result.issues
+  @override
+  void dispose() {
+    _sync.removeListener(_onRemoteChanged);
+    super.dispose();
+  }
+
+  /// Aplica em TEMPO REAL uma versão nova vinda do link — pedido do usuário:
+  /// mesmo com a tela de edição aberta, a mudança na planilha online reflete
+  /// na hora. Só age quando esta tela representa a fonte de link ativa.
+  void _onRemoteChanged() {
+    if (!mounted) return;
+    final RemoteUpdate? pending = _sync.pending;
+    if (pending == null) return;
+    if (widget.sourceUrl == null && !_sync.isActive) return;
+    setState(() {
+      _result = pending.result;
+      _teams = <Team>[...pending.result.teams];
+    });
+    _sync.markApplied(pending);
+    final CacheService? cache = widget.cache;
+    if (cache != null) {
+      unawaited(cache.saveRoster(SavedRoster(
+        teams: _teams,
+        competitionName: _result.competitionName,
+        sourceUrl: _sync.sourceUrl ?? widget.sourceUrl,
+        sourceHash: pending.contentHash,
+      )));
+    }
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Spreadsheet updated from the online link.'),
+    ));
+  }
+
+  List<ParseIssue> get _errors => _result.issues
       .where((ParseIssue i) => i.severity == ParseIssueSeverity.error)
       .toList();
 
-  List<ParseIssue> get _warnings => widget.result.issues
+  List<ParseIssue> get _warnings => _result.issues
       .where((ParseIssue i) => i.severity == ParseIssueSeverity.warning)
       .toList();
 
@@ -85,7 +136,7 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
     });
   }
 
-  void _updateShirt(Team team, Player player, int newShirt) =>
+  void _updateShirt(Team team, Player player, String newShirt) =>
       _mutatePlayer(team, player, (Player p) => p.copyWith(shirtNumber: newShirt));
 
   void _updateName(Team team, Player player, String newName) =>
@@ -220,7 +271,7 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             _Header(
-              competitionName: widget.result.competitionName,
+              competitionName: _result.competitionName,
               teamCount: _teams.length,
               playerCount: _playerCount,
               hasBlockingIssues: errors.isNotEmpty,
@@ -399,7 +450,8 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
       );
     }
     final List<Player> sorted = <Player>[...team.players]
-      ..sort((Player a, Player b) => a.shirtNumber.compareTo(b.shirtNumber));
+      ..sort((Player a, Player b) =>
+          Player.compareShirtLabels(a.shirtNumber, b.shirtNumber));
     final Widget table = Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -409,7 +461,7 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
             key: ValueKey<String>('player-row-${p.id}'),
             player: p,
             siblings: team.players,
-            onShirtChanged: (int newShirt) => _updateShirt(team, p, newShirt),
+            onShirtChanged: (String newShirt) => _updateShirt(team, p, newShirt),
             onNameChanged: (String newName) => _updateName(team, p, newName),
             onClassChanged: (double newClass) =>
                 _updateClass(team, p, newClass),
@@ -439,7 +491,7 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
   Future<void> _openMissingData(BuildContext context) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => MissingDataScreen(result: widget.result),
+        builder: (_) => MissingDataScreen(result: _result),
       ),
     );
   }
@@ -452,14 +504,18 @@ class _ValidationSummaryScreenState extends State<ValidationSummaryScreen> {
     await widget.cache?.saveRoster(
       SavedRoster(
         teams: _teams,
-        competitionName: widget.result.competitionName,
+        competitionName: _result.competitionName,
+        // Preserva a fonte de link (se houver) para retomar a sincronização
+        // ao restaurar a planilha na tela inicial.
+        sourceUrl: _sync.sourceUrl ?? widget.sourceUrl,
+        sourceHash: _sync.appliedHash,
       ),
     );
     await navigator.push<void>(
       MaterialPageRoute<void>(
         builder: (_) => MatchSetupScreen(
           teams: _teams,
-          competitionName: widget.result.competitionName,
+          competitionName: _result.competitionName,
         ),
       ),
     );
@@ -498,7 +554,7 @@ class _EditablePlayerRow extends StatefulWidget {
 
   final Player player;
   final List<Player> siblings;
-  final ValueChanged<int> onShirtChanged;
+  final ValueChanged<String> onShirtChanged;
   final ValueChanged<String> onNameChanged;
   final ValueChanged<double> onClassChanged;
   final ValueChanged<DateTime> onDobChanged;
@@ -518,7 +574,7 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
   void initState() {
     super.initState();
     _shirtController =
-        TextEditingController(text: widget.player.shirtNumber.toString());
+        TextEditingController(text: widget.player.shirtNumber);
     _nameController = TextEditingController(text: widget.player.name);
   }
 
@@ -528,7 +584,7 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
     // Sincroniza os controllers se o pai commitou um valor novo — mas só
     // quando difere do que está no campo (evita resetar o cursor enquanto
     // o usuário digita, já que o valor commitado iguala o digitado).
-    final String latestShirt = widget.player.shirtNumber.toString();
+    final String latestShirt = widget.player.shirtNumber;
     if (_shirtController.text != latestShirt && _error == null) {
       _shirtController.text = latestShirt;
     }
@@ -550,23 +606,24 @@ class _EditablePlayerRowState extends State<_EditablePlayerRow> {
       setState(() => _error = 'Shirt number is required.');
       return;
     }
-    final int? parsed = int.tryParse(trimmed);
-    if (parsed == null || parsed < 0 || parsed > 99) {
-      setState(() => _error = 'Use a number between 0 and 99.');
+    // Aceita 1 ou 2 dígitos como TEXTO, preservando zeros à esquerda —
+    // "0" e "00" são rótulos válidos e distintos.
+    if (!RegExp(r'^\d{1,2}$').hasMatch(trimmed)) {
+      setState(() => _error = 'Use 1 or 2 digits (0–99, incl. 00).');
       return;
     }
-    if (parsed == widget.player.shirtNumber) {
+    if (trimmed == widget.player.shirtNumber) {
       setState(() => _error = null);
       return;
     }
-    final bool duplicate = widget.siblings
-        .any((Player p) => p.id != widget.player.id && p.shirtNumber == parsed);
+    final bool duplicate = widget.siblings.any(
+        (Player p) => p.id != widget.player.id && p.shirtNumber == trimmed);
     if (duplicate) {
-      setState(() => _error = 'Shirt #$parsed is already in use.');
+      setState(() => _error = 'Shirt #$trimmed is already in use.');
       return;
     }
     setState(() => _error = null);
-    widget.onShirtChanged(parsed);
+    widget.onShirtChanged(trimmed);
   }
 
   @override

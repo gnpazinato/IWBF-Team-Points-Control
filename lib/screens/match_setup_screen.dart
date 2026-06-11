@@ -425,7 +425,7 @@ const List<Color> kJerseyPalette = <Color>[
 final Player _jerseyPreviewPlayer = Player(
   id: 'jersey-preview',
   teamName: '',
-  shirtNumber: 7,
+  shirtNumber: '7',
   name: '',
   playerClass: 1.0,
 );

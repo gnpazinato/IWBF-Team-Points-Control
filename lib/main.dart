@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/load_spreadsheet_screen.dart';
+import 'services/remote_sync_controller.dart';
 import 'services/wakelock_controller.dart';
 import 'theme/iwbf_theme.dart';
 
@@ -50,9 +51,14 @@ class _IwbfAppState extends State<IwbfApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Ao voltar do background, reafirma tela cheia + wakelock.
+    // Ao voltar do background, reafirma tela cheia + wakelock e retoma a
+    // sincronização do link (verifica a planilha online imediatamente).
     if (state == AppLifecycleState.resumed) {
       _enforceImmersiveAndWakelock();
+      RemoteSyncController.instance.onAppResumed();
+    } else if (state == AppLifecycleState.paused) {
+      // Em segundo plano, pausa o polling para não gastar bateria/dados.
+      RemoteSyncController.instance.onAppPaused();
     }
   }
 

@@ -22,16 +22,16 @@ Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude
 > git log --oneline -12
 > ```
 >
-> **Versao atual:** `1.4.0+5` (`kAppVersion = 1.4.0`, build 5). Houve uma
-> confusao de numeracao: um commit gravou `1.5.1+5`, depois **corrigido para
-> `1.4.0+5`** (o "1.5.1" pulava a 1.4.0 e quebrava o fluxo minor++). O
-> conteudo e o mesmo — so o numero foi normalizado.
+> **Versao atual:** `1.5.0+6` (`kAppVersion = 1.5.0`, build 6) — entrada
+> 0045 na branch `claude/jersey-00-and-online-link` (NAO mergeada). A `main`
+> esta em `1.4.0+5` ate a 0044. (Historico: houve uma confusao em que um
+> commit gravou `1.5.1+5` e foi corrigido para `1.4.0+5`; o `1.5.0+6` atual
+> segue o fluxo minor++ normal.)
 >
-> **Preview Web:** `https://gnpazinato.github.io/IWBF-Team-Points-Control/`
-> (GH Pages — único preview ativo). Qualquer push em `claude/**` ou `main`
-> publica (ver entrada 0022). **Cloudflare Pages foi REMOVIDO em 2026-06-10
-> (entrada 0043)** — o job saiu do `deploy-web.yml`; a URL antiga
-> `iwbf-team-points-control.pages.dev` deixa de ser atualizada.
+> **Preview Web (GH Pages) DESCARTADO em 2026-06-11 (entrada 0045).** O
+> usuario testa apenas o **APK final**; o workflow `deploy-web.yml` foi
+> deletado (so resta `build-apk.yml`). Cloudflare Pages ja havia saido em
+> 2026-06-10 (entrada 0043). Nao ha mais preview Web ativo.
 >
 > Nunca commite direto na `main`; trabalhe numa branch `claude/**` nova a
 > partir de `main`.
@@ -48,15 +48,15 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Branch de trabalho | **`main`** (tudo mergeado). Trabalho novo: branch `claude/**` nova a partir de `main`. `claude/visual-modernization` e `claude/review-and-continue-9ZK5v` sao historicas. |
-| Versao atual | **`1.4.0+5`** (`kAppVersion = 1.4.0`, build 5). Numeracao normalizada apos um commit ter gravado `1.5.1+5` por engano (ver bloco ATENCAO acima). |
-| Data da ultima atualizacao | 2026-06-10 |
+| Branch de trabalho | **`claude/jersey-00-and-online-link`** (a partir de `main`) — entrada 0045, ainda NAO mergeada. `main` tem ate a 0044. |
+| Versao atual | **`1.5.0+6`** (`kAppVersion = 1.5.0`, build 6). Bump minor da entrada 0045 (camisa "0"/"00" texto + carregar planilha por link online). |
+| Data da ultima atualizacao | 2026-06-11 |
 | Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). Manual do usuario (.docx) atualizado para v1.4.0 na branch `claude/manual-v1.4.0` (entrada 0044). CI verde; preview Web unico (GH Pages).** |
-| Fase atual | **Ciclo fechado. Modernizacao visual (Fases 1-6) + ajustes 0039-0041 mergeados na `main` (PR #6). Importacao de PDF DESCARTADA (decisao do usuario, 2026-05-27) — nao reabrir. Sem trabalho em andamento e sem PR aberto; aguardando proximo pedido do usuario.** |
-| Proximo passo recomendado | Aguardar proximo pedido do usuario. Para novos ajustes: criar branch `claude/**` a partir de `main`, nova entrada no log, commit convencional, abrir PR. Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
-| Testers externos | 2 pessoas com link do preview Web GH Pages (compartilhado em 2026-05-14): https://gnpazinato.github.io/IWBF-Team-Points-Control/. (CF Pages removido em 2026-06-10 — entrada 0043.) |
-| Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. (A sessao de 2026-05-15 rodou 176/176 testes localmente com Flutter 3.41.9, mas esse SDK nao persiste neste sandbox.) |
-| APK gerado | Sim, via CI a cada push, na versao `1.4.0+5`. Preview Web em https://gnpazinato.github.io/IWBF-Team-Points-Control/ (GH Pages — unico, apos remocao do CF Pages na entrada 0043) a cada push em `claude/**` ou `main`. |
+| Fase atual | **Entrada 0045 em andamento na branch `claude/jersey-00-and-online-link` (NAO mergeada): camisa "0"/"00" como texto + carregar planilha por link online (SharePoint/OneDrive/Google) com auto-refresh, so no APK Android. GitHub Pages REMOVIDO nesta sessao (pedido do usuario). Importacao de PDF DESCARTADA (2026-05-27) — nao reabrir.** |
+| Proximo passo recomendado | Revisar o verde do CI da branch 0045, abrir PR e (apos merge) testar o link real no APK. Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
+| Testers externos | 2 pessoas. **Preview Web (GH Pages) DESCARTADO em 2026-06-11 (entrada 0045)** — o usuario testa apenas o **APK final**. (CF Pages ja havia saido em 2026-06-10, entrada 0043.) |
+| Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. |
+| APK gerado | Sim, via CI a cada push, na versao `1.5.0+6`. **Sem preview Web** (deploy GH Pages removido na entrada 0045). |
 
 ## Ritual obrigatorio para a IA
 
@@ -558,6 +558,81 @@ Pendencias:
 Proximo passo recomendado:
 
 - Implementar `LineupControlScreen` real (substituir o placeholder criado neste incremento) com `VibrationService` mockavel injetavel e `CacheService` salvando o `MatchState` a cada mudanca relevante.
+
+### 0045 - 2026-06-11 - Camisa "0"/"00" (texto) + carregar planilha por link online (v1.5.0)
+
+Contexto: dois ajustes pedidos pelo usuario.
+
+**1) Numero de camisa "0" E "00" (distintos), ponta a ponta.** A causa raiz
+era `Player.shirtNumber` ser `int` — `"00"` colapsava em `0` em todo o
+pipeline. Mudado para **`String`**, preservando zeros a esquerda:
+- `lib/models/player.dart`: `shirtNumber: int -> String`; `fromJson` com
+  back-compat (le `int` legado de caches/rosters antigos via
+  `_shirtNumberFromJson`); novo `static int compareShirtLabels(a, b)` que
+  ordena pelo VALOR numerico (nao lexicografico) mas mantem "0" e "00"
+  distintos (em empate, rotulo mais curto primeiro).
+- `lib/services/spreadsheet_parser_service.dart`: `_parseShirtNumber`
+  devolve `String?`, preserva texto de 1-2 digitos ("00"/"07") e converte
+  celula numerica "7.0" -> "7"; deteccao de duplicata passa a usar
+  `Map<String,int>` (entao "0" e "00" NAO sao reportados como duplicata um
+  do outro).
+- `lib/services/template_generator_service.dart`: coluna de numero gravada
+  como **`TextCellValue`** + **formato de celula TEXTO** (`NumFormat
+  .standard_49` = numFmtId 49 = `"@"`) via `_applyTextFormatToColumn`, para
+  o Excel NAO converter `00`/`07` em `0`/`7` ao digitar/reabrir.
+- `lib/screens/validation_summary_screen.dart`: campo de camisa valida
+  `^\d{1,2}$` como texto (aceita "0" e "00"); ordenacao via
+  `compareShirtLabels`.
+- `lib/screens/lineup_control_screen.dart`: ordenacao da lista lateral via
+  `compareShirtLabels`. `player_jersey_icon.dart` ja interpola string (mostra
+  "00" na quadra sem mudanca).
+- Testes: ~10 arquivos atualizados de `int` para `String` (helpers +
+  asserts) + cobertura nova (migracao int->String, "0" vs "00" distintos,
+  `compareShirtLabels`, parser preservando "00"/"0" e "7.0"->"7").
+
+**2) Carregar planilha por LINK online com auto-refresh (SharePoint /
+OneDrive / Google Drive / Google Sheets).** Decisao do usuario: so o **APK
+Android** importa (GitHub Pages descartado — ver abaixo), entao SEM proxy e
+SEM problema de CORS.
+- `lib/services/remote_fetcher.dart` (+ `_io`/`_web`/`_stub`): download
+  nativo via `dart:io HttpClient` com **redirect manual repassando cookies**
+  — e o que faz o link anonimo do SharePoint funcionar (o 1o `302` entrega
+  um `FedAuth` anonimo que precisa acompanhar o salto seguinte; sem ele ->
+  `403`). Confirmado por teste de rede: o link do usuario baixa o `.xlsx`
+  (200, 20 KB, magic `PK`). Web lanca `UnsupportedError` (CORS).
+- `lib/services/remote_spreadsheet_service.dart`: normaliza o link por
+  provedor (SharePoint `?download=1`; Google Drive `uc?export=download&id`;
+  Google Sheets `export?format=xlsx`; OneDrive pessoal
+  `api.onedrive.com/.../shares/u!{base64url}/root/content`; senao link
+  direto), baixa, valida assinatura `.xlsx` (`PK`) e calcula hash de
+  conteudo (FNV-1a) para detectar mudancas. `fetcher` injetavel nos testes.
+- `lib/services/remote_sync_controller.dart`: `ChangeNotifier` (instancia
+  compartilhada) que faz **polling** (a cada 25 s + ao voltar do 2o plano)
+  e expoe a versao nova como `pending`. NAO aplica sozinho — quem consome
+  decide. Inativo (sem timer/rede) ate `activate`.
+- Comportamento (pedido do usuario): tela de edicao (`ValidationSummary`)
+  **aplica em tempo real** a versao nova (SnackBar); durante a **partida**
+  (`LineupControl`) a mudanca fica em espera e, ao **sair do jogo** (Change
+  Teams / back), o app pergunta "atualizar dados agora?" (dialog
+  `remote-update-dialog`). `SavedRoster` ganha `sourceUrl`/`sourceHash`, e a
+  restauracao na Home **retoma o sync** do link.
+- Home (`load_spreadsheet_screen.dart`): novo card "Load from Online Link"
+  (input `spreadsheet-link-input` + botao `load-link-button`). Upload local
+  desliga o sync. `AndroidManifest.xml`: permissao `INTERNET`.
+- Testes novos: `remote_spreadsheet_service_test.dart` (normalizacao dos 3
+  provedores + idempotencia + validacao de `.xlsx`) e
+  `remote_sync_controller_test.dart` (maquina de estados activate/checkNow/
+  pending/markApplied/dismiss).
+
+**3) GitHub Pages REMOVIDO (pedido do usuario nesta sessao).** O usuario nao
+usa mais o preview web (so o APK final). `.github/workflows/deploy-web.yml`
+deletado; `build-apk.yml` segue validando `analyze` + `test` + APK. O codigo
+continua web-safe (stubs), entao nada quebra se um dia rodar `build web`.
+
+Versao: `1.4.0+5` -> **`1.5.0+6`** (`kAppVersion = 1.5.0`). Branch
+`claude/jersey-00-and-online-link` a partir da `main`. Flutter ausente no
+sandbox — validacao no CI no push. Proximo passo: revisar o verde do CI e
+abrir PR; testar o link real no APK (SharePoint/Drive/OneDrive).
 
 ### 0044 - 2026-06-10 - Atualiza manual do usuario (.docx) para v1.4.0
 

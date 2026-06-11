@@ -6,7 +6,7 @@ import 'package:iwbf_team_points_control/models/player.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
 import 'package:iwbf_team_points_control/screens/match_setup_screen.dart';
 
-Player _player(String teamId, int shirt, double cls) => Player(
+Player _player(String teamId, String shirt, double cls) => Player(
       id: '$teamId::$shirt',
       teamName: teamId,
       shirtNumber: shirt,
@@ -21,7 +21,7 @@ Team _team(String id, String name,
       teamName: name,
       gender: gender,
       players: <Player>[
-        for (int i = 0; i < playerCount; i++) _player(id, i + 1, 2.5),
+        for (int i = 0; i < playerCount; i++) _player(id, '${i + 1}', 2.5),
       ],
     );
 
