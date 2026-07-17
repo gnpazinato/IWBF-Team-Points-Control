@@ -564,8 +564,10 @@ Proximo passo recomendado:
 > **STATUS: IMPLEMENTADO na branch `claude/3x3-support`** (spec aprovada
 > pelo usuario em 2026-07-17 — nao re-discutir o desenho). Codigo + testes
 > completos; validacao `analyze`+`test` roda no CI no push (Flutter ausente
-> no Codespace). **PR #10** aberto para a `main` — aguardando CI verde +
-> review do usuario + teste do APK 3x3 no aparelho.
+> no Codespace). **PR #10** aberto para a `main`. **CI VERDE** no push
+> `01831b9` (run 29608929789): Analyze ok, **248 testes passando**, APK
+> gerado como artifact `iwbf-team-points-control-version-1.6.0`. Falta:
+> usuario testar o APK 3x3 no aparelho + merge do PR.
 
 Pedido do usuario: o app passa a ser usado tambem em competicoes de
 basquete em cadeira de rodas **3x3**. Sem nenhum clique extra no fluxo
