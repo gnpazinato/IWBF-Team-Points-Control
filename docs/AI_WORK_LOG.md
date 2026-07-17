@@ -22,10 +22,10 @@ Este arquivo e a fonte de verdade para continuidade do projeto com Codex, Claude
 > git log --oneline -12
 > ```
 >
-> **Versao atual:** `1.6.0+8` (`kAppVersion = 1.6.0`, build 8) — entrada
-> 0047 (suporte 3x3) na branch `claude/3x3-support`, PR aberto. A `main`
-> esta em `1.5.1+7` (tudo mergeado ate a 0046). (Historico: houve uma
-> confusao em que um commit gravou `1.5.1+5` e foi corrigido para
+> **Versao atual:** `1.6.0+8` (`kAppVersion = 1.6.0`, build 8) — tudo
+> mergeado na `main` ate a entrada 0047 (suporte 3x3, PR #10,
+> 2026-07-17; branch `claude/3x3-support` deletada). (Historico: houve
+> uma confusao em que um commit gravou `1.5.1+5` e foi corrigido para
 > `1.4.0+5`; dali em diante o fluxo de versao e normal.)
 >
 > **Preview Web (GH Pages) DESCARTADO em 2026-06-11 (entrada 0045).** O
@@ -48,12 +48,12 @@ Nenhuma fase deve ser refeita se estiver marcada como concluida aqui, a menos qu
 
 | Campo | Valor |
 |---|---|
-| Branch de trabalho | **`claude/3x3-support`** (entrada 0047, PR aberto para a `main`). A `main` tem tudo ate a 0046 (`1.5.1+7`). |
-| Versao atual | **`1.6.0+8`** (`kAppVersion = 1.6.0`, build 8) na branch 0047: suporte 3x3 (MatchFormat + heuristica + triangulo na quadra). Na `main`: `1.5.1+7` (0045 camisa "0"/"00" + link online; 0046 fix auto-refresh). |
+| Branch de trabalho | **`main`** (tudo mergeado ate a entrada 0047 via PR #10; branch `claude/3x3-support` deletada). Trabalho novo: branch `claude/**` nova a partir de `main`. |
+| Versao atual | **`1.6.0+8`** (`kAppVersion = 1.6.0`, build 8) — entrada 0047: suporte 3x3 (MatchFormat + heuristica por tamanho de elenco + triangulo na quadra), testado e aprovado pelo usuario no APK. |
 | Data da ultima atualizacao | 2026-07-17 |
 | Status geral | **TUDO na `main`: MVP (PR #5) + modernizacao visual Fases 1-6 (entrada 0038) + ajustes pos-testers — entrada 0039 (v1.2.0, parser tolerante a nomes de coluna), entrada 0040 (v1.3.0, restaura a planilha INTEIRA na Home), entrada 0041 (v1.4.0, DOB com ano de 2 digitos + remover jogador pelo chip da quadra + bandeiras africanas) — mergeados via PR #6 em 2026-06-10 (entrada 0042). Cloudflare Pages removido do CI em 2026-06-10 (entrada 0043). Manual do usuario (.docx) atualizado para v1.4.0 na branch `claude/manual-v1.4.0` (entrada 0044). CI verde; preview Web unico (GH Pages).** |
-| Fase atual | **Entrada 0047 implementada na branch `claude/3x3-support` (PR aberto): suporte a basquete 3x3 — MatchFormat (5x5 limite 14.0 / 3x3 limite 8.5, max 5/3 em quadra), heuristica por tamanho de elenco no Match Setup (toggle manual sempre disponivel), triangulo na quadra. Importacao de PDF DESCARTADA (2026-05-27) — nao reabrir.** |
-| Proximo passo recomendado | Revisar o verde do CI do PR da 0047, usuario testa o APK (jogo 3x3 + jogo 5x5 + cenario "5x5 com 5 inscritos" via toggle) e faz merge. Depois: manual do usuario (.docx) para v1.6.0 (ainda pendente da v1.5.x). Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
+| Fase atual | **Entrada 0047 CONCLUIDA e mergeada na `main` (PR #10, 2026-07-17): suporte a basquete 3x3 — MatchFormat (5x5 limite 14.0 / 3x3 limite 8.5, max 5/3 em quadra), heuristica por tamanho de elenco no Match Setup (toggle manual sempre disponivel, sem texto explicativo na UI), triangulo na quadra. Importacao de PDF DESCARTADA (2026-05-27) — nao reabrir.** |
+| Proximo passo recomendado | Nada em aberto. Quando pedido: manual do usuario (.docx) para v1.6.0 (secao Match Format/3x3). Escopo futuro possivel (nao iniciado): estatisticas pos-jogo/scoring, Play Store, multi-language. |
 | Testers externos | 2 pessoas. **Preview Web (GH Pages) DESCARTADO em 2026-06-11 (entrada 0045)** — o usuario testa apenas o **APK final**. (CF Pages ja havia saido em 2026-06-10, entrada 0043.) |
 | Ultimos testes executados | Validados no CI (`build-apk.yml`) a cada push — `Analyze` + `Run tests` verdes; APK release gerado como artifact. **Flutter NAO esta instalado no Codespace atual** — toda validacao roda no CI no push. |
 | APK gerado | Sim, via CI a cada push, na versao `1.5.0+6`. **Sem preview Web** (deploy GH Pages removido na entrada 0045). |
@@ -561,13 +561,14 @@ Proximo passo recomendado:
 
 ### 0047 - 2026-07-17 - Suporte a 3x3: formato da partida, limite 8.5 e triangulo na quadra (v1.6.0)
 
-> **STATUS: IMPLEMENTADO na branch `claude/3x3-support`** (spec aprovada
-> pelo usuario em 2026-07-17 — nao re-discutir o desenho). Codigo + testes
-> completos; validacao `analyze`+`test` roda no CI no push (Flutter ausente
-> no Codespace). **PR #10** aberto para a `main`. **CI VERDE** no push
-> `01831b9` (run 29608929789): Analyze ok, **248 testes passando**, APK
-> gerado como artifact `iwbf-team-points-control-version-1.6.0`. Falta:
-> usuario testar o APK 3x3 no aparelho + merge do PR.
+> **STATUS: CONCLUIDA — MERGEADA na `main` via PR #10 (2026-07-17).**
+> Spec aprovada pelo usuario (nao re-discutir o desenho). CI VERDE:
+> Analyze ok, **248 testes passando**, APK artifact
+> `iwbf-team-points-control-version-1.6.0`. O usuario **testou o APK no
+> aparelho e aprovou** ("funcionou"). Ajuste pos-teste (pedido do
+> usuario): removida a mensagem explicativa sob o toggle Match Format —
+> a regra da sugestao automatica nao fica exposta na UI. A branch
+> `claude/3x3-support` foi deletada apos o merge.
 
 Pedido do usuario: o app passa a ser usado tambem em competicoes de
 basquete em cadeira de rodas **3x3**. Sem nenhum clique extra no fluxo
@@ -639,10 +640,8 @@ Arquivos alterados: `lib/constants/point_limits.dart`,
 `lib/screens/lineup_control_screen.dart`, `pubspec.yaml`, 4 arquivos de
 teste, `docs/AI_WORK_LOG.md`, `CLAUDE.md`.
 
-Proximo passo: CI verde → usuario testa o APK (um jogo 3x3 e um 5x5,
-incluindo o cenario "equipe de 5x5 com so 5 inscritos" usando o toggle) →
-merge do PR. Depois: atualizar o manual do usuario (.docx) para a v1.6.0
-(secao Match Format) — ainda pendente da v1.5.x tambem.
+Proximo passo: atualizar o manual do usuario (.docx) para a v1.6.0
+(secao Match Format / 3x3) quando o usuario pedir.
 
 ### 0046 - 2026-06-11 - Fix: auto-refresh do link nao aplicava + link "colado" + DOB legivel (v1.5.1)
 

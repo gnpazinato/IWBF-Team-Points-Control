@@ -7,14 +7,15 @@
 ## Branch ativa
 
 **Tudo está na `main`.** O MVP (PR #5), a modernização visual + ajustes
-(Fases 1–6 + 0039–0041, `1.4.0+5`, **PR #6, 2026-06-10**) e a entrada
+(Fases 1–6 + 0039–0041, `1.4.0+5`, **PR #6, 2026-06-10**), a entrada
 **0045 (`1.5.0+6`, 2026-06-11): camisa "0"/"00" como texto + carregar
-planilha por link online** foram **mergeados na `main`** (aprovados pelo
-usuário; a branch `claude/jersey-00-and-online-link` foi mergeada e
-**deletada**). As branches `claude/review-and-continue-9ZK5v`,
-`claude/visual-modernization` e `claude/jersey-00-and-online-link` são
-históricas; **não trabalhe mais a partir delas** e ignore avisos antigos de
-que "main é só scaffold". `lib/main.dart` na `main` é o app real e atual.
+planilha por link online** e a entrada **0047 (`1.6.0+8`, 2026-07-17):
+suporte a basquete 3x3 (PR #10)** foram **mergeados na `main`**
+(aprovados pelo usuário). As branches `claude/review-and-continue-9ZK5v`,
+`claude/visual-modernization`, `claude/jersey-00-and-online-link` e
+`claude/3x3-support` são históricas (mergeadas e deletadas); **não
+trabalhe mais a partir delas** e ignore avisos antigos de que "main é só
+scaffold". `lib/main.dart` na `main` é o app real e atual.
 
 **Trabalho novo:** crie uma branch `claude/**` nova a partir da `main`.
 Nunca commite direto na `main`. Fluxo:
@@ -30,12 +31,14 @@ git log --oneline -12
 ## Estado atual (resumo)
 
 - **Versão atual:** **`1.6.0+8`** (`kAppVersion = 1.6.0`, build 8) —
-  entrada **0047 (2026-07-17): suporte a basquete 3x3** — `MatchFormat`
-  (5x5 limite padrão 14.0 / 3x3 limite padrão 8.5, máx 5/3 em quadra),
-  sugestão automática no Match Setup pelo tamanho dos elencos (3x3 só
-  quando AS DUAS equipes têm ≤5 inscritos; misto → 5x5), toggle manual
-  `match-format-toggle` sempre disponível, chips em triângulo no 3x3.
-  Anteriores: 0045/0046 (`1.5.1+7`) —
+  entrada **0047 (2026-07-17, PR #10, mergeada): suporte a basquete
+  3x3** — `MatchFormat` (5x5 limite padrão 14.0 / 3x3 limite padrão 8.5,
+  máx 5/3 em quadra), sugestão automática no Match Setup pelo tamanho dos
+  elencos (3x3 só quando AS DUAS equipes têm ≤5 inscritos; misto → 5x5),
+  toggle manual `match-format-toggle` sempre disponível (sem texto
+  explicativo na UI — decisão do usuário), chips em triângulo no 3x3.
+  Testada e aprovada pelo usuário no APK. Anteriores: 0045/0046
+  (`1.5.1+7`) —
   entradas 0045 (camisa "0"/"00" + link online) e **0046** (fix do
   auto-refresh do link: `RemoteSyncController.matchInProgress` segura a
   atualização durante a partida; `ValidationSummary` aplica o `pending`
@@ -112,7 +115,7 @@ git log --oneline -12
   validação (`analyze`/`test`/`build` + APK) roda no **CI a cada push**
   (`build-apk.yml`). O APK sai como artifact `iwbf-team-points-control-
   version-<versão>` em cada run.
-- **Última atualização:** 2026-06-11.
+- **Última atualização:** 2026-07-17 (entrada 0047 mergeada, `1.6.0+8`).
 
 ## Arquitetura do link online (entrada 0045)
 
@@ -162,14 +165,14 @@ usuário não usa mais Web). Camadas:
 
 ## Próximo passo provável
 
-Tudo está mergeado na `main` (até a entrada 0045, `1.5.0+6`). **Não há
+Tudo está mergeado na `main` (até a entrada 0047, `1.6.0+8`). **Não há
 trabalho em andamento nem PR aberto.** Os caminhos típicos para uma nova
 conversa:
 
-- **Atualizar o manual do usuário (.docx)** para a v1.5.0: o manual
-  versionado ainda reflete a v1.4.0 (entrada 0044). Os recursos novos da
-  0045 — camisa "0"/"00" e **carregar planilha por link online** — ainda
-  **não** estão no manual. Provável próximo pedido de documentação.
+- **Atualizar o manual do usuário (.docx)** para a v1.6.0: o manual
+  cobre até a v1.5.1 (entradas 0044/0046). O recurso novo da 0047 —
+  **Match Format 5x5/3x3 com sugestão automática** — ainda **não** está
+  no manual. Provável próximo pedido de documentação.
 - **Ajustes de feedback** dos testers ou novos pedidos: crie uma branch
   `claude/**` nova a partir da `main`, adicione entrada no log e abra PR.
 - **Escopo futuro possível** (nunca iniciado): estatísticas pós-jogo/

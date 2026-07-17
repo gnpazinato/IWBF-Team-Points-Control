@@ -457,12 +457,6 @@ class _MatchFormatSelector extends StatelessWidget {
           onSelectionChanged: (Set<MatchFormat> selection) =>
               onChanged(selection.first),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Pre-selected from the spreadsheet: 3x3 when both teams have '
-          'up to 5 athletes. Tap to change.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
       ],
     );
   }
