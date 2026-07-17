@@ -564,8 +564,8 @@ Proximo passo recomendado:
 > **STATUS: IMPLEMENTADO na branch `claude/3x3-support`** (spec aprovada
 > pelo usuario em 2026-07-17 — nao re-discutir o desenho). Codigo + testes
 > completos; validacao `analyze`+`test` roda no CI no push (Flutter ausente
-> no Codespace). PR aberto para a `main` — aguardando CI verde + review do
-> usuario + teste do APK 3x3 no aparelho.
+> no Codespace). **PR #10** aberto para a `main` — aguardando CI verde +
+> review do usuario + teste do APK 3x3 no aparelho.
 
 Pedido do usuario: o app passa a ser usado tambem em competicoes de
 basquete em cadeira de rodas **3x3**. Sem nenhum clique extra no fluxo
