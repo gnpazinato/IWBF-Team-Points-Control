@@ -29,7 +29,13 @@ git log --oneline -12
 
 ## Estado atual (resumo)
 
-- **Versão atual:** **`1.5.1+7`** (`kAppVersion = 1.5.1`, build 7) —
+- **Versão atual:** **`1.6.0+8`** (`kAppVersion = 1.6.0`, build 8) —
+  entrada **0047 (2026-07-17): suporte a basquete 3x3** — `MatchFormat`
+  (5x5 limite padrão 14.0 / 3x3 limite padrão 8.5, máx 5/3 em quadra),
+  sugestão automática no Match Setup pelo tamanho dos elencos (3x3 só
+  quando AS DUAS equipes têm ≤5 inscritos; misto → 5x5), toggle manual
+  `match-format-toggle` sempre disponível, chips em triângulo no 3x3.
+  Anteriores: 0045/0046 (`1.5.1+7`) —
   entradas 0045 (camisa "0"/"00" + link online) e **0046** (fix do
   auto-refresh do link: `RemoteSyncController.matchInProgress` segura a
   atualização durante a partida; `ValidationSummary` aplica o `pending`
@@ -204,6 +210,17 @@ Pergunte ao usuário qual caminho aplica antes de codar.
   `fromJson` aceita `int` legado. No template, a coluna de número é
   **TEXTO** (`TextCellValue` + `NumFormat.standard_49`) — **nunca**
   `IntCellValue` (o Excel converteria `00`→`0`).
+- **Formato 3x3 (entrada 0047):** `MatchFormat` vive em
+  `lib/constants/point_limits.dart` (enum com `label`, `maxOnCourt`,
+  `defaultPointLimit`) + heurística `suggestMatchFormat`. O array de slots
+  do `MatchState` continua FIXO em 5 (`kMaxPlayersPerTeam`) para a
+  serialização não mudar; o bloqueio do 4º no 3x3 é feito por
+  `_firstFreeSlot` (só oferece slots < `maxOnCourt`). JSON sem `format` →
+  5x5 (back-compat). A heurística roda SÓ na troca de equipe no Match
+  Setup — nunca sobrescreve toggle manual nem partida restaurada. O
+  dropdown de Point Limit é FormField: remontado via
+  `KeyedSubtree(ValueKey(_format))` quando o formato muda (senão o valor
+  exibido não acompanha).
 - **Link online (entrada 0045):** ver "Arquitetura do link online". Só
   Android; a Web é stub (CORS). O fetch nativo (`remote_fetcher_io.dart`)
   precisa do redirect manual com **cookie passthrough** (SharePoint). O

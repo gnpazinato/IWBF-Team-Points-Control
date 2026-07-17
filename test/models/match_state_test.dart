@@ -19,11 +19,13 @@ MatchState _matchOf({
   required List<Player> teamAPlayers,
   required List<Player> teamBPlayers,
   double limit = kDefaultPointLimit,
+  MatchFormat format = MatchFormat.fiveOnFive,
 }) {
   return MatchState(
     teamA: _teamWith('Brazil', teamAPlayers),
     teamB: _teamWith('Argentina', teamBPlayers),
     pointLimit: limit,
+    format: format,
   );
 }
 
@@ -85,6 +87,53 @@ void main() {
       expect(match.selectPlayer(p), isTrue);
       expect(match.selectPlayer(p), isTrue);
       expect(match.selectedTeamAIds, hasLength(1));
+    });
+  });
+
+  group('MatchState - formato 3x3 (entrada 0047)', () {
+    test('formato padrão é 5x5 (maxOnCourt 5)', () {
+      final MatchState m =
+          _matchOf(teamAPlayers: <Player>[], teamBPlayers: <Player>[]);
+      expect(m.format, equals(MatchFormat.fiveOnFive));
+      expect(m.maxOnCourt, equals(5));
+    });
+
+    test('no 3x3 selectPlayer adiciona até 3 e bloqueia o 4º', () {
+      final List<Player> roster = <Player>[
+        for (int i = 0; i < 4; i++)
+          _player('a$i', 'Brazil', 1.0, number: '$i'),
+      ];
+      final MatchState match = _matchOf(
+        teamAPlayers: roster,
+        teamBPlayers: <Player>[],
+        format: MatchFormat.threeOnThree,
+      );
+      for (int i = 0; i < 3; i++) {
+        expect(match.selectPlayer(roster[i]), isTrue, reason: 'i=$i');
+      }
+      expect(match.selectPlayer(roster[3]), isFalse,
+          reason: '4º atleta deve ser bloqueado no 3x3');
+      expect(match.togglePlayer(roster[3]), isFalse,
+          reason: 'togglePlayer também deve bloquear o 4º');
+      expect(match.selectedTeamAIds, hasLength(3));
+    });
+
+    test('no 3x3 remover um atleta libera a vaga para outro', () {
+      final List<Player> roster = <Player>[
+        for (int i = 0; i < 4; i++)
+          _player('a$i', 'Brazil', 1.0, number: '$i'),
+      ];
+      final MatchState match = _matchOf(
+        teamAPlayers: roster,
+        teamBPlayers: <Player>[],
+        format: MatchFormat.threeOnThree,
+      );
+      for (int i = 0; i < 3; i++) {
+        match.selectPlayer(roster[i]);
+      }
+      match.deselectPlayer(roster[1]);
+      expect(match.selectPlayer(roster[3]), isTrue);
+      expect(match.selectedTeamAIds, hasLength(3));
     });
   });
 
@@ -212,6 +261,29 @@ void main() {
       expect(restored.selectedTeamBIds, equals(<String>{'b1'}));
       expect(restored.totalPointsTeamA, equals(2.5));
       expect(restored.totalPointsTeamB, equals(1.5));
+      expect(restored.format, equals(MatchFormat.fiveOnFive));
+    });
+
+    test('roundtrip preserva o formato 3x3', () {
+      final MatchState original = _matchOf(
+        teamAPlayers: <Player>[],
+        teamBPlayers: <Player>[],
+        limit: 8.5,
+        format: MatchFormat.threeOnThree,
+      );
+      final MatchState restored = MatchState.fromJson(original.toJson());
+      expect(restored.format, equals(MatchFormat.threeOnThree));
+      expect(restored.maxOnCourt, equals(3));
+      expect(restored.pointLimit, equals(8.5));
+    });
+
+    test('JSON antigo sem `format` restaura como 5x5 (back-compat)', () {
+      final MatchState original =
+          _matchOf(teamAPlayers: <Player>[], teamBPlayers: <Player>[]);
+      final Map<String, dynamic> json = original.toJson()..remove('format');
+      final MatchState restored = MatchState.fromJson(json);
+      expect(restored.format, equals(MatchFormat.fiveOnFive));
+      expect(restored.maxOnCourt, equals(5));
     });
   });
 }
