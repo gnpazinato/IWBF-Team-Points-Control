@@ -28,6 +28,7 @@ class MatchState {
     required this.teamA,
     required this.teamB,
     double pointLimit = kDefaultPointLimit,
+    this.format = MatchFormat.fiveOnFive,
     List<String?>? teamASlots,
     List<String?>? teamBSlots,
     Set<String>? selectedTeamAIds,
@@ -69,6 +70,14 @@ class MatchState {
   final Team teamA;
   final Team teamB;
   final String? competitionName;
+
+  /// Formato da partida (entrada 0047). No 3x3 só os 3 primeiros slots
+  /// de cada equipe são preenchíveis; o array continua com
+  /// [kMaxPlayersPerTeam] posições para a serialização não mudar.
+  final MatchFormat format;
+
+  /// Máximo de atletas simultâneos em quadra por equipe neste formato.
+  int get maxOnCourt => format.maxOnCourt;
 
   /// Cor da camisa de cada equipe (selecionada no setup; pinta os ícones
   /// de camisa na quadra e nas listas laterais).
@@ -135,7 +144,7 @@ class MatchState {
   bool selectPlayer(Player player) {
     final List<String?> slots = _slotsFor(player);
     if (slots.contains(player.id)) return true;
-    final int empty = slots.indexOf(null);
+    final int empty = _firstFreeSlot(slots);
     if (empty == -1) return false;
     slots[empty] = player.id;
     return true;
@@ -159,10 +168,22 @@ class MatchState {
       slots[existing] = null;
       return false;
     }
-    final int empty = slots.indexOf(null);
+    final int empty = _firstFreeSlot(slots);
     if (empty == -1) return false;
     slots[empty] = player.id;
     return true;
+  }
+
+  /// Primeiro slot vazio dentro do máximo do formato. No 3x3 os slots 3 e
+  /// 4 nunca são oferecidos — o 4º toque não entra, mesmo comportamento
+  /// de quando os 5 slots enchem no 5x5.
+  int _firstFreeSlot(List<String?> slots) {
+    final int limit =
+        maxOnCourt < slots.length ? maxOnCourt : slots.length;
+    for (int i = 0; i < limit; i++) {
+      if (slots[i] == null) return i;
+    }
+    return -1;
   }
 
   void clearTeamA() {
@@ -214,6 +235,7 @@ class MatchState {
         'teamA': teamA.toJson(),
         'teamB': teamB.toJson(),
         'pointLimit': _pointLimit,
+        'format': format.name,
         'teamASlots': _teamASlots,
         'teamBSlots': _teamBSlots,
         'jerseyColorA': jerseyColorA.toARGB32(),
@@ -226,6 +248,8 @@ class MatchState {
       teamB: Team.fromJson(json['teamB'] as Map<String, dynamic>),
       pointLimit:
           (json['pointLimit'] as num?)?.toDouble() ?? kDefaultPointLimit,
+      // Back-compat: JSON de versões < 1.6.0 não tem `format` → 5x5.
+      format: MatchFormat.fromName(json['format'] as String?),
       teamASlots: _readSlotsJson(json['teamASlots']),
       teamBSlots: _readSlotsJson(json['teamBSlots']),
       // Compat com caches antigos que ainda usavam `selectedTeamA/B` em set.

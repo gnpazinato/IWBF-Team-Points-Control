@@ -22,7 +22,8 @@ import 'validation_summary_screen.dart';
 /// Funções:
 /// - Layout responsivo: tablet (>= 720dp) usa listas laterais + quadra
 ///   central; celular usa abas Team A / Court / Team B.
-/// - Seleção/deseleção por toque, limite de 5 atletas, bloqueio do 6º.
+/// - Seleção/deseleção por toque, limite de atletas em quadra conforme o
+///   formato (5 no 5x5, 3 no 3x3) com bloqueio do excedente.
 /// - Soma automática das classes funcionais e alerta persistente acima
 ///   do limite.
 /// - Vibração leve apenas no instante em que cruza o limite (uma vez
@@ -800,8 +801,9 @@ class _PlayerCard extends StatelessWidget {
 /// É exibida rotacionada 90° para o app, que opera em retrato.
 const String kCourtAsset = 'assets/images/court.png';
 
-/// Vista aérea simplificada da quadra com posicionamento simétrico
-/// dos cinco jogadores selecionados em cada metade.
+/// Vista aérea simplificada da quadra com posicionamento simétrico dos
+/// jogadores selecionados em cada metade (5 por equipe no 5x5; 3 em
+/// triângulo próximo ao centro no 3x3).
 ///
 /// O asset `court.png` é landscape (2816x1504). Como o app é portrait,
 /// rotacionamos 90° via `RotatedBox` para enxergar a quadra na vertical
@@ -843,6 +845,24 @@ class _CourtView extends StatelessWidget {
     Offset(0.50, 0.58),
   ];
 
+  /// Posições do 3x3 (entrada 0047): triângulo mais próximo do centro da
+  /// quadra — dois chips numa linha e o terceiro centralizado entre eles,
+  /// em direção ao meio-campo. Slots 0 e 1 formam a linha, slot 2 é a
+  /// ponta do triângulo. Gap vertical entre as pontas (0.40 ↔ 0.60) é
+  /// 0.20 * h — folga maior que o 5x5 atual (0.16).
+  static const List<Offset> _teamATargets3x3 = <Offset>[
+    Offset(0.30, 0.24),
+    Offset(0.70, 0.24),
+    Offset(0.50, 0.40),
+  ];
+
+  /// Espelho simétrico do triângulo da Team A na metade inferior.
+  static const List<Offset> _teamBTargets3x3 = <Offset>[
+    Offset(0.30, 0.76),
+    Offset(0.70, 0.76),
+    Offset(0.50, 0.60),
+  ];
+
   @override
   Widget build(BuildContext context) {
     // Posições alinhadas ao slot do `MatchState`: o slot 0 sempre cai
@@ -853,6 +873,11 @@ class _CourtView extends StatelessWidget {
     final List<Player?> teamB = state.teamBSlotPlayers;
     final bool teamAEmpty = teamA.every((Player? p) => p == null);
     final bool teamBEmpty = teamB.every((Player? p) => p == null);
+    // No 3x3 só os 3 primeiros slots são preenchíveis (MatchState garante),
+    // então usar as listas de 3 alvos cobre todos os chips possíveis.
+    final bool is3x3 = state.format == MatchFormat.threeOnThree;
+    final List<Offset> targetsA = is3x3 ? _teamATargets3x3 : _teamATargets;
+    final List<Offset> targetsB = is3x3 ? _teamBTargets3x3 : _teamBTargets;
 
     return Center(
       key: const Key('court-view'),
@@ -911,12 +936,12 @@ class _CourtView extends StatelessWidget {
                         alignment: Alignment(0, 0.55),
                         child: _CourtHint(text: 'Tap players in Team B list'),
                       ),
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < targetsA.length; i++)
                       if (teamA[i] != null)
                         _CourtPlayerSlot(
                           player: teamA[i]!,
                           isTeamA: true,
-                          target: _teamATargets[i],
+                          target: targetsA[i],
                           width: w,
                           height: h,
                           slotMaxWidth: slotMaxWidth,
@@ -924,12 +949,12 @@ class _CourtView extends StatelessWidget {
                           jerseyColor: state.jerseyColorA,
                           onTap: () => onPlayerTap(teamA[i]!, _Side.a),
                         ),
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < targetsB.length; i++)
                       if (teamB[i] != null)
                         _CourtPlayerSlot(
                           player: teamB[i]!,
                           isTeamA: false,
-                          target: _teamBTargets[i],
+                          target: targetsB[i],
                           width: w,
                           height: h,
                           slotMaxWidth: slotMaxWidth,

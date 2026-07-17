@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iwbf_team_points_control/constants/point_limits.dart';
 import 'package:iwbf_team_points_control/models/match_state.dart';
 import 'package:iwbf_team_points_control/models/player.dart';
 import 'package:iwbf_team_points_control/models/team.dart';
@@ -844,6 +845,126 @@ void main() {
             'Mesmo encolhido ou com ellipsis, o Text deve ter o nome '
             'inteiro como `data` (so o que e PINTADO pode cortar).',
       );
+    });
+  });
+
+  group('LineupControlScreen — formato 3x3 (entrada 0047)', () {
+    MatchState fresh3x3() => MatchState(
+          teamA: _teamA(),
+          teamB: _teamB(),
+          pointLimit: 8.5,
+          format: MatchFormat.threeOnThree,
+        );
+
+    testWidgets('no 3x3 o 4º jogador não entra em quadra',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: fresh3x3(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      await _tapPlayer(tester, 'team-brazil', 1); // 1.0
+      await _tapPlayer(tester, 'team-brazil', 2); // 2.0
+      await _tapPlayer(tester, 'team-brazil', 3); // 3.0 → 6.0
+      expect(find.text('6.0 / 8.5'), findsOneWidget);
+
+      // 4º toque: bloqueado — score não muda e não aparece chip novo.
+      await _tapPlayer(tester, 'team-brazil', 4);
+      expect(find.text('6.0 / 8.5'), findsOneWidget);
+      expect(
+          find.byKey(const Key('court-chip-team-brazil::4')), findsNothing);
+      expect(find.byKey(const Key('court-chip-team-brazil::1')),
+          findsOneWidget);
+      expect(find.byKey(const Key('court-chip-team-brazil::2')),
+          findsOneWidget);
+      expect(find.byKey(const Key('court-chip-team-brazil::3')),
+          findsOneWidget);
+    });
+
+    testWidgets('remover um jogador no 3x3 libera vaga para o reserva',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: fresh3x3(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      await _tapPlayer(tester, 'team-brazil', 1);
+      await _tapPlayer(tester, 'team-brazil', 2);
+      await _tapPlayer(tester, 'team-brazil', 3);
+      await tester.tap(find.byKey(const Key('court-chip-team-brazil::2')));
+      await tester.pumpAndSettle();
+
+      await _tapPlayer(tester, 'team-brazil', 4); // 4.0
+      expect(
+          find.byKey(const Key('court-chip-team-brazil::4')), findsOneWidget);
+      expect(find.text('8.0 / 8.5'), findsOneWidget); // 1.0 + 3.0 + 4.0
+    });
+
+    testWidgets('chips do 3x3 formam triângulo simétrico perto do centro',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: fresh3x3(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      await _tapPlayer(tester, 'team-brazil', 1);
+      await _tapPlayer(tester, 'team-brazil', 2);
+      await _tapPlayer(tester, 'team-brazil', 3);
+
+      final Offset c1 = tester
+          .getCenter(find.byKey(const Key('court-chip-team-brazil::1')));
+      final Offset c2 = tester
+          .getCenter(find.byKey(const Key('court-chip-team-brazil::2')));
+      final Offset c3 = tester
+          .getCenter(find.byKey(const Key('court-chip-team-brazil::3')));
+
+      // Slots 0 e 1 formam a linha (mesma altura); o slot 2 é a ponta do
+      // triângulo: mais baixo (rumo ao meio-campo) e centrado entre os dois.
+      expect((c1.dy - c2.dy).abs(), lessThan(0.5));
+      expect(c3.dy, greaterThan(c1.dy));
+      expect((c3.dx - (c1.dx + c2.dx) / 2).abs(), lessThan(0.5));
+    });
+
+    testWidgets('no 5x5 as posições antigas continuam (point guard central)',
+        (WidgetTester tester) async {
+      await _pump(
+        tester,
+        LineupControlScreen(
+          initialState: _freshState(),
+          cache: _FakeCache(),
+          vibration: _FakeVibration(),
+          wakelock: _FakeWakelock(),
+        ),
+      );
+
+      for (int shirt = 1; shirt <= 5; shirt++) {
+        await _tapPlayer(tester, 'team-brazil', shirt);
+      }
+      for (int shirt = 1; shirt <= 5; shirt++) {
+        expect(find.byKey(Key('court-chip-team-brazil::$shirt')),
+            findsOneWidget, reason: 'shirt=$shirt');
+      }
+      // Slot 4 (5º atleta) segue sendo o point guard central do 5x5.
+      final Offset c1 = tester
+          .getCenter(find.byKey(const Key('court-chip-team-brazil::1')));
+      final Offset c5 = tester
+          .getCenter(find.byKey(const Key('court-chip-team-brazil::5')));
+      expect(c5.dy, greaterThan(c1.dy));
     });
   });
 }

@@ -213,6 +213,191 @@ void main() {
     });
   });
 
+  group('MatchSetupScreen — Match Format (entrada 0047)', () {
+    Set<MatchFormat> selectedFormat(WidgetTester tester) =>
+        tester
+            .widget<SegmentedButton<MatchFormat>>(
+                find.byKey(const Key('match-format-toggle')))
+            .selected;
+
+    // O DropdownButton fechado constrói TODOS os items num IndexedStack,
+    // então find.text('8.5') acharia o item mesmo sem estar selecionado.
+    // Ler o initialValue do FormField (remontado via ValueKey a cada troca
+    // de formato) verifica o valor realmente exibido.
+    double? pointLimitValue(WidgetTester tester) =>
+        tester
+            .widget<DropdownButtonFormField<double>>(
+                find.byKey(const Key('point-limit-dropdown')))
+            .initialValue;
+
+    testWidgets('toggle renderiza com 5x5 pré-selecionado por padrão',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil', 'Brazil'),
+          _team('team-argentina', 'Argentina'),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('match-format-toggle')));
+      expect(find.text('Match Format'), findsOneWidget);
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.fiveOnFive,
+      }));
+    });
+
+    testWidgets('duas equipes com <=5 atletas sugerem 3x3 e limite 8.5',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil', 'Brazil', playerCount: 5),
+          _team('team-argentina', 'Argentina', playerCount: 4),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina',
+      );
+
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.threeOnThree,
+      }));
+      expect(pointLimitValue(tester), equals(8.5));
+    });
+
+    testWidgets('equipe com 6+ atletas mantém 5x5 e limite 14.0 (caso misto)',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil', 'Brazil', playerCount: 4),
+          _team('team-argentina', 'Argentina', playerCount: 8),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina',
+      );
+
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.fiveOnFive,
+      }));
+      expect(pointLimitValue(tester), equals(14.0));
+    });
+
+    testWidgets('toggle manual troca o formato e realinha o Point Limit',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil', 'Brazil', playerCount: 8),
+          _team('team-argentina', 'Argentina', playerCount: 8),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina',
+      );
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.fiveOnFive,
+      }));
+
+      await tester.ensureVisible(find.byKey(const Key('match-format-toggle')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('3x3'));
+      await tester.pumpAndSettle();
+
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.threeOnThree,
+      }));
+      expect(pointLimitValue(tester), equals(8.5));
+    });
+
+    testWidgets('trocar equipe depois de escolha manual re-roda a heurística',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(teams: <Team>[
+          _team('team-brazil', 'Brazil', playerCount: 8),
+          _team('team-argentina', 'Argentina', playerCount: 8),
+          _team('team-chile', 'Chile', playerCount: 8),
+        ]),
+      ));
+      await tester.pumpAndSettle();
+
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-a-dropdown'),
+        optionText: 'Brazil',
+      );
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Argentina',
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('match-format-toggle')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('3x3'));
+      await tester.pumpAndSettle();
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.threeOnThree,
+      }));
+
+      // Contexto novo (outra equipe) → sugestão nova: elencos 8 e 8 → 5x5.
+      await _selectFromDropdown(
+        tester,
+        dropdownKey: const Key('team-b-dropdown'),
+        optionText: 'Chile',
+      );
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.fiveOnFive,
+      }));
+      expect(pointLimitValue(tester), equals(14.0));
+    });
+
+    testWidgets('partida 3x3 restaurada pré-seleciona 3x3 e mantém o limite',
+        (WidgetTester tester) async {
+      final MatchState restored = MatchState(
+        teamA: _team('team-brazil', 'Brazil', playerCount: 4),
+        teamB: _team('team-argentina', 'Argentina', playerCount: 4),
+        pointLimit: 8.5,
+        format: MatchFormat.threeOnThree,
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: MatchSetupScreen(restored: restored),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(selectedFormat(tester), equals(<MatchFormat>{
+        MatchFormat.threeOnThree,
+      }));
+      expect(pointLimitValue(tester), equals(8.5));
+    });
+  });
+
   group('MatchSetupScreen — restored session', () {
     testWidgets('pré-preenche teams, point limit e competition do cache',
         (WidgetTester tester) async {

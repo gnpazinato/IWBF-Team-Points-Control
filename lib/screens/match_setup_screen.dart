@@ -39,6 +39,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
   Team? _teamA;
   Team? _teamB;
   double _pointLimit = kDefaultPointLimit;
+  MatchFormat _format = MatchFormat.fiveOnFive;
   Color _jerseyColorA = kDefaultJerseyColorA;
   Color _jerseyColorB = kDefaultJerseyColorB;
 
@@ -50,9 +51,35 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       _teamA = restored.teamA;
       _teamB = restored.teamB;
       _pointLimit = restored.pointLimit;
+      _format = restored.format;
       _jerseyColorA = restored.jerseyColorA;
       _jerseyColorB = restored.jerseyColorB;
     }
+  }
+
+  /// A sugestão automática de formato roda SOMENTE quando uma equipe é
+  /// (re)selecionada — nunca sobrescreve um toque manual no toggle nem o
+  /// formato de uma partida restaurada. Trocar de equipe descarta a
+  /// escolha manual anterior e re-sugere (contexto novo, sugestão nova).
+  void _onTeamSelected({Team? a, Team? b}) {
+    setState(() {
+      if (a != null) _teamA = a;
+      if (b != null) _teamB = b;
+      final Team? teamA = _teamA;
+      final Team? teamB = _teamB;
+      if (teamA != null && teamB != null) {
+        _applyFormat(
+            suggestMatchFormat(teamA.playerCount, teamB.playerCount));
+      }
+    });
+  }
+
+  /// Troca o formato e realinha o Point Limit ao padrão do formato novo
+  /// (8.5 no 3x3, 14.0 no 5x5). O dropdown continua livre depois.
+  void _applyFormat(MatchFormat next) {
+    if (next == _format) return;
+    _format = next;
+    _pointLimit = next.defaultPointLimit;
   }
 
   List<Team> get _availableTeams {
@@ -141,6 +168,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
       teamA: a,
       teamB: b,
       pointLimit: _pointLimit,
+      format: _format,
       competitionName: _competitionName,
       jerseyColorA: _jerseyColorA,
       jerseyColorB: _jerseyColorB,
@@ -184,8 +212,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                       label: 'Select Team A',
                       value: _teamA,
                       teams: teams,
-                      onChanged: (Team? value) =>
-                          setState(() => _teamA = value),
+                      onChanged: (Team? value) => _onTeamSelected(a: value),
                     ),
                     const SizedBox(height: 12),
                     _JerseyPicker(
@@ -207,8 +234,7 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
                       label: 'Select Team B',
                       value: _teamB,
                       teams: teams,
-                      onChanged: (Team? value) =>
-                          setState(() => _teamB = value),
+                      onChanged: (Team? value) => _onTeamSelected(b: value),
                     ),
                     const SizedBox(height: 12),
                     _JerseyPicker(
@@ -223,10 +249,26 @@ class _MatchSetupScreenState extends State<MatchSetupScreen> {
               const SizedBox(height: 14),
               _AccentCard(
                 accentColor: IwbfColors.goldDeep,
-                child: _PointLimitDropdown(
-                  value: _pointLimit,
-                  onChanged: (double next) =>
-                      setState(() => _pointLimit = next),
+                child: _MatchFormatSelector(
+                  value: _format,
+                  onChanged: (MatchFormat next) =>
+                      setState(() => _applyFormat(next)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _AccentCard(
+                accentColor: IwbfColors.goldDeep,
+                // O dropdown é um FormField: `initialValue` não re-sincroniza
+                // em rebuild. Trocar o formato é o único momento em que
+                // `_pointLimit` muda por fora do próprio dropdown, então o
+                // ValueKey remonta o campo para exibir o padrão novo.
+                child: KeyedSubtree(
+                  key: ValueKey<MatchFormat>(_format),
+                  child: _PointLimitDropdown(
+                    value: _pointLimit,
+                    onChanged: (double next) =>
+                        setState(() => _pointLimit = next),
+                  ),
                 ),
               ),
               if (_teamsAreSame)
@@ -371,6 +413,51 @@ class _TeamDropdown extends StatelessWidget {
           )
           .toList(),
       onChanged: teams.isEmpty ? null : onChanged,
+    );
+  }
+}
+
+/// Toggle 5x5 | 3x3 (entrada 0047). Vem pré-selecionado pela sugestão
+/// automática (elencos <= 5 nas duas equipes → 3x3); um toque troca o
+/// formato e realinha o Point Limit ao padrão do formato escolhido.
+class _MatchFormatSelector extends StatelessWidget {
+  const _MatchFormatSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final MatchFormat value;
+  final ValueChanged<MatchFormat> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          'Match Format',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 10),
+        SegmentedButton<MatchFormat>(
+          key: const Key('match-format-toggle'),
+          segments: <ButtonSegment<MatchFormat>>[
+            for (final MatchFormat format in MatchFormat.values)
+              ButtonSegment<MatchFormat>(
+                value: format,
+                label: Text(format.label),
+                icon: Icon(
+                  format == MatchFormat.fiveOnFive
+                      ? Icons.groups_outlined
+                      : Icons.group_outlined,
+                ),
+              ),
+          ],
+          selected: <MatchFormat>{value},
+          onSelectionChanged: (Set<MatchFormat> selection) =>
+              onChanged(selection.first),
+        ),
+      ],
     );
   }
 }
